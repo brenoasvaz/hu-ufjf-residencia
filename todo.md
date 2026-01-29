@@ -63,3 +63,8 @@
 - [x] Redesenhar calendário semanal com visão em colunas por dia
 - [x] Implementar visualização de escala ao clicar no rodízio
 - [x] Mostrar todos os dias da semana visíveis com atividades por horário
+
+## Bug - Escalas CC1 e CC2 Vazias
+- [x] Diagnosticar por que CC1 e CC2 não exibem atividades na escala semanal
+- [x] Adicionar atividades para R1 CC1 e CC2 no seed
+- [x] Testar visualização após correção
