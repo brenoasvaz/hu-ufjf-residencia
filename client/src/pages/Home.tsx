@@ -97,18 +97,16 @@ export default function Home() {
                     className="group hover:shadow-lg transition-all duration-300 cursor-pointer"
                   >
                     <Link href={feature.href}>
-                      <a className="block">
-                        <CardHeader>
-                          <div className="flex items-start justify-between">
-                            <div className={`p-3 rounded-lg bg-background ${feature.color}`}>
-                              <Icon className="h-6 w-6" />
-                            </div>
-                            <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className={`p-3 rounded-lg bg-background ${feature.color}`}>
+                            <Icon className="h-6 w-6" />
                           </div>
-                          <CardTitle className="mt-4">{feature.title}</CardTitle>
-                          <CardDescription>{feature.description}</CardDescription>
-                        </CardHeader>
-                      </a>
+                          <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                        </div>
+                        <CardTitle className="mt-4">{feature.title}</CardTitle>
+                        <CardDescription>{feature.description}</CardDescription>
+                      </CardHeader>
                     </Link>
                   </Card>
                 );

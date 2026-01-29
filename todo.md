@@ -53,3 +53,6 @@
 - [ ] Documentar guia de uso para ADMIN
 - [ ] Documentar guia de uso para VIEWER
 - [ ] Criar lista de limitações e soluções
+
+## Bugs
+- [x] Corrigir erro de `<a>` aninhado na página Home
