@@ -1,19 +1,67 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Clock } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { CalendarDays, Clock, MapPin, Info } from "lucide-react";
 
-const DIAS_SEMANA = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+const DIAS_SEMANA = [
+  { index: 1, nome: "Segunda", abrev: "Seg" },
+  { index: 2, nome: "Terça", abrev: "Ter" },
+  { index: 3, nome: "Quarta", abrev: "Qua" },
+  { index: 4, nome: "Quinta", abrev: "Qui" },
+  { index: 5, nome: "Sexta", abrev: "Sex" },
+  { index: 6, nome: "Sábado", abrev: "Sáb" },
+  { index: 0, nome: "Domingo", abrev: "Dom" },
+];
+
+const HORARIOS = [
+  "07:00", "08:00", "09:00", "10:00", "11:00", "12:00",
+  "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"
+];
 
 const BLOCOS_R1 = ["Enfermaria", "CC1", "CC2"];
 const BLOCOS_R2_R3 = ["A", "B", "C"];
 
+// Cores para diferentes tipos de atividades
+const getActivityColor = (titulo: string) => {
+  if (titulo.includes("CC HU") || titulo.includes("Centro Cirúrgico")) return "bg-rose-100 border-rose-300 text-rose-900";
+  if (titulo.includes("Ambulatório")) return "bg-blue-100 border-blue-300 text-blue-900";
+  if (titulo.includes("Visita")) return "bg-emerald-100 border-emerald-300 text-emerald-900";
+  if (titulo.includes("Estudo")) return "bg-amber-100 border-amber-300 text-amber-900";
+  if (titulo.includes("Reunião") || titulo.includes("Clube")) return "bg-violet-100 border-violet-300 text-violet-900";
+  if (titulo.includes("HPS") || titulo.includes("Plantão")) return "bg-orange-100 border-orange-300 text-orange-900";
+  if (titulo.includes("Enfermaria")) return "bg-cyan-100 border-cyan-300 text-cyan-900";
+  return "bg-slate-100 border-slate-300 text-slate-900";
+};
+
 export default function CalendarioSemanal() {
+  const searchString = useSearch();
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedBloco, setSelectedBloco] = useState<string>("all");
+
+  // Ler parâmetros da URL ao carregar
+  useEffect(() => {
+    const params = new URLSearchParams(searchString);
+    const blocoParam = params.get("bloco");
+    const yearParam = params.get("ano");
+    
+    if (blocoParam) {
+      setSelectedBloco(blocoParam);
+      // Auto-selecionar ano baseado no bloco
+      if (["A", "B", "C"].includes(blocoParam)) {
+        setSelectedYear("R2");
+      } else if (["Enfermaria", "CC1", "CC2"].includes(blocoParam)) {
+        setSelectedYear("R1");
+      }
+    }
+    if (yearParam) {
+      setSelectedYear(yearParam);
+    }
+  }, [searchString]);
 
   // Buscar atividades semanais
   const { data: activities, isLoading } = trpc.weeklyActivities.list.useQuery({
@@ -21,27 +69,35 @@ export default function CalendarioSemanal() {
     bloco: selectedBloco !== "all" ? selectedBloco : undefined,
   });
 
-  // Agrupar atividades por dia da semana
-  const activitiesByDay = useMemo(() => {
+  // Agrupar atividades por dia e horário
+  const activitiesGrid = useMemo(() => {
     if (!activities) return {};
 
-    const grouped: Record<number, any[]> = {};
+    const grid: Record<number, Record<string, any[]>> = {};
     
-    activities.forEach((activity: any) => {
-      if (!grouped[activity.diaSemana]) {
-        grouped[activity.diaSemana] = [];
-      }
-      grouped[activity.diaSemana].push(activity);
-    });
-
-    // Ordenar atividades de cada dia por hora de início
-    Object.keys(grouped).forEach((day) => {
-      grouped[Number(day)].sort((a, b) => {
-        return a.horaInicio.localeCompare(b.horaInicio);
+    DIAS_SEMANA.forEach(dia => {
+      grid[dia.index] = {};
+      HORARIOS.forEach(hora => {
+        grid[dia.index][hora] = [];
       });
     });
 
-    return grouped;
+    activities.forEach((activity: any) => {
+      const startHour = activity.horaInicio?.substring(0, 5) || "07:00";
+      const dayIndex = activity.diaSemana;
+      
+      if (grid[dayIndex] && grid[dayIndex][startHour]) {
+        grid[dayIndex][startHour].push(activity);
+      } else if (grid[dayIndex]) {
+        // Se não encontrar o horário exato, adiciona ao mais próximo
+        const closestHour = HORARIOS.find(h => h >= startHour) || HORARIOS[0];
+        if (grid[dayIndex][closestHour]) {
+          grid[dayIndex][closestHour].push(activity);
+        }
+      }
+    });
+
+    return grid;
   }, [activities]);
 
   // Determinar blocos disponíveis baseado no ano selecionado
@@ -51,6 +107,26 @@ export default function CalendarioSemanal() {
     return [...BLOCOS_R1, ...BLOCOS_R2_R3];
   }, [selectedYear]);
 
+  // Calcular altura do bloco baseado na duração
+  const getActivityHeight = (activity: any) => {
+    const start = activity.horaInicio?.split(":").map(Number) || [7, 0];
+    const end = activity.horaFim?.split(":").map(Number) || [8, 0];
+    const duration = (end[0] * 60 + end[1]) - (start[0] * 60 + start[1]);
+    return Math.max(duration / 60, 1); // Mínimo 1 hora
+  };
+
+  // Título do bloco selecionado
+  const getBlocoTitle = () => {
+    if (selectedBloco === "all") return "Todos os Blocos";
+    if (selectedBloco === "A") return "Bloco A - Ombro, Pé e Mão";
+    if (selectedBloco === "B") return "Bloco B - Coluna e Quadril";
+    if (selectedBloco === "C") return "Bloco C - Joelho e Tumor";
+    if (selectedBloco === "Enfermaria") return "Enfermaria";
+    if (selectedBloco === "CC1") return "Centro Cirúrgico 1";
+    if (selectedBloco === "CC2") return "Centro Cirúrgico 2";
+    return selectedBloco;
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -58,19 +134,18 @@ export default function CalendarioSemanal() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
             <CalendarDays className="h-8 w-8 text-primary" />
-            Calendário Semanal
+            Escala Semanal
           </h1>
           <p className="text-muted-foreground mt-1">
-            Visualize as atividades semanais por ano e bloco de residência
+            Visualize todas as atividades da semana por horário e dia
           </p>
         </div>
       </div>
 
       {/* Filtros */}
       <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-          <CardDescription>Refine a visualização das atividades</CardDescription>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Filtros</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -78,22 +153,22 @@ export default function CalendarioSemanal() {
               <label className="text-sm font-medium mb-2 block">Ano de Residência</label>
               <Select value={selectedYear} onValueChange={(value) => {
                 setSelectedYear(value);
-                setSelectedBloco("all"); // Reset bloco ao mudar ano
+                setSelectedBloco("all");
               }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="R1">R1</SelectItem>
-                  <SelectItem value="R2">R2</SelectItem>
-                  <SelectItem value="R3">R3</SelectItem>
+                  <SelectItem value="R1">R1 - Primeiro Ano</SelectItem>
+                  <SelectItem value="R2">R2 - Segundo Ano</SelectItem>
+                  <SelectItem value="R3">R3 - Terceiro Ano</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Bloco</label>
+              <label className="text-sm font-medium mb-2 block">Bloco / Estágio</label>
               <Select value={selectedBloco} onValueChange={setSelectedBloco}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
@@ -102,7 +177,12 @@ export default function CalendarioSemanal() {
                   <SelectItem value="all">Todos</SelectItem>
                   {availableBlocks.map((bloco) => (
                     <SelectItem key={bloco} value={bloco}>
-                      {bloco}
+                      {bloco === "A" && "Bloco A - Ombro, Pé e Mão"}
+                      {bloco === "B" && "Bloco B - Coluna e Quadril"}
+                      {bloco === "C" && "Bloco C - Joelho e Tumor"}
+                      {bloco === "Enfermaria" && "Enfermaria"}
+                      {bloco === "CC1" && "Centro Cirúrgico 1"}
+                      {bloco === "CC2" && "Centro Cirúrgico 2"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -112,114 +192,178 @@ export default function CalendarioSemanal() {
         </CardContent>
       </Card>
 
-      {/* Grade Semanal */}
-      <div className="space-y-4">
-        {isLoading ? (
-          <div className="space-y-4">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-32 w-full" />
-            ))}
-          </div>
-        ) : (
-          DIAS_SEMANA.map((dia, index) => {
-            const dayActivities = activitiesByDay[index] || [];
+      {/* Título do Bloco */}
+      {selectedBloco !== "all" && (
+        <div className="text-center py-2">
+          <h2 className="text-xl font-semibold text-primary">{getBlocoTitle()}</h2>
+          {selectedYear !== "all" && (
+            <p className="text-muted-foreground">{selectedYear}</p>
+          )}
+        </div>
+      )}
 
-            return (
-              <Card key={index}>
-                <CardHeader>
-                  <CardTitle className="text-xl flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-primary" />
-                    {dia}
-                  </CardTitle>
-                  <CardDescription>
-                    {dayActivities.length} atividade(s) programada(s)
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {dayActivities.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      Nenhuma atividade programada
+      {/* Grade Semanal em Colunas */}
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="p-6 space-y-4">
+              <Skeleton className="h-[600px] w-full" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <div className="min-w-[900px]">
+                {/* Header com dias da semana */}
+                <div className="grid grid-cols-8 border-b bg-muted/50">
+                  <div className="p-3 font-medium text-center border-r text-sm">
+                    <Clock className="h-4 w-4 mx-auto mb-1" />
+                    Horário
+                  </div>
+                  {DIAS_SEMANA.map((dia) => (
+                    <div key={dia.index} className="p-3 font-medium text-center border-r last:border-r-0">
+                      <span className="hidden md:inline">{dia.nome}</span>
+                      <span className="md:hidden">{dia.abrev}</span>
                     </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {dayActivities.map((activity: any) => (
-                        <div
-                          key={activity.id}
-                          className="flex flex-col md:flex-row md:items-start gap-4 p-4 border rounded-lg hover:bg-accent transition-colors"
-                        >
-                          {/* Horário */}
-                          <div className="flex items-center gap-2 md:w-32 flex-shrink-0">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <div className="text-sm font-medium">
-                              {activity.horaInicio} - {activity.horaFim}
-                            </div>
-                          </div>
+                  ))}
+                </div>
 
-                          {/* Conteúdo */}
-                          <div className="flex-1 space-y-2">
-                            <div className="font-medium">{activity.titulo}</div>
-                            {activity.descricao && (
-                              <div className="text-sm text-muted-foreground">
-                                {activity.descricao}
-                              </div>
-                            )}
-                            {activity.local && (
-                              <div className="text-sm text-muted-foreground flex items-center gap-1">
-                                📍 {activity.local}
-                              </div>
-                            )}
-                            {activity.observacao && (
-                              <div className="text-xs text-muted-foreground italic">
-                                {activity.observacao}
-                              </div>
-                            )}
-                          </div>
+                {/* Grid de horários */}
+                <div className="divide-y">
+                  {HORARIOS.map((hora) => (
+                    <div key={hora} className="grid grid-cols-8 min-h-[80px]">
+                      {/* Coluna de horário */}
+                      <div className="p-2 border-r bg-muted/30 flex items-start justify-center">
+                        <span className="text-sm font-medium text-muted-foreground">{hora}</span>
+                      </div>
 
-                          {/* Badges */}
-                          <div className="flex flex-wrap gap-2">
-                            {activity.audiences?.map((audience: any) => (
-                              <Badge key={audience.id} variant="secondary">
-                                {audience.anoResidencia}
-                                {audience.bloco && ` - ${audience.bloco}`}
-                                {audience.opcional === 1 && " (Opcional)"}
-                              </Badge>
-                            ))}
-                            {activity.recorrente === 1 && (
-                              <Badge variant="outline">Recorrente</Badge>
+                      {/* Colunas dos dias */}
+                      {DIAS_SEMANA.map((dia) => {
+                        const dayActivities = activitiesGrid[dia.index]?.[hora] || [];
+                        
+                        return (
+                          <div 
+                            key={`${dia.index}-${hora}`} 
+                            className="p-1 border-r last:border-r-0 relative"
+                          >
+                            {dayActivities.length === 0 ? (
+                              <div className="h-full" />
+                            ) : (
+                              <div className="space-y-1">
+                                {dayActivities.map((activity: any) => (
+                                  <Tooltip key={activity.id}>
+                                    <TooltipTrigger asChild>
+                                      <div
+                                        className={`p-2 rounded border text-xs cursor-pointer transition-all hover:shadow-md ${getActivityColor(activity.titulo)}`}
+                                        style={{
+                                          minHeight: `${Math.min(getActivityHeight(activity) * 60, 120)}px`
+                                        }}
+                                      >
+                                        <div className="font-medium line-clamp-2 mb-1">
+                                          {activity.titulo}
+                                        </div>
+                                        <div className="text-[10px] opacity-75">
+                                          {activity.horaInicio} - {activity.horaFim}
+                                        </div>
+                                        {activity.local && (
+                                          <div className="text-[10px] opacity-75 flex items-center gap-1 mt-1">
+                                            <MapPin className="h-2.5 w-2.5" />
+                                            <span className="truncate">{activity.local}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="max-w-xs">
+                                      <div className="space-y-2">
+                                        <p className="font-semibold">{activity.titulo}</p>
+                                        <p className="text-sm">
+                                          <Clock className="h-3 w-3 inline mr-1" />
+                                          {activity.horaInicio} - {activity.horaFim}
+                                        </p>
+                                        {activity.descricao && (
+                                          <p className="text-sm text-muted-foreground">{activity.descricao}</p>
+                                        )}
+                                        {activity.local && (
+                                          <p className="text-sm">
+                                            <MapPin className="h-3 w-3 inline mr-1" />
+                                            {activity.local}
+                                          </p>
+                                        )}
+                                        {activity.audiences?.length > 0 && (
+                                          <div className="flex flex-wrap gap-1 pt-1">
+                                            {activity.audiences.map((aud: any) => (
+                                              <Badge key={aud.id} variant="secondary" className="text-xs">
+                                                {aud.anoResidencia}
+                                                {aud.bloco && ` - ${aud.bloco}`}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                ))}
+                              </div>
                             )}
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })
-        )}
-      </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Legenda */}
+      {/* Legenda de cores */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Legenda</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Info className="h-5 w-5" />
+            Legenda
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="font-medium mb-2">Anos de Residência:</p>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• <strong>R1:</strong> Primeiro ano</li>
-                <li>• <strong>R2:</strong> Segundo ano</li>
-                <li>• <strong>R3:</strong> Terceiro ano</li>
-              </ul>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-rose-100 border border-rose-300" />
+              <span className="text-sm">Centro Cirúrgico</span>
             </div>
-            <div>
-              <p className="font-medium mb-2">Blocos:</p>
-              <ul className="space-y-1 text-muted-foreground">
-                <li>• <strong>R1:</strong> Enfermaria, CC1, CC2</li>
-                <li>• <strong>R2/R3:</strong> A (Ombro/Pé/Mão), B (Coluna/Quadril), C (Joelho/Tumor)</li>
-              </ul>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300" />
+              <span className="text-sm">Ambulatório</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-emerald-100 border border-emerald-300" />
+              <span className="text-sm">Visita</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-amber-100 border border-amber-300" />
+              <span className="text-sm">Estudo Dirigido</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-violet-100 border border-violet-300" />
+              <span className="text-sm">Reunião / Clube</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300" />
+              <span className="text-sm">Plantão HPS</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-4 h-4 rounded bg-cyan-100 border border-cyan-300" />
+              <span className="text-sm">Enfermaria</span>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-4 border-t">
+            <p className="text-sm text-muted-foreground mb-2 font-medium">Blocos de Residência:</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+              <div>
+                <strong>R1:</strong> Enfermaria, CC1 (Centro Cirúrgico 1), CC2 (Centro Cirúrgico 2)
+              </div>
+              <div>
+                <strong>R2/R3:</strong> Bloco A (Ombro/Pé/Mão), Bloco B (Coluna/Quadril), Bloco C (Joelho/Tumor)
+              </div>
             </div>
           </div>
         </CardContent>

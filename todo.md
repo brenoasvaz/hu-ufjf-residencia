@@ -56,3 +56,10 @@
 
 ## Bugs
 - [x] Corrigir erro de `<a>` aninhado na página Home
+
+## Nova Funcionalidade - Escala Semanal Completa
+- [x] Analisar PDF da Semana Padrão e extrair estrutura de horários
+- [x] Atualizar seed com atividades completas por bloco/ano
+- [x] Redesenhar calendário semanal com visão em colunas por dia
+- [x] Implementar visualização de escala ao clicar no rodízio
+- [x] Mostrar todos os dias da semana visíveis com atividades por horário
