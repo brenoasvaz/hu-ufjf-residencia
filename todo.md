@@ -102,3 +102,15 @@
 - [x] Reformular filtro de residente para exibir apenas o bloco escalado naquele mês
 - [x] Remover exibição de todos os blocos quando um residente é selecionado
 - [x] Testar visualização com diferentes residentes (R2a, R2b, R2c, R3a, R3b, R3c)
+
+## Revisão de Horários das Escalas Semanais
+- [x] Reler PDF da Semana Padrão e extrair horários corretos
+- [x] Comparar horários atuais com PDF e identificar erros
+- [x] Corrigir horários do Bloco A (já estava correto)
+- [x] Corrigir horários do Bloco B (corrigido CC Coluna segunda)
+- [x] Corrigir horários do Bloco C (já estava correto)
+- [x] Corrigir horários da Enfermaria R1 (já estava correto)
+- [x] Corrigir horários do CC1 R1 (já estava correto)
+- [x] Corrigir horários do CC2 R1 (já estava correto)
+- [x] Remover 44 atividades duplicadas do banco
+- [x] Testar visualização após correções
