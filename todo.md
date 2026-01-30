@@ -130,3 +130,6 @@
 - [x] Corrigir horários do CC1 R1 conforme especificação
 - [x] Corrigir horários do CC2 R1 conforme especificação
 - [x] Testar visualização de todos os blocos
+
+## Alteração Visual do Usuário
+- [x] Atualizar título da Home para "HU UFJF Residência Médica Ortopedia e Traumatologia"

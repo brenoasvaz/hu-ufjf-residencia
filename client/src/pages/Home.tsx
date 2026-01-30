@@ -48,7 +48,7 @@ export default function Home() {
           <Calendar className="w-10 h-10 text-primary" />
         </div>
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-          HU UFJF Residência Médica
+          HU UFJF Residência Médica Ortopedia e Traumatologia
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
           Sistema de gerenciamento de rodízios e cronogramas para o Serviço de Ortopedia e
