@@ -1,0 +1,110 @@
+{
+  "query": "SELECT data, DAYOFWEEK(data) as dia_semana, tema FROM clinical_meetings WHERE data >= '2026-02-01' AND data <= '2026-03-31' ORDER BY data LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT data, DAYOFWEEK(data) as dia_semana, tema FROM clinical_meetings WHERE data >= '2026-02-01' AND data <= '2026-03-31' ORDER BY data LIMIT 20;",
+  "rows": [
+    {
+      "data": "2026-02-05 00:00:00",
+      "dia_semana": "5",
+      "tema": "Joelho - Lesões ligamentares do Joelho"
+    },
+    {
+      "data": "2026-02-05 00:00:00",
+      "dia_semana": "5",
+      "tema": "Abertura do ano letivo"
+    },
+    {
+      "data": "2026-02-05 00:00:00",
+      "dia_semana": "5",
+      "tema": "Apresentação das escalas e semana padrão"
+    },
+    {
+      "data": "2026-02-12 00:00:00",
+      "dia_semana": "5",
+      "tema": "Instabilidade Patelar"
+    },
+    {
+      "data": "2026-02-12 00:00:00",
+      "dia_semana": "5",
+      "tema": "Apresentação de artigo"
+    },
+    {
+      "data": "2026-02-12 00:00:00",
+      "dia_semana": "5",
+      "tema": "Casos clínicos"
+    },
+    {
+      "data": "2026-02-19 00:00:00",
+      "dia_semana": "5",
+      "tema": "Apresentação de artigo"
+    },
+    {
+      "data": "2026-02-19 00:00:00",
+      "dia_semana": "5",
+      "tema": "Joelho - Lesões Meniscais"
+    },
+    {
+      "data": "2026-02-19 00:00:00",
+      "dia_semana": "5",
+      "tema": "Casos clínicos"
+    },
+    {
+      "data": "2026-02-26 00:00:00",
+      "dia_semana": "5",
+      "tema": "Pé e Tornozelo - Pé Diabético"
+    },
+    {
+      "data": "2026-02-26 00:00:00",
+      "dia_semana": "5",
+      "tema": "Casos clínicos"
+    },
+    {
+      "data": "2026-02-26 00:00:00",
+      "dia_semana": "5",
+      "tema": "Apresentação de Artigo"
+    },
+    {
+      "data": "2026-03-05 00:00:00",
+      "dia_semana": "5",
+      "tema": "Apresentação de Artigo"
+    },
+    {
+      "data": "2026-03-05 00:00:00",
+      "dia_semana": "5",
+      "tema": "Trauma - Princípios de Osteossíntese"
+    },
+    {
+      "data": "2026-03-05 00:00:00",
+      "dia_semana": "5",
+      "tema": "Recepção dos residentes"
+    },
+    {
+      "data": "2026-03-12 00:00:00",
+      "dia_semana": "5",
+      "tema": "RECESSO PARA O TEOT"
+    },
+    {
+      "data": "2026-03-19 00:00:00",
+      "dia_semana": "5",
+      "tema": "Geral - Osteomielite"
+    },
+    {
+      "data": "2026-03-19 00:00:00",
+      "dia_semana": "5",
+      "tema": "Apresentação de Artigo"
+    },
+    {
+      "data": "2026-03-19 00:00:00",
+      "dia_semana": "5",
+      "tema": "Casos clínicos"
+    },
+    {
+      "data": "2026-03-26 00:00:00",
+      "dia_semana": "5",
+      "tema": "Trauma - Fraturas Expostas / Controle de Danos"
+    }
+  ],
+  "messages": [],
+  "stdout": "data\tdia_semana\ttema\n2026-02-05 00:00:00\t5\tJoelho - Lesões ligamentares do Joelho\n2026-02-05 00:00:00\t5\tAbertura do ano letivo\n2026-02-05 00:00:00\t5\tApresentação das escalas e semana padrão\n2026-02-12 00:00:00\t5\tInstabilidade Patelar\n2026-02-12 00:00:00\t5\tApresentação de artigo\n2026-02-12 00:00:00\t5\tCasos clínicos\n2026-02-19 00:00:00\t5\tApresentação de artigo\n2026-02-19 00:00:00\t5\tJoelho - Lesões Meniscais\n2026-02-19 00:00:00\t5\tCasos clínicos\n2026-02-26 00:00:00\t5\tPé e Tornozelo - Pé Diabético\n2026-02-26 00:00:00\t5\tCasos clínicos\n2026-02-26 00:00:00\t5\tApresentação de Artigo\n2026-03-05 00:00:00\t5\tApresentação de Artigo\n2026-03-05 00:00:00\t5\tTrauma - Princípios de Osteossíntese\n2026-03-05 00:00:00\t5\tRecepção dos residentes\n2026-03-12 00:00:00\t5\tRECESSO PARA O TEOT\n2026-03-19 00:00:00\t5\tGeral - Osteomielite\n2026-03-19 00:00:00\t5\tApresentação de Artigo\n2026-03-19 00:00:00\t5\tCasos clínicos\n2026-03-26 00:00:00\t5\tTrauma - Fraturas Expostas / Controle de Danos\n",
+  "stderr": "",
+  "execution_time_ms": 485
+}

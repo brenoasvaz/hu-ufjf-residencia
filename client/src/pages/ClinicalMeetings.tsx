@@ -83,7 +83,11 @@ export default function ClinicalMeetings() {
   }, [meetings]);
 
   const formatDate = (date: Date | string) => {
-    const d = new Date(date);
+    // Parse date string as UTC to avoid timezone issues
+    const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const d = new Date(year, month - 1, day);
+    
     return d.toLocaleDateString("pt-BR", {
       weekday: "long",
       day: "2-digit",

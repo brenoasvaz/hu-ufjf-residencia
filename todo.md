@@ -149,3 +149,10 @@
 - [x] Corrigir todas as datas para quintas-feiras
 - [x] Adicionar reuniões de fevereiro de 2026
 - [x] Testar visualização após correção
+
+
+## Correção Final - Datas das Reuniões (Quintas-feiras)
+- [x] Verificar datas atuais no banco de dados
+- [x] Calcular quintas-feiras corretas para cada mês
+- [x] Identificar problema de timezone na formatação
+- [x] Corrigir função formatDate para exibir dia correto

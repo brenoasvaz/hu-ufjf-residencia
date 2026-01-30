@@ -1,0 +1,62 @@
+{
+  "query": "SELECT data, tema FROM clinical_meetings WHERE data >= '2027-02-01' AND data <= '2027-02-28' ORDER BY data;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT data, tema FROM clinical_meetings WHERE data >= '2027-02-01' AND data <= '2027-02-28' ORDER BY data;",
+  "rows": [
+    {
+      "data": "2027-02-04 00:00:00",
+      "tema": "Abertura do ano letivo 2027"
+    },
+    {
+      "data": "2027-02-04 00:00:00",
+      "tema": "Apresentação das escalas e semana padrão"
+    },
+    {
+      "data": "2027-02-04 00:00:00",
+      "tema": "Joelho - Lesões ligamentares do Joelho"
+    },
+    {
+      "data": "2027-02-11 00:00:00",
+      "tema": "Instabilidade Patelar"
+    },
+    {
+      "data": "2027-02-11 00:00:00",
+      "tema": "Apresentação de artigo"
+    },
+    {
+      "data": "2027-02-11 00:00:00",
+      "tema": "Casos clínicos"
+    },
+    {
+      "data": "2027-02-18 00:00:00",
+      "tema": "Joelho - Lesões Meniscais"
+    },
+    {
+      "data": "2027-02-18 00:00:00",
+      "tema": "Apresentação de artigo"
+    },
+    {
+      "data": "2027-02-18 00:00:00",
+      "tema": "Casos clínicos"
+    },
+    {
+      "data": "2027-02-25 00:00:00",
+      "tema": "Pé e Tornozelo - Pé Diabético"
+    },
+    {
+      "data": "2027-02-25 00:00:00",
+      "tema": "Apresentação de Artigo"
+    },
+    {
+      "data": "2027-02-25 00:00:00",
+      "tema": "Casos clínicos"
+    },
+    {
+      "data": "2027-02-25 00:00:00",
+      "tema": "Reunião de apresentação dos novos residentes - auditório 2º andar 08:00h"
+    }
+  ],
+  "messages": [],
+  "stdout": "data\ttema\n2027-02-04 00:00:00\tAbertura do ano letivo 2027\n2027-02-04 00:00:00\tApresentação das escalas e semana padrão\n2027-02-04 00:00:00\tJoelho - Lesões ligamentares do Joelho\n2027-02-11 00:00:00\tInstabilidade Patelar\n2027-02-11 00:00:00\tApresentação de artigo\n2027-02-11 00:00:00\tCasos clínicos\n2027-02-18 00:00:00\tJoelho - Lesões Meniscais\n2027-02-18 00:00:00\tApresentação de artigo\n2027-02-18 00:00:00\tCasos clínicos\n2027-02-25 00:00:00\tPé e Tornozelo - Pé Diabético\n2027-02-25 00:00:00\tApresentação de Artigo\n2027-02-25 00:00:00\tCasos clínicos\n2027-02-25 00:00:00\tReunião de apresentação dos novos residentes - auditório 2º andar 08:00h\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}
