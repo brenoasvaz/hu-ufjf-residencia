@@ -143,3 +143,9 @@
 - [x] Adicionar aba ao menu de navegação
 - [x] Popular dados das reuniões do ano
 - [x] Testar visualização
+
+
+## Correção - Datas das Reuniões Clínicas
+- [x] Corrigir todas as datas para quintas-feiras
+- [x] Adicionar reuniões de fevereiro de 2026
+- [x] Testar visualização após correção
