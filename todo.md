@@ -114,3 +114,10 @@
 - [x] Corrigir horários do CC2 R1 (já estava correto)
 - [x] Remover 44 atividades duplicadas do banco
 - [x] Testar visualização após correções
+
+## Nova Revisão de Horários das Escalas Semanais
+- [x] Reler PDF da Semana Padrão página por página
+- [x] Extrair horários detalhados de cada bloco (A, B, C, Enfermaria, CC1, CC2)
+- [x] Comparar com banco atual e identificar todas as diferenças
+- [x] Corrigir horários no banco de dados
+- [x] Testar visualização após correções
