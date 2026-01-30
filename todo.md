@@ -78,3 +78,7 @@
 - [x] Extrair horários corretos do PDF para CC2 R1
 - [x] Atualizar seed com todos os horários corrigidos
 - [x] Executar seed e testar visualização
+
+## Ajustes Solicitados
+- [x] Padronizar horário da Reunião Clínica para sempre iniciar às 07:00h (corrigir Bloco B que está 07:15h)
+- [x] Ajustar visualização do calendário semanal para preencher todos os blocos de horário ocupados por cada atividade (evitar horários em branco)

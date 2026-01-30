@@ -82,19 +82,31 @@ export default function CalendarioSemanal() {
       });
     });
 
+    // Helper para converter hora em minutos
+    const timeToMinutes = (time: string) => {
+      const [h, m] = time.split(":").map(Number);
+      return h * 60 + m;
+    };
+
     activities.forEach((activity: any) => {
-      const startHour = activity.horaInicio?.substring(0, 5) || "07:00";
+      const startTime = activity.horaInicio?.substring(0, 5) || "07:00";
+      const endTime = activity.horaFim?.substring(0, 5) || "08:00";
       const dayIndex = activity.diaSemana;
       
-      if (grid[dayIndex] && grid[dayIndex][startHour]) {
-        grid[dayIndex][startHour].push(activity);
-      } else if (grid[dayIndex]) {
-        // Se não encontrar o horário exato, adiciona ao mais próximo
-        const closestHour = HORARIOS.find(h => h >= startHour) || HORARIOS[0];
-        if (grid[dayIndex][closestHour]) {
-          grid[dayIndex][closestHour].push(activity);
+      const startMinutes = timeToMinutes(startTime);
+      const endMinutes = timeToMinutes(endTime);
+      
+      // Preencher todos os horários ocupados pela atividade
+      HORARIOS.forEach(hora => {
+        const horaMinutes = timeToMinutes(hora);
+        
+        // Se o horário está dentro do intervalo da atividade
+        if (horaMinutes >= startMinutes && horaMinutes < endMinutes) {
+          if (grid[dayIndex] && grid[dayIndex][hora]) {
+            grid[dayIndex][hora].push(activity);
+          }
         }
-      }
+      });
     });
 
     return grid;
