@@ -243,12 +243,14 @@ export default function CalendarioMensal() {
                         <button
                           key={rotation.id}
                           onClick={() => openRotationDetails(rotation)}
-                          className={`text-xs truncate w-full text-left px-1.5 py-0.5 rounded border cursor-pointer transition-colors ${getStageColor(rotation.localEstagio)}`}
+                          className={`text-xs w-full text-left px-1.5 py-0.5 rounded border cursor-pointer transition-colors ${getStageColor(rotation.localEstagio)}`}
                         >
-                          <span className="hidden md:inline">{rotation.localEstagio}</span>
-                          <span className="md:hidden">
-                            {rotation.localEstagio.replace("Bloco ", "").substring(0, 3)}
-                          </span>
+                          <div className="font-medium truncate">{rotation.localEstagio}</div>
+                          {rotation.residents && rotation.residents.length > 0 && (
+                            <div className="text-[10px] opacity-75 truncate">
+                              {rotation.residents.map((r: any) => r.nomeCompleto).join(", ")}
+                            </div>
+                          )}
                         </button>
                       ))}
                       {dayRotations.length > 3 && (
@@ -295,6 +297,12 @@ export default function CalendarioMensal() {
                     {format(new Date(rotation.dataInicio), "dd/MM", { locale: ptBR })} -{" "}
                     {format(new Date(rotation.dataFim), "dd/MM/yyyy", { locale: ptBR })}
                   </div>
+                  {rotation.residents && rotation.residents.length > 0 && (
+                    <div className="text-sm flex items-center gap-1 mb-1">
+                      <Users className="h-3.5 w-3.5" />
+                      {rotation.residents.map((r: any) => r.nomeCompleto).join(" + ")}
+                    </div>
+                  )}
                   {rotation.descricao && (
                     <div className="text-sm opacity-80 line-clamp-2">{rotation.descricao}</div>
                   )}

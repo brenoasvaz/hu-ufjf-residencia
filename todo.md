@@ -90,3 +90,10 @@
 - [x] Implementar destaque visual no primeiro bloco de atividade longa
 - [x] Blocos intermediários devem mostrar apenas cor de fundo sem texto repetido
 - [x] Testar visualização em diferentes blocos
+
+## Implementação de Escalas Anuais
+- [x] Extrair cronograma de rodízios do ano completo (mar/2026 - fev/2027)
+- [x] Criar mapeamento de residentes R2 e R3 por bloco e mês
+- [x] Implementar seed com rodízios do ano completo
+- [x] Atualizar calendário mensal para exibir nomes dos residentes
+- [x] Testar visualização em diferentes meses

@@ -131,7 +131,8 @@ export async function getRotationsByDateRange(dataInicio: Date, dataFim: Date) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return db
+  // Buscar rodízios no período
+  const rotationsInRange = await db
     .select()
     .from(rotations)
     .where(
@@ -141,4 +142,25 @@ export async function getRotationsByDateRange(dataInicio: Date, dataFim: Date) {
       )
     )
     .orderBy(rotations.dataInicio);
+
+  // Para cada rodízio, buscar residentes associados
+  const rotationsWithResidents = await Promise.all(
+    rotationsInRange.map(async (rotation) => {
+      const assignments = await db
+        .select({
+          assignment: rotationAssignments,
+          resident: residents,
+        })
+        .from(rotationAssignments)
+        .leftJoin(residents, eq(rotationAssignments.residentId, residents.id))
+        .where(eq(rotationAssignments.rotationId, rotation.id));
+
+      return {
+        ...rotation,
+        residents: assignments.map(a => a.resident).filter(Boolean),
+      };
+    })
+  );
+
+  return rotationsWithResidents;
 }
