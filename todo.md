@@ -121,3 +121,12 @@
 - [x] Comparar com banco atual e identificar todas as diferenças
 - [x] Corrigir horários no banco de dados
 - [x] Testar visualização após correções
+
+## Correção Final de Horários (especificações do usuário)
+- [x] Corrigir horários do Bloco A conforme especificação
+- [x] Corrigir horários do Bloco B conforme especificação
+- [x] Corrigir horários do Bloco C conforme especificação
+- [x] Corrigir horários da Enfermaria R1 conforme especificação
+- [x] Corrigir horários do CC1 R1 conforme especificação
+- [x] Corrigir horários do CC2 R1 conforme especificação
+- [x] Testar visualização de todos os blocos
