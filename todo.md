@@ -85,3 +85,8 @@
 
 ## Novo Ajuste
 - [x] Remover opção "Todos" do filtro de Bloco/Estágio no calendário semanal
+
+## Nova Funcionalidade - Destaque Visual
+- [x] Implementar destaque visual no primeiro bloco de atividade longa
+- [x] Blocos intermediários devem mostrar apenas cor de fundo sem texto repetido
+- [x] Testar visualização em diferentes blocos

@@ -96,6 +96,8 @@ export default function CalendarioSemanal() {
       const startMinutes = timeToMinutes(startTime);
       const endMinutes = timeToMinutes(endTime);
       
+      let isFirstBlock = true;
+      
       // Preencher todos os horários ocupados pela atividade
       HORARIOS.forEach(hora => {
         const horaMinutes = timeToMinutes(hora);
@@ -103,7 +105,11 @@ export default function CalendarioSemanal() {
         // Se o horário está dentro do intervalo da atividade
         if (horaMinutes >= startMinutes && horaMinutes < endMinutes) {
           if (grid[dayIndex] && grid[dayIndex][hora]) {
-            grid[dayIndex][hora].push(activity);
+            grid[dayIndex][hora].push({
+              ...activity,
+              isFirstBlock,
+            });
+            isFirstBlock = false; // Próximos blocos não são o primeiro
           }
         }
       });
@@ -258,25 +264,37 @@ export default function CalendarioSemanal() {
                               <div className="h-full" />
                             ) : (
                               <div className="space-y-1">
-                                {dayActivities.map((activity: any) => (
-                                  <Tooltip key={activity.id}>
+                                {dayActivities.map((activity: any, idx: number) => (
+                                  <Tooltip key={`${activity.id}-${idx}`}>
                                     <TooltipTrigger asChild>
                                       <div
-                                        className={`p-2 rounded border text-xs cursor-pointer transition-all hover:shadow-md ${getActivityColor(activity.titulo)}`}
+                                        className={`rounded border text-xs cursor-pointer transition-all hover:shadow-md ${
+                                          activity.isFirstBlock 
+                                            ? `p-2 ${getActivityColor(activity.titulo)}` 
+                                            : `p-1 ${getActivityColor(activity.titulo)} opacity-60`
+                                        }`}
                                         style={{
-                                          minHeight: `${Math.min(getActivityHeight(activity) * 60, 120)}px`
+                                          minHeight: activity.isFirstBlock ? `${Math.min(getActivityHeight(activity) * 60, 120)}px` : '60px'
                                         }}
                                       >
-                                        <div className="font-medium line-clamp-2 mb-1">
-                                          {activity.titulo}
-                                        </div>
-                                        <div className="text-[10px] opacity-75">
-                                          {activity.horaInicio} - {activity.horaFim}
-                                        </div>
-                                        {activity.local && (
-                                          <div className="text-[10px] opacity-75 flex items-center gap-1 mt-1">
-                                            <MapPin className="h-2.5 w-2.5" />
-                                            <span className="truncate">{activity.local}</span>
+                                        {activity.isFirstBlock ? (
+                                          <>
+                                            <div className="font-bold line-clamp-2 mb-1">
+                                              {activity.titulo}
+                                            </div>
+                                            <div className="text-[10px] opacity-75 font-semibold">
+                                              {activity.horaInicio} - {activity.horaFim}
+                                            </div>
+                                            {activity.local && (
+                                              <div className="text-[10px] opacity-75 flex items-center gap-1 mt-1">
+                                                <MapPin className="h-2.5 w-2.5" />
+                                                <span className="truncate">{activity.local}</span>
+                                              </div>
+                                            )}
+                                          </>
+                                        ) : (
+                                          <div className="h-full flex items-center justify-center">
+                                            <div className="w-1 h-8 bg-current opacity-30 rounded"></div>
                                           </div>
                                         )}
                                       </div>
