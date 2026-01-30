@@ -68,3 +68,13 @@
 - [x] Diagnosticar por que CC1 e CC2 não exibem atividades na escala semanal
 - [x] Adicionar atividades para R1 CC1 e CC2 no seed
 - [x] Testar visualização após correção
+
+## Ajuste de Horários das Atividades Semanais
+- [x] Extrair horários corretos do PDF para Bloco A (especificado pelo usuário)
+- [x] Extrair horários corretos do PDF para Bloco B
+- [x] Extrair horários corretos do PDF para Bloco C
+- [x] Extrair horários corretos do PDF para Enfermaria R1
+- [x] Extrair horários corretos do PDF para CC1 R1
+- [x] Extrair horários corretos do PDF para CC2 R1
+- [x] Atualizar seed com todos os horários corrigidos
+- [x] Executar seed e testar visualização
