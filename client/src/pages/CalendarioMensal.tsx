@@ -73,18 +73,28 @@ export default function CalendarioMensal() {
     if (!rotations) return [];
 
     return rotations.filter((rotation: any) => {
+      // Filtro por residente - mostrar apenas o bloco onde ele está escalado
+      if (selectedResident !== "all") {
+        const residentId = parseInt(selectedResident);
+        const hasResident = rotation.residents?.some((r: any) => r.id === residentId);
+        if (!hasResident) return false;
+      }
+      
+      // Filtro por estágio
       if (selectedStage !== "all" && rotation.localEstagio !== selectedStage) return false;
+      
+      // Filtro por ano
       if (selectedYear !== "all") {
-        // Filtrar por ano baseado no estágio
         const isR1Stage = ["Enfermaria", "CC1", "CC2"].includes(rotation.localEstagio);
         const isR2R3Stage = ["Bloco A", "Bloco B", "Bloco C"].includes(rotation.localEstagio);
         
         if (selectedYear === "R1" && !isR1Stage) return false;
         if ((selectedYear === "R2" || selectedYear === "R3") && !isR2R3Stage) return false;
       }
+      
       return true;
     });
-  }, [rotations, selectedStage, selectedYear]);
+  }, [rotations, selectedStage, selectedYear, selectedResident]);
 
   // Navegar entre meses
   const goToPreviousMonth = () => setCurrentDate(subMonths(currentDate, 1));

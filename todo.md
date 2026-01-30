@@ -97,3 +97,8 @@
 - [x] Implementar seed com rodízios do ano completo
 - [x] Atualizar calendário mensal para exibir nomes dos residentes
 - [x] Testar visualização em diferentes meses
+
+## Correção - Calendário Mensal por Residente
+- [x] Reformular filtro de residente para exibir apenas o bloco escalado naquele mês
+- [x] Remover exibição de todos os blocos quando um residente é selecionado
+- [x] Testar visualização com diferentes residentes (R2a, R2b, R2c, R3a, R3b, R3c)
