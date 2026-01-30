@@ -8,6 +8,7 @@ import * as residentsDb from "./db-helpers/residents";
 import * as rotationsDb from "./db-helpers/rotations";
 import * as weeklyActivitiesDb from "./db-helpers/weeklyActivities";
 import * as importsDb from "./db-helpers/imports";
+import * as clinicalMeetingsDb from "./db";
 import { pdfRouter } from "./pdf-upload-router";
 
 // Helper para procedures que requerem papel ADMIN
@@ -332,6 +333,61 @@ export const appRouter = router({
 
   // ===== PDF UPLOAD & PARSING =====
   pdf: pdfRouter,
+
+  // ===== CLINICAL MEETINGS =====
+  clinicalMeetings: router({
+    list: viewerProcedure
+      .input(z.object({
+        year: z.number().optional(),
+        month: z.number().min(1).max(12).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        if (input?.year && input?.month) {
+          return clinicalMeetingsDb.getClinicalMeetingsByMonth(input.year, input.month);
+        }
+        return clinicalMeetingsDb.getAllClinicalMeetings();
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        data: z.date(),
+        tema: z.string(),
+        tipo: z.enum(["AULA", "ARTIGO", "CASOS_CLINICOS", "PROVA", "AVALIACAO", "EVENTO", "FERIADO", "RECESSO"]),
+        preceptor: z.string().optional(),
+        residenteApresentador: z.string().optional(),
+        observacao: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return clinicalMeetingsDb.createClinicalMeeting(input);
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return clinicalMeetingsDb.deleteClinicalMeeting(input.id);
+      }),
+  }),
+
+  // ===== PRESENTATION GUIDELINES =====
+  presentationGuidelines: router({
+    list: viewerProcedure
+      .query(async () => {
+        return clinicalMeetingsDb.getAllPresentationGuidelines();
+      }),
+    
+    upsert: adminProcedure
+      .input(z.object({
+        tipo: z.enum(["AULA", "ARTIGO", "CASOS_CLINICOS"]),
+        titulo: z.string(),
+        descricao: z.string(),
+        tempoApresentacao: z.number(),
+        tempoDiscussao: z.number(),
+        orientacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return clinicalMeetingsDb.upsertPresentationGuideline(input);
+      }),
+  }),
 
   // ===== STAGES =====
   stages: router({

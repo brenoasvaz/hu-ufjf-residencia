@@ -144,3 +144,39 @@ export const stages = mysqlTable("stages", {
 
 export type Stage = typeof stages.$inferSelect;
 export type InsertStage = typeof stages.$inferInsert;
+
+/**
+ * Reuniões Clínicas - Programação científica semanal
+ */
+export const clinicalMeetings = mysqlTable("clinical_meetings", {
+  id: int("id").autoincrement().primaryKey(),
+  data: timestamp("data").notNull(),
+  tema: varchar("tema", { length: 500 }).notNull(),
+  tipo: mysqlEnum("tipo", ["AULA", "ARTIGO", "CASOS_CLINICOS", "PROVA", "AVALIACAO", "EVENTO", "FERIADO", "RECESSO"]).notNull(),
+  preceptor: varchar("preceptor", { length: 255 }),
+  residenteApresentador: varchar("residente_apresentador", { length: 50 }), // R1, R2, R3 ou combinações
+  observacao: text("observacao"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ClinicalMeeting = typeof clinicalMeetings.$inferSelect;
+export type InsertClinicalMeeting = typeof clinicalMeetings.$inferInsert;
+
+/**
+ * Orientações de Apresentação - Regras e tempos para cada tipo de apresentação
+ */
+export const presentationGuidelines = mysqlTable("presentation_guidelines", {
+  id: int("id").autoincrement().primaryKey(),
+  tipo: mysqlEnum("tipo", ["AULA", "ARTIGO", "CASOS_CLINICOS"]).notNull().unique(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  descricao: text("descricao").notNull(),
+  tempoApresentacao: int("tempo_apresentacao").notNull(), // em minutos
+  tempoDiscussao: int("tempo_discussao").notNull(), // em minutos
+  orientacoes: text("orientacoes"), // JSON com lista de orientações
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type PresentationGuideline = typeof presentationGuidelines.$inferSelect;
+export type InsertPresentationGuideline = typeof presentationGuidelines.$inferInsert;

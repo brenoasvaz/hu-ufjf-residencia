@@ -133,3 +133,13 @@
 
 ## Alteração Visual do Usuário
 - [x] Atualizar título da Home para "HU UFJF Residência Médica Ortopedia e Traumatologia"
+
+## Nova Aba - Reuniões Clínicas
+- [x] Analisar PDF de Reuniões Clínicas e extrair programação
+- [x] Extrair orientações para apresentação dos temas
+- [x] Criar modelo de dados para reuniões clínicas
+- [x] Criar página de Reuniões Clínicas com programação
+- [x] Adicionar seção de orientações para apresentação
+- [x] Adicionar aba ao menu de navegação
+- [x] Popular dados das reuniões do ano
+- [x] Testar visualização

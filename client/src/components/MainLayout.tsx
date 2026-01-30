@@ -11,6 +11,7 @@ import {
   LogOut,
   Menu,
   X,
+  Presentation,
 } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -56,6 +57,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
       href: "/residentes",
       label: "Residentes",
       icon: Users,
+    },
+    {
+      href: "/reunioes-clinicas",
+      label: "Reuniões Clínicas",
+      icon: Presentation,
     },
     ...(user?.role === "admin"
       ? [

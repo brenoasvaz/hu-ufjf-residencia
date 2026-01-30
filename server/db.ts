@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, clinicalMeetings, presentationGuidelines, ClinicalMeeting, InsertClinicalMeeting, PresentationGuideline, InsertPresentationGuideline } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -89,4 +89,78 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ============================================
+// Clinical Meetings Queries
+// ============================================
+
+export async function getAllClinicalMeetings(): Promise<ClinicalMeeting[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get clinical meetings: database not available");
+    return [];
+  }
+  return await db.select().from(clinicalMeetings).orderBy(clinicalMeetings.data);
+}
+
+export async function getClinicalMeetingsByMonth(year: number, month: number): Promise<ClinicalMeeting[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get clinical meetings: database not available");
+    return [];
+  }
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 0, 23, 59, 59);
+  
+  const { gte, lte, and } = await import("drizzle-orm");
+  return await db.select().from(clinicalMeetings)
+    .where(and(
+      gte(clinicalMeetings.data, startDate),
+      lte(clinicalMeetings.data, endDate)
+    ))
+    .orderBy(clinicalMeetings.data);
+}
+
+export async function createClinicalMeeting(meeting: InsertClinicalMeeting): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  await db.insert(clinicalMeetings).values(meeting);
+}
+
+export async function deleteClinicalMeeting(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  await db.delete(clinicalMeetings).where(eq(clinicalMeetings.id, id));
+}
+
+// ============================================
+// Presentation Guidelines Queries
+// ============================================
+
+export async function getAllPresentationGuidelines(): Promise<PresentationGuideline[]> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get presentation guidelines: database not available");
+    return [];
+  }
+  return await db.select().from(presentationGuidelines);
+}
+
+export async function upsertPresentationGuideline(guideline: InsertPresentationGuideline): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  await db.insert(presentationGuidelines).values(guideline).onDuplicateKeyUpdate({
+    set: {
+      titulo: guideline.titulo,
+      descricao: guideline.descricao,
+      tempoApresentacao: guideline.tempoApresentacao,
+      tempoDiscussao: guideline.tempoDiscussao,
+      orientacoes: guideline.orientacoes,
+    },
+  });
+}

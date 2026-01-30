@@ -10,6 +10,7 @@ import CalendarioSemanal from "./pages/CalendarioSemanal";
 import Residentes from "./pages/Residentes";
 import Admin from "./pages/Admin";
 import AdminImports from "./pages/AdminImports";
+import ClinicalMeetings from "./pages/ClinicalMeetings";
 import MainLayout from "./components/MainLayout";
 
 function Router() {
@@ -22,6 +23,7 @@ function Router() {
         <Route path={"/residentes"} component={Residentes} />
         <Route path={"/admin"} component={Admin} />
         <Route path={"/admin/imports"} component={AdminImports} />
+        <Route path={"/reunioes-clinicas"} component={ClinicalMeetings} />
         <Route path={"/404"} component={NotFound} />
         <Route component={NotFound} />
       </Switch>
