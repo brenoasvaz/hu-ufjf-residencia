@@ -82,3 +82,6 @@
 ## Ajustes Solicitados
 - [x] Padronizar horário da Reunião Clínica para sempre iniciar às 07:00h (corrigir Bloco B que está 07:15h)
 - [x] Ajustar visualização do calendário semanal para preencher todos os blocos de horário ocupados por cada atividade (evitar horários em branco)
+
+## Novo Ajuste
+- [x] Remover opção "Todos" do filtro de Bloco/Estágio no calendário semanal

@@ -40,8 +40,8 @@ const getActivityColor = (titulo: string) => {
 
 export default function CalendarioSemanal() {
   const searchString = useSearch();
-  const [selectedYear, setSelectedYear] = useState<string>("all");
-  const [selectedBloco, setSelectedBloco] = useState<string>("all");
+  const [selectedYear, setSelectedYear] = useState<string>("R1");
+  const [selectedBloco, setSelectedBloco] = useState<string>("Enfermaria");
 
   // Ler parâmetros da URL ao carregar
   useEffect(() => {
@@ -129,7 +129,6 @@ export default function CalendarioSemanal() {
 
   // Título do bloco selecionado
   const getBlocoTitle = () => {
-    if (selectedBloco === "all") return "Todos os Blocos";
     if (selectedBloco === "A") return "Bloco A - Ombro, Pé e Mão";
     if (selectedBloco === "B") return "Bloco B - Coluna e Quadril";
     if (selectedBloco === "C") return "Bloco C - Joelho e Tumor";
@@ -165,7 +164,9 @@ export default function CalendarioSemanal() {
               <label className="text-sm font-medium mb-2 block">Ano de Residência</label>
               <Select value={selectedYear} onValueChange={(value) => {
                 setSelectedYear(value);
-                setSelectedBloco("all");
+                // Auto-selecionar primeiro bloco do ano
+                if (value === "R1") setSelectedBloco("Enfermaria");
+                else if (value === "R2" || value === "R3") setSelectedBloco("A");
               }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
@@ -186,7 +187,6 @@ export default function CalendarioSemanal() {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
                   {availableBlocks.map((bloco) => (
                     <SelectItem key={bloco} value={bloco}>
                       {bloco === "A" && "Bloco A - Ombro, Pé e Mão"}
@@ -205,14 +205,12 @@ export default function CalendarioSemanal() {
       </Card>
 
       {/* Título do Bloco */}
-      {selectedBloco !== "all" && (
-        <div className="text-center py-2">
-          <h2 className="text-xl font-semibold text-primary">{getBlocoTitle()}</h2>
-          {selectedYear !== "all" && (
-            <p className="text-muted-foreground">{selectedYear}</p>
-          )}
-        </div>
-      )}
+      <div className="text-center py-2">
+        <h2 className="text-xl font-semibold text-primary">{getBlocoTitle()}</h2>
+        {selectedYear !== "all" && (
+          <p className="text-muted-foreground">{selectedYear}</p>
+        )}
+      </div>
 
       {/* Grade Semanal em Colunas */}
       <Card className="overflow-hidden">
