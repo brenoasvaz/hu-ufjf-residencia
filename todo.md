@@ -156,3 +156,9 @@
 - [x] Calcular quintas-feiras corretas para cada mês
 - [x] Identificar problema de timezone na formatação
 - [x] Corrigir função formatDate para exibir dia correto
+
+
+## Ajuste de Cronograma - 14/05
+- [x] Localizar reunião do dia 14/05/2026
+- [x] Alterar tema de "Pediátrica - Fraturas do Cotovelo Infantil" para "Pediátrica - Paralisia Cerebral"
+- [x] Validar alteração na interface

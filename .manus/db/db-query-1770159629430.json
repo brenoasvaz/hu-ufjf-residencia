@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, data, tema, tipo, preceptor FROM clinical_meetings WHERE data = '2026-05-14' AND tema LIKE '%Cotovelo%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT id, data, tema, tipo, preceptor FROM clinical_meetings WHERE data = '2026-05-14' AND tema LIKE '%Cotovelo%';",
+  "rows": [
+    {
+      "id": "169",
+      "data": "2026-05-14 00:00:00",
+      "tema": "Pediátrica - Fraturas do Cotovelo Infantil",
+      "tipo": "AULA",
+      "preceptor": "Dr. Leonardo de Castro"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdata\ttema\ttipo\tpreceptor\n169\t2026-05-14 00:00:00\tPediátrica - Fraturas do Cotovelo Infantil\tAULA\tDr. Leonardo de Castro\n",
+  "stderr": "",
+  "execution_time_ms": 65
+}

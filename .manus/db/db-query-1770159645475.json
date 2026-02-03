@@ -1,0 +1,31 @@
+{
+  "query": "SELECT id, data, tema, tipo, preceptor FROM clinical_meetings WHERE data = '2026-05-14';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT id, data, tema, tipo, preceptor FROM clinical_meetings WHERE data = '2026-05-14';",
+  "rows": [
+    {
+      "id": "169",
+      "data": "2026-05-14 00:00:00",
+      "tema": "Pediátrica - Paralisia Cerebral",
+      "tipo": "AULA",
+      "preceptor": "Dr. Leonardo de Castro"
+    },
+    {
+      "id": "170",
+      "data": "2026-05-14 00:00:00",
+      "tema": "Apresentação de Artigo",
+      "tipo": "ARTIGO",
+      "preceptor": "Dr. Breno Vaz"
+    },
+    {
+      "id": "171",
+      "data": "2026-05-14 00:00:00",
+      "tema": "Casos clínicos",
+      "tipo": "CASOS_CLINICOS",
+      "preceptor": "Dr. Breno Vaz"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdata\ttema\ttipo\tpreceptor\n169\t2026-05-14 00:00:00\tPediátrica - Paralisia Cerebral\tAULA\tDr. Leonardo de Castro\n170\t2026-05-14 00:00:00\tApresentação de Artigo\tARTIGO\tDr. Breno Vaz\n171\t2026-05-14 00:00:00\tCasos clínicos\tCASOS_CLINICOS\tDr. Breno Vaz\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE clinical_meetings SET tema = 'Pediátrica - Paralisia Cerebral' WHERE data = '2026-05-14' AND tema LIKE '%Cotovelo%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute UPDATE clinical_meetings SET tema = 'Pediátrica - Paralisia Cerebral' WHERE data = '2026-05-14' AND tema LIKE '%Cotovelo%';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 194
+}
