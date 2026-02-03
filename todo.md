@@ -171,3 +171,11 @@
 - [x] Adicionar botões de editar/deletar visíveis apenas para administradores
 - [x] Implementar validação de permissões (apenas admin)
 - [x] Testar edição e exclusão de reuniões
+
+
+## Exportação de Reuniões para Calendário (ICS)
+- [x] Instalar biblioteca ics para geração de arquivos de calendário
+- [x] Criar endpoint tRPC para exportar reuniões em formato ICS
+- [x] Implementar função de geração de arquivo ICS com todas as reuniões
+- [x] Adicionar botão de exportar na interface de Reuniões Clínicas
+- [x] Testar geração e download de arquivo ICS

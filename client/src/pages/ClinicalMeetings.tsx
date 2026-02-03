@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2 } from "lucide-react";
+import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download } from "lucide-react";
 import { EditClinicalMeetingDialog } from "@/components/EditClinicalMeetingDialog";
 import { toast } from "sonner";
 import {
@@ -127,6 +127,31 @@ export default function ClinicalMeetings() {
   };
 
   const years = [2025, 2026, 2027];
+  
+  const { data: icsData, refetch: exportICS, isFetching: isExporting } = trpc.clinicalMeetings.exportICS.useQuery(
+    { year: selectedYear, month: selectedMonth },
+    { enabled: false }
+  );
+  
+  const handleExport = async () => {
+    try {
+      const result = await exportICS();
+      if (result.data?.icsContent) {
+        const blob = new Blob([result.data.icsContent], { type: 'text/calendar' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `reunioes-clinicas-${selectedYear}-${String(selectedMonth).padStart(2, '0')}.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        toast.success('Calend\u00e1rio exportado com sucesso!');
+      }
+    } catch (error) {
+      toast.error('Erro ao exportar calend\u00e1rio');
+    }
+  };
 
   return (
     <div className="container py-6 space-y-6">
@@ -138,6 +163,10 @@ export default function ClinicalMeetings() {
             Programação científica semanal do Serviço de Ortopedia e Traumatologia
           </p>
         </div>
+        <Button onClick={handleExport} disabled={isExporting}>
+          <Download className="mr-2 h-4 w-4" />
+          {isExporting ? 'Exportando...' : 'Exportar para Calendário'}
+        </Button>
       </div>
 
       <Tabs defaultValue="schedule" className="space-y-4">

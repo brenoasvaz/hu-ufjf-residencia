@@ -381,6 +381,54 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return clinicalMeetingsDb.deleteClinicalMeeting(input.id);
       }),
+    
+    exportICS: viewerProcedure
+      .input(z.object({
+        year: z.number().optional(),
+        month: z.number().min(1).max(12).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const { createEvents } = await import('ics');
+        
+        let meetings;
+        if (input?.year && input?.month) {
+          meetings = await clinicalMeetingsDb.getClinicalMeetingsByMonth(input.year, input.month);
+        } else {
+          meetings = await clinicalMeetingsDb.getAllClinicalMeetings();
+        }
+        
+        const events = meetings.map(meeting => {
+          const date = new Date(meeting.data);
+          const startTime = [date.getFullYear(), date.getMonth() + 1, date.getDate(), 7, 15] as [number, number, number, number, number];
+          const endTime = [date.getFullYear(), date.getMonth() + 1, date.getDate(), 8, 30] as [number, number, number, number, number];
+          
+          let description = `Tipo: ${meeting.tipo}\n`;
+          if (meeting.preceptor) description += `Preceptor: ${meeting.preceptor}\n`;
+          if (meeting.residenteApresentador) description += `Residente: ${meeting.residenteApresentador}\n`;
+          if (meeting.observacao) description += `Observa\u00e7\u00e3o: ${meeting.observacao}`;
+          
+          return {
+            start: startTime,
+            end: endTime,
+            title: meeting.tema,
+            description,
+            location: 'Audit\u00f3rio 2\u00ba andar, HU Dom Bosco',
+            status: 'CONFIRMED' as const,
+            busyStatus: 'BUSY' as const,
+          };
+        });
+        
+        const { error, value } = await createEvents(events);
+        
+        if (error) {
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Erro ao gerar arquivo ICS',
+          });
+        }
+        
+        return { icsContent: value };
+      }),
   }),
 
   // ===== PRESENTATION GUIDELINES =====
