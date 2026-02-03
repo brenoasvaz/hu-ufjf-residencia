@@ -128,6 +128,14 @@ export async function createClinicalMeeting(meeting: InsertClinicalMeeting): Pro
   await db.insert(clinicalMeetings).values(meeting);
 }
 
+export async function updateClinicalMeeting(id: number, data: Partial<InsertClinicalMeeting>): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  await db.update(clinicalMeetings).set(data).where(eq(clinicalMeetings.id, id));
+}
+
 export async function deleteClinicalMeeting(id: number): Promise<void> {
   const db = await getDb();
   if (!db) {

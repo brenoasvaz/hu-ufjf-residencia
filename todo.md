@@ -162,3 +162,12 @@
 - [x] Localizar reunião do dia 14/05/2026
 - [x] Alterar tema de "Pediátrica - Fraturas do Cotovelo Infantil" para "Pediátrica - Paralisia Cerebral"
 - [x] Validar alteração na interface
+
+
+## Funcionalidade de Edição de Reuniões Clínicas
+- [x] Criar endpoint tRPC para atualizar reunião
+- [x] Criar endpoint tRPC para deletar reunião
+- [x] Criar componente Dialog de edição com formulário
+- [x] Adicionar botões de editar/deletar visíveis apenas para administradores
+- [x] Implementar validação de permissões (apenas admin)
+- [x] Testar edição e exclusão de reuniões

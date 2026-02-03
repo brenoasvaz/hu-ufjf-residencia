@@ -1,11 +1,25 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2 } from "lucide-react";
+import { EditClinicalMeetingDialog } from "@/components/EditClinicalMeetingDialog";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const MONTHS = [
   { value: 1, label: "Janeiro" },
@@ -57,8 +71,14 @@ const MEETING_TYPE_ICONS: Record<string, React.ReactNode> = {
 
 export default function ClinicalMeetings() {
   const currentDate = new Date();
+  const { user } = useAuth();
+  const utils = trpc.useUtils();
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+  const [editingMeeting, setEditingMeeting] = useState<any>(null);
+  const [deletingMeetingId, setDeletingMeetingId] = useState<number | null>(null);
+  
+  const isAdmin = user?.role === 'admin';
 
   const { data: meetings, isLoading: meetingsLoading } = trpc.clinicalMeetings.list.useQuery({
     year: selectedYear,
@@ -66,6 +86,17 @@ export default function ClinicalMeetings() {
   });
 
   const { data: guidelines, isLoading: guidelinesLoading } = trpc.presentationGuidelines.list.useQuery();
+  
+  const deleteMutation = trpc.clinicalMeetings.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Reunião excluída com sucesso!");
+      utils.clinicalMeetings.list.invalidate();
+      setDeletingMeetingId(null);
+    },
+    onError: (error) => {
+      toast.error(`Erro ao excluir reunião: ${error.message}`);
+    },
+  });
 
   // Group meetings by date
   const meetingsByDate = useMemo(() => {
@@ -234,6 +265,24 @@ export default function ClinicalMeetings() {
                                   <GraduationCap className="h-4 w-4" />
                                   {meeting.preceptor}
                                 </span>
+                              )}
+                              {isAdmin && (
+                                <div className="flex gap-1 ml-auto">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setEditingMeeting(meeting)}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setDeletingMeetingId(meeting.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -458,6 +507,34 @@ export default function ClinicalMeetings() {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Edit Dialog */}
+      <EditClinicalMeetingDialog
+        meeting={editingMeeting}
+        open={!!editingMeeting}
+        onOpenChange={(open) => !open && setEditingMeeting(null)}
+      />
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingMeetingId} onOpenChange={(open) => !open && setDeletingMeetingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta reunião? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingMeetingId && deleteMutation.mutate({ id: deletingMeetingId })}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

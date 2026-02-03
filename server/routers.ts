@@ -361,6 +361,21 @@ export const appRouter = router({
         return clinicalMeetingsDb.createClinicalMeeting(input);
       }),
     
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        data: z.date().optional(),
+        tema: z.string().optional(),
+        tipo: z.enum(["AULA", "ARTIGO", "CASOS_CLINICOS", "PROVA", "AVALIACAO", "EVENTO", "FERIADO", "RECESSO"]).optional(),
+        preceptor: z.string().optional(),
+        residenteApresentador: z.string().optional(),
+        observacao: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return clinicalMeetingsDb.updateClinicalMeeting(id, data);
+      }),
+    
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
