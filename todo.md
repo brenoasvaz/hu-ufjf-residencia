@@ -208,3 +208,10 @@
 - [x] Filtrar blocos/estágios por ano de residência selecionado
 - [x] Criar links do calendário mensal para o calendário semanal do bloco
 - [x] Testar navegação entre calendários
+
+
+## Busca em Reuniões Clínicas
+- [x] Adicionar campo de busca na interface de Reuniões Clínicas
+- [x] Implementar filtragem por tema (título da reunião)
+- [x] Implementar filtragem por preceptor
+- [x] Testar busca com diferentes termos

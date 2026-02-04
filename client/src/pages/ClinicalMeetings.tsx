@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download } from "lucide-react";
+import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search } from "lucide-react";
 import { EditClinicalMeetingDialog } from "@/components/EditClinicalMeetingDialog";
 import { toast } from "sonner";
 import {
@@ -75,6 +75,7 @@ export default function ClinicalMeetings() {
   const utils = trpc.useUtils();
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+  const [searchQuery, setSearchQuery] = useState("");
   const [editingMeeting, setEditingMeeting] = useState<any>(null);
   const [deletingMeetingId, setDeletingMeetingId] = useState<number | null>(null);
   
@@ -98,12 +99,24 @@ export default function ClinicalMeetings() {
     },
   });
 
-  // Group meetings by date
+  // Group meetings by date with search filter
   const meetingsByDate = useMemo(() => {
     if (!meetings) return {};
     
+    // Filter meetings by search query
+    const filteredMeetings = meetings.filter((meeting) => {
+      if (!searchQuery.trim()) return true;
+      
+      const query = searchQuery.toLowerCase();
+      const matchesTopic = meeting.tema?.toLowerCase().includes(query);
+      const matchesPreceptor = meeting.preceptor?.toLowerCase().includes(query);
+      const matchesResident = meeting.residenteApresentador?.toLowerCase().includes(query);
+      
+      return matchesTopic || matchesPreceptor || matchesResident;
+    });
+    
     const grouped: Record<string, typeof meetings> = {};
-    meetings.forEach((meeting) => {
+    filteredMeetings.forEach((meeting) => {
       const dateKey = new Date(meeting.data).toISOString().split("T")[0];
       if (!grouped[dateKey]) {
         grouped[dateKey] = [];
@@ -111,7 +124,7 @@ export default function ClinicalMeetings() {
       grouped[dateKey].push(meeting);
     });
     return grouped;
-  }, [meetings]);
+  }, [meetings, searchQuery]);
 
   const formatDate = (date: Date | string) => {
     // Parse date string as UTC to avoid timezone issues
@@ -183,9 +196,26 @@ export default function ClinicalMeetings() {
               <CardTitle className="text-lg">Filtros</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <div className="flex-1">
-                  <label className="text-sm font-medium mb-2 block">Ano</label>
+              <div className="space-y-4">
+                {/* Campo de busca */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Buscar por tema ou preceptor</label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      placeholder="Digite o tema da reunião ou nome do preceptor..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                </div>
+                
+                {/* Filtros de ano e mês */}
+                <div className="flex flex-col gap-4 sm:flex-row">
+                  <div className="flex-1">
+                    <label className="text-sm font-medium mb-2 block">Ano</label>
                   <Select
                     value={selectedYear.toString()}
                     onValueChange={(value) => setSelectedYear(parseInt(value))}
@@ -220,6 +250,7 @@ export default function ClinicalMeetings() {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
               </div>
             </CardContent>
           </Card>
