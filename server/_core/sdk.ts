@@ -268,34 +268,52 @@ class SDKServer {
 
     const sessionUserId = session.openId;
     const signedInAt = new Date();
+    
+    // Try to find user by openId first, then by email (for internal auth)
     let user = await db.getUserByOpenId(sessionUserId);
-
-    // If user not in DB, sync from OAuth server automatically
     if (!user) {
-      try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+      // For internal auth, openId is the email
+      user = await db.getUserByEmail(sessionUserId);
+    }
+
+    // If user found by email (internal auth), return directly
+    if (user) {
+      // Update last signed in for internal users
+      if (!user.openId) {
         await db.upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+          openId: user.email, // Use email as openId for internal users
+          email: user.email,
           lastSignedIn: signedInAt,
         });
-        user = await db.getUserByOpenId(userInfo.openId);
-      } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
+      } else {
+        await db.upsertUser({
+          openId: user.openId,
+          email: user.email || (user.openId + '@manus.oauth'),
+          lastSignedIn: signedInAt,
+        });
       }
+      return user;
+    }
+
+    // If user not in DB, try to sync from OAuth server (only for OAuth users)
+    try {
+      const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+      await db.upsertUser({
+        openId: userInfo.openId,
+        name: userInfo.name || null,
+        email: userInfo.email || userInfo.openId + '@manus.oauth',
+        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+        lastSignedIn: signedInAt,
+      });
+      user = await db.getUserByOpenId(userInfo.openId);
+    } catch (error) {
+      console.error("[Auth] Failed to sync user from OAuth:", error);
+      throw ForbiddenError("User not found");
     }
 
     if (!user) {
       throw ForbiddenError("User not found");
     }
-
-    await db.upsertUser({
-      openId: user.openId,
-      lastSignedIn: signedInAt,
-    });
 
     return user;
   }

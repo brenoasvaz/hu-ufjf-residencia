@@ -179,3 +179,13 @@
 - [x] Implementar função de geração de arquivo ICS com todas as reuniões
 - [x] Adicionar botão de exportar na interface de Reuniões Clínicas
 - [x] Testar geração e download de arquivo ICS
+
+
+## Sistema Híbrido de Autenticação (OAuth + Login Interno)
+- [x] Atualizar schema com campos de senha hash
+- [x] Corrigir erros de TypeScript
+- [x] Implementar endpoints de registro e login interno
+- [x] Criar página de login com opções (OAuth e email/senha)
+- [x] Criar página de registro de usuários
+- [x] Integrar autenticação interna com sistema existente
+- [x] Testar login interno com sucesso

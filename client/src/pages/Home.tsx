@@ -58,7 +58,7 @@ export default function Home() {
         {!isAuthenticated ? (
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
             <Button size="lg" asChild>
-              <a href={getLoginUrl()}>
+              <a href="/login">
                 Fazer Login
                 <ArrowRight className="ml-2 h-4 w-4" />
               </a>

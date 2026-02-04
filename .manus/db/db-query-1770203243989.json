@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, email, name, role, passwordHash, openId, loginMethod FROM users WHERE email = 'teste@teste.com' LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT id, email, name, role, passwordHash, openId, loginMethod FROM users WHERE email = 'teste@teste.com' LIMIT 1;",
+  "rows": [
+    {
+      "id": "990009",
+      "email": "teste@teste.com",
+      "name": "Teste Usuario",
+      "role": "user",
+      "passwordHash": "$2b$10$6PqNTBiLHz59TJ52SyQxXO1IS9Is1ix.F03VHmqcypgPZbvnmi3K.",
+      "openId": "NULL",
+      "loginMethod": "internal"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tname\trole\tpasswordHash\topenId\tloginMethod\n990009\tteste@teste.com\tTeste Usuario\tuser\t$2b$10$6PqNTBiLHz59TJ52SyQxXO1IS9Is1ix.F03VHmqcypgPZbvnmi3K.\tNULL\tinternal\n",
+  "stderr": "",
+  "execution_time_ms": 139
+}

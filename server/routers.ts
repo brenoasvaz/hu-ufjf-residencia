@@ -10,6 +10,8 @@ import * as weeklyActivitiesDb from "./db-helpers/weeklyActivities";
 import * as importsDb from "./db-helpers/imports";
 import * as clinicalMeetingsDb from "./db";
 import { pdfRouter } from "./pdf-upload-router";
+import { registerUser, authenticateUser, getUserByEmail } from "./auth";
+import { sdk } from "./_core/sdk";
 
 // Helper para procedures que requerem papel ADMIN
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -35,6 +37,77 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    
+    // Internal authentication - Register
+    register: publicProcedure
+      .input(z.object({
+        email: z.string().email('Email inválido'),
+        password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+        name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const user = await registerUser({
+            email: input.email,
+            password: input.password,
+            name: input.name,
+            role: 'user',
+          });
+          
+          // Create session token for the new user
+          const sessionToken = await sdk.createSessionToken(input.email, {
+            name: input.name,
+            expiresInMs: 365 * 24 * 60 * 60 * 1000, // 1 year
+          });
+          
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, sessionToken, { 
+            ...cookieOptions, 
+            maxAge: 365 * 24 * 60 * 60 * 1000 
+          });
+          
+          return { success: true, user };
+        } catch (error) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: error instanceof Error ? error.message : 'Erro ao registrar usuário',
+          });
+        }
+      }),
+    
+    // Internal authentication - Login
+    login: publicProcedure
+      .input(z.object({
+        email: z.string().email('Email inválido'),
+        password: z.string().min(1, 'Senha é obrigatória'),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const user = await authenticateUser({
+            email: input.email,
+            password: input.password,
+          });
+          
+          // Create session token
+          const sessionToken = await sdk.createSessionToken(input.email, {
+            name: user.name || '',
+            expiresInMs: 365 * 24 * 60 * 60 * 1000, // 1 year
+          });
+          
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, sessionToken, { 
+            ...cookieOptions, 
+            maxAge: 365 * 24 * 60 * 60 * 1000 
+          });
+          
+          return { success: true, user };
+        } catch (error) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: error instanceof Error ? error.message : 'Email ou senha inválidos',
+          });
+        }
+      }),
   }),
 
   // ===== RESIDENTS =====
