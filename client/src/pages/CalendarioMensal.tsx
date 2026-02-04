@@ -68,6 +68,25 @@ export default function CalendarioMensal() {
     return [...paddedDays, ...days];
   }, [monthStart, monthEnd]);
 
+  // Filtrar estágios por ano de residência
+  const filteredStages = useMemo(() => {
+    if (!stages) return [];
+    
+    if (selectedYear === "all") return stages;
+    
+    // R1: Enfermaria, CC1, CC2
+    if (selectedYear === "R1") {
+      return stages.filter((stage: any) => ["Enfermaria", "CC1", "CC2"].includes(stage.nome));
+    }
+    
+    // R2 e R3: Bloco A, B, C
+    if (selectedYear === "R2" || selectedYear === "R3") {
+      return stages.filter((stage: any) => ["Bloco A", "Bloco B", "Bloco C"].includes(stage.nome));
+    }
+    
+    return stages;
+  }, [stages, selectedYear]);
+
   // Filtrar rodízios
   const filteredRotations = useMemo(() => {
     if (!rotations) return [];
@@ -158,9 +177,9 @@ export default function CalendarioMensal() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
-                  {stages?.map((stage: any) => (
+                  {filteredStages?.map((stage: any) => (
                     <SelectItem key={stage.id} value={stage.nome}>
-                      {stage.nome}
+                      {stage.nome} {stage.descricao ? `- ${stage.descricao}` : ''}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -255,7 +274,9 @@ export default function CalendarioMensal() {
                           onClick={() => openRotationDetails(rotation)}
                           className={`text-xs w-full text-left px-1.5 py-0.5 rounded border cursor-pointer transition-colors ${getStageColor(rotation.localEstagio)}`}
                         >
-                          <div className="font-medium truncate">{rotation.localEstagio}</div>
+                          <div className="font-medium truncate">
+                            {rotation.stage?.descricao ? `${rotation.localEstagio} - ${rotation.stage.descricao}` : rotation.localEstagio}
+                          </div>
                           {rotation.residents && rotation.residents.length > 0 && (
                             <div className="text-[10px] opacity-75 truncate">
                               {rotation.residents.map((r: any) => r.nomeCompleto).join(", ")}
@@ -301,7 +322,9 @@ export default function CalendarioMensal() {
                   onClick={() => openRotationDetails(rotation)}
                   className={`flex flex-col p-4 border rounded-lg transition-all cursor-pointer text-left ${getStageColor(rotation.localEstagio)}`}
                 >
-                  <div className="font-semibold text-lg mb-2">{rotation.localEstagio}</div>
+                  <div className="font-semibold text-lg mb-2">
+                    {rotation.stage?.descricao ? `${rotation.localEstagio} - ${rotation.stage.descricao}` : rotation.localEstagio}
+                  </div>
                   <div className="text-sm flex items-center gap-1 mb-1">
                     <Clock className="h-3.5 w-3.5" />
                     {format(new Date(rotation.dataInicio), "dd/MM", { locale: ptBR })} -{" "}
@@ -316,10 +339,18 @@ export default function CalendarioMensal() {
                   {rotation.descricao && (
                     <div className="text-sm opacity-80 line-clamp-2">{rotation.descricao}</div>
                   )}
-                  <div className="mt-2 text-xs flex items-center gap-1 opacity-70">
-                    <ExternalLink className="h-3 w-3" />
-                    Clique para ver escala semanal
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-2 text-xs h-7 w-full justify-start"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      goToWeeklySchedule(rotation.localEstagio);
+                    }}
+                  >
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    Ver escala semanal
+                  </Button>
                 </button>
               ))}
             </div>

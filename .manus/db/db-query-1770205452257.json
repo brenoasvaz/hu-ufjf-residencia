@@ -1,0 +1,19 @@
+{
+  "query": "SELECT DISTINCT local_estagio FROM rotations ORDER BY local_estagio;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT DISTINCT local_estagio FROM rotations ORDER BY local_estagio;",
+  "rows": [
+    {
+      "local_estagio": "Bloco A"
+    },
+    {
+      "local_estagio": "Bloco B"
+    },
+    {
+      "local_estagio": "Bloco C"
+    }
+  ],
+  "messages": [],
+  "stdout": "local_estagio\nBloco A\nBloco B\nBloco C\n",
+  "stderr": "",
+  "execution_time_ms": 53
+}

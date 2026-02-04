@@ -201,3 +201,10 @@
 - [x] Bloquear login de usuários não aprovados
 - [x] Mostrar mensagem informativa para usuários pendentes
 - [x] Testar fluxo completo de aprovação
+
+
+## Melhorias de Navegação dos Calendários
+- [x] Adicionar descrições aos blocos (ex: "Bloco B - Coluna e Quadril")
+- [x] Filtrar blocos/estágios por ano de residência selecionado
+- [x] Criar links do calendário mensal para o calendário semanal do bloco
+- [x] Testar navegação entre calendários

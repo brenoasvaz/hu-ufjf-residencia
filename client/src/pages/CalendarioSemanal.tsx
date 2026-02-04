@@ -69,6 +69,9 @@ export default function CalendarioSemanal() {
     bloco: selectedBloco !== "all" ? selectedBloco : undefined,
   });
 
+  // Buscar estágios para obter descrições
+  const { data: stages } = trpc.stages.list.useQuery({ activeOnly: true });
+
   // Agrupar atividades por dia e horário
   const activitiesGrid = useMemo(() => {
     if (!activities) return {};
@@ -118,12 +121,27 @@ export default function CalendarioSemanal() {
     return grid;
   }, [activities]);
 
-  // Determinar blocos disponíveis baseado no ano selecionado
+  // Blocos disponíveis baseado no ano selecionado
   const availableBlocks = useMemo(() => {
+    if (selectedYear === "all") return [...BLOCOS_R1, ...BLOCOS_R2_R3];
     if (selectedYear === "R1") return BLOCOS_R1;
-    if (selectedYear === "R2" || selectedYear === "R3") return BLOCOS_R2_R3;
-    return [...BLOCOS_R1, ...BLOCOS_R2_R3];
+    return BLOCOS_R2_R3;
   }, [selectedYear]);
+
+  // Função para obter descrição do bloco
+  const getBlocoDescription = (bloco: string) => {
+    const blocoMap: Record<string, string> = {
+      "A": "Bloco A",
+      "B": "Bloco B",
+      "C": "Bloco C",
+      "Enfermaria": "Enfermaria",
+      "CC1": "CC1",
+      "CC2": "CC2",
+    };
+    const blocoNome = blocoMap[bloco] || bloco;
+    const stage = stages?.find((s: any) => s.nome === blocoNome);
+    return stage?.descricao || null;
+  };
 
   // Calcular altura do bloco baseado na duração
   const getActivityHeight = (activity: any) => {
@@ -193,16 +211,22 @@ export default function CalendarioSemanal() {
                   <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableBlocks.map((bloco) => (
-                    <SelectItem key={bloco} value={bloco}>
-                      {bloco === "A" && "Bloco A - Ombro, Pé e Mão"}
-                      {bloco === "B" && "Bloco B - Coluna e Quadril"}
-                      {bloco === "C" && "Bloco C - Joelho e Tumor"}
-                      {bloco === "Enfermaria" && "Enfermaria"}
-                      {bloco === "CC1" && "Centro Cirúrgico 1"}
-                      {bloco === "CC2" && "Centro Cirúrgico 2"}
-                    </SelectItem>
-                  ))}
+                  {availableBlocks.map((bloco) => {
+                    const desc = getBlocoDescription(bloco);
+                    let label = bloco;
+                    if (bloco === "A") label = desc ? `Bloco A - ${desc}` : "Bloco A";
+                    else if (bloco === "B") label = desc ? `Bloco B - ${desc}` : "Bloco B";
+                    else if (bloco === "C") label = desc ? `Bloco C - ${desc}` : "Bloco C";
+                    else if (bloco === "Enfermaria") label = "Enfermaria";
+                    else if (bloco === "CC1") label = "Centro Cirúrgico 1";
+                    else if (bloco === "CC2") label = "Centro Cirúrgico 2";
+                    
+                    return (
+                      <SelectItem key={bloco} value={bloco}>
+                        {label}
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>

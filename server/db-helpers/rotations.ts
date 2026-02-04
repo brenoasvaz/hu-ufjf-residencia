@@ -4,6 +4,7 @@ import {
   rotations, 
   rotationAssignments, 
   residents,
+  stages,
   type InsertRotation, 
   type InsertRotationAssignment 
 } from "../../drizzle/schema";
@@ -131,10 +132,14 @@ export async function getRotationsByDateRange(dataInicio: Date, dataFim: Date) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  // Buscar rodízios no período
+  // Buscar rodízios no período com informações do stage
   const rotationsInRange = await db
-    .select()
+    .select({
+      rotation: rotations,
+      stage: stages,
+    })
     .from(rotations)
+    .leftJoin(stages, eq(rotations.localEstagio, stages.nome))
     .where(
       and(
         lte(rotations.dataInicio, dataFim),
@@ -145,7 +150,10 @@ export async function getRotationsByDateRange(dataInicio: Date, dataFim: Date) {
 
   // Para cada rodízio, buscar residentes associados
   const rotationsWithResidents = await Promise.all(
-    rotationsInRange.map(async (rotation) => {
+    rotationsInRange.map(async (item) => {
+      const rotation = item.rotation;
+      const stage = item.stage;
+      
       const assignments = await db
         .select({
           assignment: rotationAssignments,
@@ -157,6 +165,7 @@ export async function getRotationsByDateRange(dataInicio: Date, dataFim: Date) {
 
       return {
         ...rotation,
+        stage,
         residents: assignments.map(a => a.resident).filter(Boolean),
       };
     })
