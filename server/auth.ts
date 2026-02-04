@@ -91,6 +91,15 @@ export async function authenticateUser(input: LoginInput) {
     throw new Error('Email ou senha inválidos');
   }
 
+  // Check account status
+  if (user.accountStatus === 'pending') {
+    throw new Error('Sua conta está aguardando aprovação de um administrador.');
+  }
+
+  if (user.accountStatus === 'rejected') {
+    throw new Error('Sua solicitação de acesso foi negada. Entre em contato com um administrador.');
+  }
+
   // Update last signed in
   await db.update(users)
     .set({ lastSignedIn: new Date() })
@@ -136,4 +145,54 @@ export async function getUserByEmail(email: string) {
 
   const foundUsers = await db.select().from(users).where(eq(users.email, email)).limit(1);
   return foundUsers[0] || null;
+}
+
+/**
+ * Get all users with optional status filter
+ */
+export async function getAllUsers(status?: 'pending' | 'approved' | 'rejected') {
+  const db = await getDb();
+  if (!db) return [];
+
+  if (status) {
+    return db.select().from(users).where(eq(users.accountStatus, status)).orderBy(users.createdAt);
+  }
+  return db.select().from(users).orderBy(users.createdAt);
+}
+
+/**
+ * Approve a user account
+ */
+export async function approveUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  await db.update(users)
+    .set({ accountStatus: 'approved' })
+    .where(eq(users.id, userId));
+}
+
+/**
+ * Reject a user account
+ */
+export async function rejectUser(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  await db.update(users)
+    .set({ accountStatus: 'rejected' })
+    .where(eq(users.id, userId));
+}
+
+/**
+ * Check if user account is approved
+ */
+export async function isUserApproved(userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+
+  const foundUsers = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const user = foundUsers[0];
+  
+  return user?.accountStatus === 'approved';
 }

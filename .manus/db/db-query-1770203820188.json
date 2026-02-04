@@ -1,0 +1,73 @@
+{
+  "query": "SELECT id, email, name, role, accountStatus FROM users ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT id, email, name, role, accountStatus FROM users ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "email": "breno.a.s.v@gmail.com",
+      "name": "Breno Vaz",
+      "role": "admin",
+      "accountStatus": "approved"
+    },
+    {
+      "id": "510041",
+      "email": "jessicabamerico@gmail.com",
+      "name": "Jéssica Américo",
+      "role": "user",
+      "accountStatus": "pending"
+    },
+    {
+      "id": "600001",
+      "email": "adrianofmjr@gmail.com",
+      "name": "Prof. Adriano Mendes Jr.",
+      "role": "user",
+      "accountStatus": "pending"
+    },
+    {
+      "id": "630001",
+      "email": "joaomeirelles906@gmail.com",
+      "name": "joaomeirelles906",
+      "role": "user",
+      "accountStatus": "pending"
+    },
+    {
+      "id": "660001",
+      "email": "igor_gerdi@hotmail.com",
+      "name": "igor_gerdi",
+      "role": "user",
+      "accountStatus": "pending"
+    },
+    {
+      "id": "810001",
+      "email": "guigravina@hotmail.com",
+      "name": "guigravina",
+      "role": "user",
+      "accountStatus": "pending"
+    },
+    {
+      "id": "990001",
+      "email": "prmhuufjfortopedia@gmail.com",
+      "name": "PRM SOT HU UFJF",
+      "role": "user",
+      "accountStatus": "pending"
+    },
+    {
+      "id": "990009",
+      "email": "teste@teste.com",
+      "name": "Teste Usuario",
+      "role": "user",
+      "accountStatus": "pending"
+    },
+    {
+      "id": "990022",
+      "email": "novoresidente@teste.com",
+      "name": "Novo Residente Teste",
+      "role": "user",
+      "accountStatus": "pending"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\temail\tname\trole\taccountStatus\n1\tbreno.a.s.v@gmail.com\tBreno Vaz\tadmin\tapproved\n510041\tjessicabamerico@gmail.com\tJéssica Américo\tuser\tpending\n600001\tadrianofmjr@gmail.com\tProf. Adriano Mendes Jr.\tuser\tpending\n630001\tjoaomeirelles906@gmail.com\tjoaomeirelles906\tuser\tpending\n660001\tigor_gerdi@hotmail.com\tigor_gerdi\tuser\tpending\n810001\tguigravina@hotmail.com\tguigravina\tuser\tpending\n990001\tprmhuufjfortopedia@gmail.com\tPRM SOT HU UFJF\tuser\tpending\n990009\tteste@teste.com\tTeste Usuario\tuser\tpending\n990022\tnovoresidente@teste.com\tNovo Residente Teste\tuser\tpending\n",
+  "stderr": "",
+  "execution_time_ms": 54
+}

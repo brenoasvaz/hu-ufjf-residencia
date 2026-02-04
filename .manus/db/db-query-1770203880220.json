@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO users (openId, name, email, role, passwordHash, accountStatus, createdAt, updatedAt) VALUES ('admin-internal-001', 'Administrador Sistema', 'admin@huufjf.com', 'admin', '$2b$10$QooJb4BCwpPEiNeuYUo8uuYRHxG6o7vxU8Z8UE51Z2FUew6W2OVM6', 'approved', NOW(), NOW()) ON DUPLICATE KEY UPDATE passwordHash = '$2b$10$QooJb4BCwpPEiNeuYUo8uuYRHxG6o7vxU8Z8UE51Z2FUew6W2OVM6', accountStatus = 'approved';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute INSERT INTO users (openId, name, email, role, passwordHash, accountStatus, createdAt, updatedAt) VALUES ('admin-internal-001', 'Administrador Sistema', 'admin@huufjf.com', 'admin', '$2b$10$QooJb4BCwpPEiNeuYUo8uuYRHxG6o7vxU8Z8UE51Z2FUew6W2OVM6', 'approved', NOW(), NOW()) ON DUPLICATE KEY UPDATE passwordHash = '$2b$10$QooJb4BCwpPEiNeuYUo8uuYRHxG6o7vxU8Z8UE51Z2FUew6W2OVM6', accountStatus = 'approved';",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 160
+}

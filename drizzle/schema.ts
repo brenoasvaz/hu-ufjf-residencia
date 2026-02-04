@@ -20,6 +20,7 @@ export const users = mysqlTable("users", {
   name: text("name"),
   loginMethod: varchar("loginMethod", { length: 64 }).default("internal"),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  accountStatus: mysqlEnum("accountStatus", ["pending", "approved", "rejected"]).default("pending").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

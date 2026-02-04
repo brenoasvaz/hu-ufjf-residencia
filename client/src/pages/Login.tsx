@@ -25,6 +25,7 @@ export default function Login() {
   const [registerPassword, setRegisterPassword] = useState("");
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState("");
   const [registerError, setRegisterError] = useState("");
+  const [registerSuccess, setRegisterSuccess] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -40,8 +41,7 @@ export default function Login() {
 
   const registerMutation = trpc.auth.register.useMutation({
     onSuccess: () => {
-      utils.auth.me.invalidate();
-      setLocation("/");
+      setRegisterSuccess(true);
     },
     onError: (error) => {
       setRegisterError(error.message);
@@ -151,6 +151,29 @@ export default function Login() {
             </TabsContent>
             
             <TabsContent value="register">
+              {registerSuccess ? (
+                <div className="text-center py-6 space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-green-700">Cadastro realizado com sucesso!</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Sua solicitação de acesso foi enviada e está aguardando aprovação de um administrador.
+                    Você receberá acesso assim que sua conta for aprovada.
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setRegisterSuccess(false);
+                      setActiveTab("login");
+                    }}
+                  >
+                    Voltar para Login
+                  </Button>
+                </div>
+              ) : (
               <form onSubmit={handleRegister} className="space-y-4">
                 {registerError && (
                   <Alert variant="destructive">
@@ -220,6 +243,7 @@ export default function Login() {
                   Cadastrar
                 </Button>
               </form>
+              )}
             </TabsContent>
           </Tabs>
           

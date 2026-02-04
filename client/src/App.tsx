@@ -12,6 +12,7 @@ import Admin from "./pages/Admin";
 import AdminImports from "./pages/AdminImports";
 import ClinicalMeetings from "./pages/ClinicalMeetings";
 import Login from "./pages/Login";
+import UserManagement from "./pages/UserManagement";
 import MainLayout from "./components/MainLayout";
 
 function Router() {
@@ -31,6 +32,7 @@ function Router() {
             <Route path="/admin" component={Admin} />
             <Route path="/admin/imports" component={AdminImports} />
             <Route path="/reunioes-clinicas" component={ClinicalMeetings} />
+            <Route path="/admin/usuarios" component={UserManagement} />
             <Route path="/404" component={NotFound} />
             <Route component={NotFound} />
           </Switch>

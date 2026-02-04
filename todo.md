@@ -189,3 +189,15 @@
 - [x] Criar página de registro de usuários
 - [x] Integrar autenticação interna com sistema existente
 - [x] Testar login interno com sucesso
+
+
+## Fluxo de Aprovação de Cadastros
+- [x] Adicionar campo status ao schema de usuários (pending, approved, rejected)
+- [x] Modificar registro para criar usuários com status pending
+- [x] Criar endpoint para listar usuários pendentes
+- [x] Criar endpoint para aprovar usuário
+- [x] Criar endpoint para rejeitar usuário
+- [x] Criar página de administração de usuários pendentes
+- [x] Bloquear login de usuários não aprovados
+- [x] Mostrar mensagem informativa para usuários pendentes
+- [x] Testar fluxo completo de aprovação

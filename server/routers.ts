@@ -10,7 +10,7 @@ import * as weeklyActivitiesDb from "./db-helpers/weeklyActivities";
 import * as importsDb from "./db-helpers/imports";
 import * as clinicalMeetingsDb from "./db";
 import { pdfRouter } from "./pdf-upload-router";
-import { registerUser, authenticateUser, getUserByEmail } from "./auth";
+import { registerUser, authenticateUser, getUserByEmail, getAllUsers, approveUser, rejectUser } from "./auth";
 import { sdk } from "./_core/sdk";
 
 // Helper para procedures que requerem papel ADMIN
@@ -32,6 +32,12 @@ export const appRouter = router({
   
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    
+    // Get pending users count for admin badge
+    pendingCount: adminProcedure.query(async () => {
+      const pendingUsers = await getAllUsers('pending');
+      return pendingUsers.length;
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -107,6 +113,42 @@ export const appRouter = router({
             message: error instanceof Error ? error.message : 'Email ou senha inválidos',
           });
         }
+      }),
+  }),
+
+  // ===== USER MANAGEMENT =====
+  users: router({
+    list: adminProcedure
+      .input(z.object({
+        status: z.enum(['pending', 'approved', 'rejected']).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const users = await getAllUsers(input?.status);
+        // Remove sensitive data
+        return users.map(u => ({
+          id: u.id,
+          email: u.email,
+          name: u.name,
+          role: u.role,
+          accountStatus: u.accountStatus,
+          loginMethod: u.loginMethod,
+          createdAt: u.createdAt,
+          lastSignedIn: u.lastSignedIn,
+        }));
+      }),
+    
+    approve: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => {
+        await approveUser(input.userId);
+        return { success: true };
+      }),
+    
+    reject: adminProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ input }) => {
+        await rejectUser(input.userId);
+        return { success: true };
       }),
   }),
 

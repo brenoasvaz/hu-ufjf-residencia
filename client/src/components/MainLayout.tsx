@@ -12,6 +12,7 @@ import {
   Menu,
   X,
   Presentation,
+  UserCog,
 } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -74,6 +75,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
             href: "/admin/imports",
             label: "Importações",
             icon: FileText,
+          },
+          {
+            href: "/admin/usuarios",
+            label: "Usuários",
+            icon: UserCog,
           },
         ]
       : []),
