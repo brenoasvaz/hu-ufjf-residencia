@@ -236,3 +236,8 @@
 - [x] Adicionar item "Avaliações" no menu de navegação
 - [x] Escrever testes Vitest (especialidades, modelos, geração, submissão, controle de acesso)
 - [x] Testar fluxo completo Admin e Residente
+
+
+## Correção - Link Gerenciar Modelos
+- [x] Corrigir link "Gerenciar Modelos" na página Admin de Avaliações (erro 404)
+- [x] Redirecionar para página de modelos existente ou criar rota correta

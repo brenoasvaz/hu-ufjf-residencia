@@ -18,6 +18,7 @@ import ExecucaoSimulado from "./pages/ExecucaoSimulado";
 import ResultadoSimulado from "./pages/ResultadoSimulado";
 import DashboardAvaliacoes from "./pages/DashboardAvaliacoes";
 import AdminAvaliacoes from "./pages/admin/AdminAvaliacoes";
+import ModelosProva from "./pages/ModelosProva";
 import MainLayout from "./components/MainLayout";
 
 function Router() {
@@ -42,6 +43,7 @@ function Router() {
             <Route path="/avaliacoes/:id/resultado" component={ResultadoSimulado} />
             <Route path="/avaliacoes/dashboard" component={DashboardAvaliacoes} />
             <Route path="/admin/avaliacoes" component={AdminAvaliacoes} />
+            <Route path="/admin/avaliacoes/modelos" component={ModelosProva} />
             <Route path="/admin/usuarios" component={UserManagement} />
             <Route path="/404" component={NotFound} />
             <Route component={NotFound} />
