@@ -184,3 +184,117 @@ export const presentationGuidelines = mysqlTable("presentation_guidelines", {
 
 export type PresentationGuideline = typeof presentationGuidelines.$inferSelect;
 export type InsertPresentationGuideline = typeof presentationGuidelines.$inferInsert;
+
+/**
+ * ========================================
+ * MÓDULO DE AVALIAÇÕES/SIMULADOS
+ * ========================================
+ */
+
+/**
+ * Especialidades Ortopédicas - Categorias das questões
+ */
+export const especialidades = mysqlTable("especialidades", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 128 }).notNull().unique(),
+  descricao: text("descricao"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Especialidade = typeof especialidades.$inferSelect;
+export type InsertEspecialidade = typeof especialidades.$inferInsert;
+
+/**
+ * Questões - Banco de questões de ortopedia
+ */
+export const questoes = mysqlTable("questoes", {
+  id: int("id").autoincrement().primaryKey(),
+  especialidadeId: int("especialidade_id").notNull(),
+  enunciado: text("enunciado").notNull(),
+  fonte: varchar("fonte", { length: 64 }), // 'TARO' | 'TEOT' | 'SBOT 1000'
+  ano: int("ano"),
+  subcategoria: varchar("subcategoria", { length: 255 }),
+  ativo: int("ativo").default(1).notNull(), // 1 = ativo, 0 = inativo
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Questao = typeof questoes.$inferSelect;
+export type InsertQuestao = typeof questoes.$inferInsert;
+
+/**
+ * Alternativas - Opções de resposta para cada questão (sempre 4: A, B, C, D)
+ */
+export const alternativas = mysqlTable("alternativas", {
+  id: int("id").autoincrement().primaryKey(),
+  questaoId: int("questao_id").notNull(),
+  letra: varchar("letra", { length: 1 }).notNull(), // 'A' | 'B' | 'C' | 'D'
+  texto: text("texto").notNull(),
+  isCorreta: int("is_correta").default(0).notNull(), // 1 = correta, 0 = incorreta
+});
+
+export type Alternativa = typeof alternativas.$inferSelect;
+export type InsertAlternativa = typeof alternativas.$inferInsert;
+
+/**
+ * Modelos de Prova - Templates criados pelo preceptor
+ */
+export const modelosProva = mysqlTable("modelos_prova", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 256 }).notNull(),
+  descricao: text("descricao"),
+  duracaoMinutos: int("duracao_minutos").default(60).notNull(),
+  configuracao: text("configuracao").notNull(), // JSON: { "Coluna": 10, "Joelho": 5, ... }
+  ativo: int("ativo").default(1).notNull(), // 1 = ativo, 0 = inativo
+  criadoPorId: int("criado_por_id").notNull(), // FK → users.id
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ModeloProva = typeof modelosProva.$inferSelect;
+export type InsertModeloProva = typeof modelosProva.$inferInsert;
+
+/**
+ * Simulados - Instâncias de prova geradas para um residente
+ */
+export const simulados = mysqlTable("simulados", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("user_id").notNull(), // FK → users.id
+  modeloId: int("modelo_id").notNull(), // FK → modelos_prova.id
+  dataInicio: timestamp("data_inicio").notNull(),
+  dataFim: timestamp("data_fim"),
+  duracaoMinutos: int("duracao_minutos").notNull(),
+  totalQuestoes: int("total_questoes").notNull(),
+  totalAcertos: int("total_acertos").default(0).notNull(),
+  concluido: int("concluido").default(0).notNull(), // 1 = concluído, 0 = em andamento
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Simulado = typeof simulados.$inferSelect;
+export type InsertSimulado = typeof simulados.$inferInsert;
+
+/**
+ * Simulado Questões - Questões sorteadas para cada simulado
+ */
+export const simuladoQuestoes = mysqlTable("simulado_questoes", {
+  id: int("id").autoincrement().primaryKey(),
+  simuladoId: int("simulado_id").notNull(), // FK → simulados.id
+  questaoId: int("questao_id").notNull(), // FK → questoes.id
+  ordem: int("ordem").notNull(),
+});
+
+export type SimuladoQuestao = typeof simuladoQuestoes.$inferSelect;
+export type InsertSimuladoQuestao = typeof simuladoQuestoes.$inferInsert;
+
+/**
+ * Respostas do Usuário - Respostas do residente em cada simulado
+ */
+export const respostasUsuario = mysqlTable("respostas_usuario", {
+  id: int("id").autoincrement().primaryKey(),
+  simuladoId: int("simulado_id").notNull(), // FK → simulados.id
+  questaoId: int("questao_id").notNull(), // FK → questoes.id
+  alternativaId: int("alternativa_id"), // FK → alternativas.id (nullable se não respondeu)
+  isCorreta: int("is_correta").default(0).notNull(), // 1 = correta, 0 = incorreta
+  respondidaEm: timestamp("respondida_em").notNull(),
+});
+
+export type RespostaUsuario = typeof respostasUsuario.$inferSelect;
+export type InsertRespostaUsuario = typeof respostasUsuario.$inferInsert;

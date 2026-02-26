@@ -11,6 +11,7 @@ import * as importsDb from "./db-helpers/imports";
 import * as clinicalMeetingsDb from "./db";
 import { pdfRouter } from "./pdf-upload-router";
 import { registerUser, authenticateUser, getUserByEmail, getAllUsers, approveUser, rejectUser } from "./auth";
+import { avaliacoesRouter } from "./routers/avaliacoes";
 import { sdk } from "./_core/sdk";
 
 // Helper para procedures que requerem papel ADMIN
@@ -566,6 +567,9 @@ export const appRouter = router({
         return clinicalMeetingsDb.upsertPresentationGuideline(input);
       }),
   }),
+
+  // ===== AVALIAÇÕES/SIMULADOS =====
+  avaliacoes: avaliacoesRouter,
 
   // ===== STAGES =====
   stages: router({
