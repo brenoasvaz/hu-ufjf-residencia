@@ -38,6 +38,25 @@ export const appRouter = router({
       const pendingUsers = await getAllUsers('pending');
       return pendingUsers.length;
     }),
+    
+    // Generate SSO token for external platform integration
+    generateSSOToken: protectedProcedure.query(({ ctx }) => {
+      const jwt = require('jsonwebtoken');
+      const ssoSecret = process.env.JWT_SSO_SECRET || process.env.JWT_SECRET;
+      
+      const token = jwt.sign(
+        {
+          userId: ctx.user.id,
+          email: ctx.user.email,
+          name: ctx.user.name,
+          role: ctx.user.role,
+        },
+        ssoSecret,
+        { expiresIn: '5m' } // Token expires in 5 minutes
+      );
+      
+      return { token };
+    }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

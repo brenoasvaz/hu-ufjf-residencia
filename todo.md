@@ -215,3 +215,11 @@
 - [x] Implementar filtragem por tema (título da reunião)
 - [x] Implementar filtragem por preceptor
 - [x] Testar busca com diferentes termos
+
+
+## Integração SSO com Plataforma de Avaliações
+- [x] Criar endpoint tRPC para gerar token JWT temporário (expiração 5min)
+- [x] Adicionar botão "Avaliações" no menu principal
+- [x] Implementar redirect automático com token JWT na URL
+- [x] Documentar variável JWT_SSO_SECRET compartilhada entre projetos
+- [x] Testar fluxo completo de SSO
