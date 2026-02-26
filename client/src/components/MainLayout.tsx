@@ -13,6 +13,8 @@ import {
   X,
   Presentation,
   UserCog,
+  ClipboardCheck,
+  BarChart3,
 } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -64,6 +66,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
       label: "Reuniões Clínicas",
       icon: Presentation,
     },
+    {
+      href: "/avaliacoes",
+      label: "Avaliações",
+      icon: ClipboardCheck,
+    },
     ...(user?.role === "admin"
       ? [
           {
@@ -80,6 +87,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
             href: "/admin/usuarios",
             label: "Usuários",
             icon: UserCog,
+          },
+          {
+            href: "/admin/avaliacoes",
+            label: "Gestão de Avaliações",
+            icon: BarChart3,
           },
         ]
       : []),

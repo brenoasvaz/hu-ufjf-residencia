@@ -228,12 +228,11 @@
 - [ ] Criar página Admin: Gestão de Questões
 - [x] Criar página Admin: Gestão de Modelos de Prova
 - [ ] Criar página Admin: Lista de Residentes
-- [ ] Criar página Admin: Dashboard Agregado
-- [ ] Criar página Residente: Seletor de Modelos
-- [ ] Criar página Residente: Interface de Prova (cronômetro, navegação, progresso)
-- [ ] Criar página Residente: Feedback Pós-Prova (apenas pontuação, sem gabarito)
-- [ ] Criar página Residente: Dashboard Pessoal (evolução temporal, radar especialidades)
-- [ ] Criar página Residente: Perfil com Estatísticas
-- [ ] Adicionar item "Avaliações" no menu de navegação
-- [ ] Escrever testes Vitest (especialidades, modelos, geração, submissão, controle de acesso)
-- [ ] Testar fluxo completo Admin e Residente
+- [x] Criar página Admin: Dashboard Agregado
+- [x] Criar página Residente: Seletor de Modelos
+- [x] Criar página Residente: Interface de Prova (cronômetro, navegação, progresso)
+- [x] Criar página Residente: Feedback Pós-Prova (apenas pontuação, sem gabarito)
+- [x] Criar página Residente: Dashboard Pessoal (evolução temporal, radar especialidades)
+- [x] Adicionar item "Avaliações" no menu de navegação
+- [x] Escrever testes Vitest (especialidades, modelos, geração, submissão, controle de acesso)
+- [x] Testar fluxo completo Admin e Residente

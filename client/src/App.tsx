@@ -13,6 +13,11 @@ import AdminImports from "./pages/AdminImports";
 import ClinicalMeetings from "./pages/ClinicalMeetings";
 import Login from "./pages/Login";
 import UserManagement from "./pages/UserManagement";
+import Avaliacoes from "./pages/Avaliacoes";
+import ExecucaoSimulado from "./pages/ExecucaoSimulado";
+import ResultadoSimulado from "./pages/ResultadoSimulado";
+import DashboardAvaliacoes from "./pages/DashboardAvaliacoes";
+import AdminAvaliacoes from "./pages/admin/AdminAvaliacoes";
 import MainLayout from "./components/MainLayout";
 
 function Router() {
@@ -32,6 +37,11 @@ function Router() {
             <Route path="/admin" component={Admin} />
             <Route path="/admin/imports" component={AdminImports} />
             <Route path="/reunioes-clinicas" component={ClinicalMeetings} />
+            <Route path="/avaliacoes" component={Avaliacoes} />
+            <Route path="/avaliacoes/:id" component={ExecucaoSimulado} />
+            <Route path="/avaliacoes/:id/resultado" component={ResultadoSimulado} />
+            <Route path="/avaliacoes/dashboard" component={DashboardAvaliacoes} />
+            <Route path="/admin/avaliacoes" component={AdminAvaliacoes} />
             <Route path="/admin/usuarios" component={UserManagement} />
             <Route path="/404" component={NotFound} />
             <Route component={NotFound} />
