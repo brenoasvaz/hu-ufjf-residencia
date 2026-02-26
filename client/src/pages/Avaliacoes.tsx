@@ -21,11 +21,11 @@ export default function Avaliacoes() {
     setGeneratingExamId(templateId);
     try {
       const result = await generateExamMutation.mutateAsync({ modeloId: templateId });
-      toast.success("Simulado gerado com sucesso!");
+      toast.success("Avaliação gerada com sucesso!");
       await refetchExams();
       window.location.href = `/avaliacoes/${result.simuladoId}`;
     } catch (error: any) {
-      toast.error(error.message || "Erro ao gerar simulado");
+      toast.error(error.message || "Erro ao gerar avaliação");
     } finally {
       setGeneratingExamId(null);
     }
@@ -48,7 +48,7 @@ export default function Avaliacoes() {
     <div className="container max-w-6xl py-8 space-y-8">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Avaliações e Simulados</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Avaliações</h1>
         <p className="text-muted-foreground">
           Pratique com questões de Ortopedia e acompanhe seu desempenho
         </p>
@@ -58,7 +58,7 @@ export default function Avaliacoes() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Simulados Realizados</CardTitle>
+            <CardTitle className="text-sm font-medium">Avaliações Realizadas</CardTitle>
             <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -125,7 +125,7 @@ export default function Avaliacoes() {
         <div>
           <h2 className="text-2xl font-semibold tracking-tight">Modelos de Prova Disponíveis</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Selecione um modelo para gerar um novo simulado
+            Selecione um modelo para gerar uma nova avaliação
           </p>
         </div>
 
@@ -161,7 +161,7 @@ export default function Avaliacoes() {
                     onClick={() => handleGenerateExam(template.id)}
                     disabled={generatingExamId === template.id}
                   >
-                    {generatingExamId === template.id ? "Gerando..." : "Iniciar Simulado"}
+                    {generatingExamId === template.id ? "Gerando..." : "Iniciar Avaliação"}
                   </Button>
                 </CardContent>
               </Card>
@@ -179,9 +179,9 @@ export default function Avaliacoes() {
       {/* My Exams History */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Meus Simulados</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">Minhas Avaliações</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Histórico de simulados realizados e em andamento
+            Histórico de avaliações realizadas e em andamento
           </p>
         </div>
 
@@ -194,7 +194,7 @@ export default function Avaliacoes() {
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <p className="font-medium">Simulado #{exam.id}</p>
+                      <p className="font-medium">Avaliação #{exam.id}</p>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>
                           {new Date(exam.createdAt).toLocaleDateString('pt-BR', {
@@ -240,7 +240,7 @@ export default function Avaliacoes() {
         ) : (
           <Card>
             <CardContent className="py-8 text-center text-muted-foreground">
-              Você ainda não realizou nenhum simulado. Selecione um modelo acima para começar!
+              Você ainda não realizou nenhuma avaliação. Selecione um modelo acima para começar!
             </CardContent>
           </Card>
         )}

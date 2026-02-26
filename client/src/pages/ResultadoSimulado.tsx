@@ -33,8 +33,8 @@ export default function ResultadoSimulado() {
       <div className="container max-w-4xl py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Simulado não encontrado</CardTitle>
-            <CardDescription>ID do simulado inválido.</CardDescription>
+            <CardTitle>Avaliação não encontrada</CardTitle>
+            <CardDescription>ID da avaliação inválido.</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -56,8 +56,8 @@ export default function ResultadoSimulado() {
       <div className="container max-w-4xl py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Simulado não encontrado</CardTitle>
-            <CardDescription>Não foi possível carregar os dados deste simulado.</CardDescription>
+            <CardTitle>Avaliação não encontrada</CardTitle>
+            <CardDescription>Não foi possível carregar os dados desta avaliação.</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -69,12 +69,12 @@ export default function ResultadoSimulado() {
       <div className="container max-w-4xl py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Simulado não concluído</CardTitle>
-            <CardDescription>Este simulado ainda não foi finalizado.</CardDescription>
+            <CardTitle>Avaliação não concluída</CardTitle>
+            <CardDescription>Esta avaliação ainda não foi finalizada.</CardDescription>
           </CardHeader>
           <CardContent>
             <Link href={`/avaliacoes/${simuladoId}`}>
-              <Button>Continuar Simulado</Button>
+              <Button>Continuar Avaliação</Button>
             </Link>
           </CardContent>
         </Card>
@@ -106,9 +106,9 @@ export default function ResultadoSimulado() {
     <div className="container max-w-4xl py-8 space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Resultado do Simulado</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Resultado da Avaliação</h1>
         <p className="text-muted-foreground">
-          Simulado #{simuladoId} • Concluído em {new Date(simulado.dataFim!).toLocaleDateString('pt-BR', {
+          Avaliação #{simuladoId} • Concluída em {new Date(simulado.dataFim!).toLocaleDateString('pt-BR', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',

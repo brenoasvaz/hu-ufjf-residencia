@@ -241,3 +241,10 @@
 ## Correção - Link Gerenciar Modelos
 - [x] Corrigir link "Gerenciar Modelos" na página Admin de Avaliações (erro 404)
 - [x] Redirecionar para página de modelos existente ou criar rota correta
+
+## Nova Funcionalidade - Deletar Avaliações e Alterar Nomenclatura
+- [x] Implementar endpoint tRPC para administrador deletar avaliações
+- [x] Adicionar botão de deletar na interface admin
+- [x] Alterar nomenclatura de "simulado" para "avaliação" em todo o sistema (backend e frontend)
+- [x] Atualizar testes para refletir mudanças
+- [x] Testar funcionalidade completa

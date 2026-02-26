@@ -125,6 +125,7 @@ describe("Avaliações - Modelos de Prova", () => {
 
 describe("Avaliações - Simulados", () => {
   let userContext: any;
+  let adminContext: any;
   let testSimuladoId: number;
 
   beforeAll(async () => {
@@ -132,8 +133,10 @@ describe("Avaliações - Simulados", () => {
     if (!db) throw new Error("Database not available");
 
     const regularUser = await db.select().from(users).where(eq(users.role, "user")).limit(1);
-    if (!regularUser[0]) {
-      throw new Error("Test user not found");
+    const adminUser = await db.select().from(users).where(eq(users.role, "admin")).limit(1);
+    
+    if (!regularUser[0] || !adminUser[0]) {
+      throw new Error("Test users not found");
     }
 
     userContext = {
@@ -142,6 +145,17 @@ describe("Avaliações - Simulados", () => {
         email: regularUser[0].email,
         name: regularUser[0].name,
         role: regularUser[0].role,
+      },
+      req: {} as any,
+      res: {} as any,
+    };
+    
+    adminContext = {
+      user: {
+        id: adminUser[0].id,
+        email: adminUser[0].email,
+        name: adminUser[0].name,
+        role: adminUser[0].role,
       },
       req: {} as any,
       res: {} as any,
@@ -248,6 +262,34 @@ describe("Avaliações - Simulados", () => {
     expect(typeof result.totalAcertos).toBe("number");
     expect(typeof result.totalQuestoes).toBe("number");
     expect(typeof result.percentual).toBe("number");
+  });
+
+  it("Admin deve conseguir deletar simulado", async () => {
+    if (!testSimuladoId) {
+      console.log("testSimuladoId não foi definido, pulando teste");
+      return;
+    }
+
+    const caller = appRouter.createCaller(adminContext);
+    const result = await caller.avaliacoes.simulados.delete({
+      simuladoId: testSimuladoId,
+    });
+
+    expect(result).toHaveProperty("success");
+    expect(result.success).toBe(true);
+    
+    // Verificar que foi deletado
+    const db = await getDb();
+    const deleted = await db!.select().from(simulados).where(eq(simulados.id, testSimuladoId));
+    expect(deleted.length).toBe(0);
+  });
+
+  it("Usuário comum NÃO deve conseguir deletar simulado", async () => {
+    const caller = appRouter.createCaller(userContext);
+    
+    await expect(
+      caller.avaliacoes.simulados.delete({ simuladoId: 999 })
+    ).rejects.toThrow();
   });
 });
 

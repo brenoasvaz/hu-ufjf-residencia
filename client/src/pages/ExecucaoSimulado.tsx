@@ -89,10 +89,10 @@ export default function ExecucaoSimulado() {
         respostas,
       });
       
-      toast.success("Simulado finalizado com sucesso!");
+      toast.success("Avaliação finalizada com sucesso!");
       setLocation(`/avaliacoes/${simuladoId}/resultado`);
     } catch (error: any) {
-      toast.error(error.message || "Erro ao finalizar simulado");
+      toast.error(error.message || "Erro ao finalizar avaliação");
       setIsSubmitting(false);
     }
   };
@@ -122,8 +122,8 @@ export default function ExecucaoSimulado() {
       <div className="container max-w-4xl py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Simulado não encontrado</CardTitle>
-            <CardDescription>ID do simulado inválido.</CardDescription>
+            <CardTitle>Avaliação não encontrada</CardTitle>
+            <CardDescription>ID da avaliação inválido.</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -134,7 +134,7 @@ export default function ExecucaoSimulado() {
     return (
       <div className="container max-w-4xl py-8">
         <div className="text-center py-12">
-          <p className="text-muted-foreground">Carregando simulado...</p>
+          <p className="text-muted-foreground">Carregando avaliação...</p>
         </div>
       </div>
     );
@@ -145,8 +145,8 @@ export default function ExecucaoSimulado() {
       <div className="container max-w-4xl py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Simulado não encontrado</CardTitle>
-            <CardDescription>Não foi possível carregar as questões deste simulado.</CardDescription>
+            <CardTitle>Avaliação não encontrada</CardTitle>
+            <CardDescription>Não foi possível carregar as questões desta avaliação.</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -158,8 +158,8 @@ export default function ExecucaoSimulado() {
       <div className="container max-w-4xl py-8">
         <Card>
           <CardHeader>
-            <CardTitle>Simulado já concluído</CardTitle>
-            <CardDescription>Este simulado já foi finalizado.</CardDescription>
+            <CardTitle>Avaliação já concluída</CardTitle>
+            <CardDescription>Esta avaliação já foi finalizada.</CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => setLocation(`/avaliacoes/${simuladoId}/resultado`)}>
@@ -182,7 +182,7 @@ export default function ExecucaoSimulado() {
         <CardContent className="py-4">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold">Simulado #{simuladoId}</h2>
+              <h2 className="text-lg font-semibold">Avaliação #{simuladoId}</h2>
               <p className="text-sm text-muted-foreground">
                 Questão {currentQuestionIndex + 1} de {questoes.length}
               </p>
@@ -330,7 +330,7 @@ export default function ExecucaoSimulado() {
       <AlertDialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Finalizar Simulado?</AlertDialogTitle>
+            <AlertDialogTitle>Finalizar Avaliação?</AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <p>Você respondeu {answeredCount} de {questoes.length} questões.</p>
               {answeredCount < questoes.length && (
@@ -338,7 +338,7 @@ export default function ExecucaoSimulado() {
                   Atenção: {questoes.length - answeredCount} questão(ões) não respondida(s) serão consideradas incorretas.
                 </p>
               )}
-              <p>Deseja realmente finalizar o simulado? Esta ação não pode ser desfeita.</p>
+              <p>Deseja realmente finalizar a avaliação? Esta ação não pode ser desfeita.</p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

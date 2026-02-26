@@ -87,12 +87,12 @@ export default function DashboardAvaliacoes() {
           <div className="grid gap-4 md:grid-cols-4">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total de Simulados</CardTitle>
+                <CardTitle className="text-sm font-medium">Total de Avaliações</CardTitle>
                 <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stats.totalSimulados}</div>
-                <p className="text-xs text-muted-foreground">Simulados concluídos</p>
+                <p className="text-xs text-muted-foreground">Avaliações concluídas</p>
               </CardContent>
             </Card>
 
@@ -145,7 +145,7 @@ export default function DashboardAvaliacoes() {
                   </p>
                   <p className={`text-xs mt-1 ${trend >= 0 ? "text-green-700" : "text-amber-700"}`}>
                     {trend >= 0
-                      ? `Seu desempenho melhorou ${Math.abs(trend).toFixed(1)}% nos últimos simulados. Continue assim!`
+                      ? `Seu desempenho melhorou ${Math.abs(trend).toFixed(1)}% nas últimas avaliações. Continue assim!`
                       : `Seu desempenho variou ${Math.abs(trend).toFixed(1)}% recentemente. Revise os conceitos e pratique mais.`
                     }
                   </p>
@@ -158,7 +158,7 @@ export default function DashboardAvaliacoes() {
           <Card>
             <CardHeader>
               <CardTitle>Evolução Temporal</CardTitle>
-              <CardDescription>Desempenho ao longo dos simulados realizados</CardDescription>
+              <CardDescription>Desempenho ao longo das avaliações realizadas</CardDescription>
             </CardHeader>
             <CardContent>
               {evolutionData.length > 0 ? (
@@ -220,7 +220,7 @@ export default function DashboardAvaliacoes() {
           <Card>
             <CardHeader>
               <CardTitle>Histórico Detalhado</CardTitle>
-              <CardDescription>Todos os simulados realizados</CardDescription>
+              <CardDescription>Todas as avaliações realizadas</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -240,7 +240,7 @@ export default function DashboardAvaliacoes() {
                             <div className="text-lg font-bold">{score}%</div>
                           </div>
                           <div>
-                            <p className="font-medium">Simulado #{simulado.id}</p>
+                            <p className="font-medium">Avaliação #{simulado.id}</p>
                             <p className="text-sm text-muted-foreground">
                               {new Date(simulado.dataFim).toLocaleDateString('pt-BR', {
                                 day: '2-digit',
@@ -279,14 +279,14 @@ export default function DashboardAvaliacoes() {
               <ClipboardCheck className="h-16 w-16 text-muted-foreground/50" />
             </div>
             <div className="space-y-2">
-              <p className="text-lg font-medium">Nenhum simulado realizado ainda</p>
+              <p className="text-lg font-medium">Nenhuma avaliação realizada ainda</p>
               <p className="text-sm text-muted-foreground">
-                Comece fazendo seu primeiro simulado para ver suas estatísticas aqui.
+                Comece fazendo sua primeira avaliação para ver suas estatísticas aqui.
               </p>
             </div>
             <Link href="/avaliacoes">
               <Button>
-                Fazer Primeiro Simulado
+                Fazer Primeira Avaliação
               </Button>
             </Link>
           </CardContent>

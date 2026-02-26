@@ -1,11 +1,14 @@
 /**
- * Router tRPC para módulo de Avaliações/Simulados
+ * Router tRPC para módulo de Avaliações
  */
 
 import { router, protectedProcedure } from "../_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as avaliacoesDb from "../db-helpers/avaliacoes";
+import { getDb } from "../db";
+import { simulados, simuladoQuestoes, respostasUsuario } from "../../drizzle/schema";
+import { eq } from "drizzle-orm";
 
 // Helper para procedures que requerem papel ADMIN
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -283,6 +286,25 @@ export const avaliacoesRouter = router({
           totalQuestoes: simulado.totalQuestoes,
           percentual: Math.round((totalAcertos / simulado.totalQuestoes) * 100),
         };
+      }),
+
+    // Admin: Deletar simulado
+    delete: adminProcedure
+      .input(z.object({ simuladoId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        // Deletar respostas primeiro (foreign key)
+        await db.delete(respostasUsuario).where(eq(respostasUsuario.simuladoId, input.simuladoId));
+        
+        // Deletar questões do simulado
+        await db.delete(simuladoQuestoes).where(eq(simuladoQuestoes.simuladoId, input.simuladoId));
+        
+        // Deletar simulado
+        await db.delete(simulados).where(eq(simulados.id, input.simuladoId));
+        
+        return { success: true };
       }),
   }),
 

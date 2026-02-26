@@ -3,14 +3,30 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ClipboardCheck, Users, TrendingUp, FileText, Settings } from "lucide-react";
+import { ClipboardCheck, Users, TrendingUp, FileText, Settings, Trash2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { toast } from "sonner";
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminAvaliacoes() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [simuladoToDelete, setSimuladoToDelete] = useState<number | null>(null);
 
   const { data: modelos, isLoading: loadingModelos } = trpc.avaliacoes.modelos.list.useQuery();
+  const { data: allSimulados, isLoading: loadingSimulados, refetch: refetchSimulados } = trpc.avaliacoes.simulados.list.useQuery();
+  const deleteMutation = trpc.avaliacoes.simulados.delete.useMutation();
 
   if (!user || user.role !== 'admin') {
     return (
@@ -86,6 +102,7 @@ export default function AdminAvaliacoes() {
       <Tabs defaultValue="modelos" className="space-y-6">
         <TabsList>
           <TabsTrigger value="modelos">Modelos de Prova</TabsTrigger>
+          <TabsTrigger value="avaliacoes">Avaliações</TabsTrigger>
           <TabsTrigger value="questoes">Questões</TabsTrigger>
           <TabsTrigger value="estatisticas">Estatísticas</TabsTrigger>
         </TabsList>
@@ -153,6 +170,74 @@ export default function AdminAvaliacoes() {
           )}
         </TabsContent>
 
+        {/* Avaliações */}
+        <TabsContent value="avaliacoes" className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight">Gerenciar Avaliações</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Visualize e gerencie todas as avaliações realizadas pelos residentes
+            </p>
+          </div>
+
+          {loadingSimulados ? (
+            <div className="text-center py-8 text-muted-foreground">Carregando avaliações...</div>
+          ) : allSimulados && allSimulados.length > 0 ? (
+            <div className="space-y-3">
+              {allSimulados
+                .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((simulado: any) => (
+                  <Card key={simulado.id}>
+                    <CardContent className="py-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <p className="font-medium">Avaliação #{simulado.id}</p>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <span>
+                              Criada em {new Date(simulado.createdAt).toLocaleDateString('pt-BR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                            {simulado.concluido === 1 ? (
+                              <span className="text-green-600 font-medium">
+                                Concluída • {Math.round((simulado.totalAcertos / simulado.totalQuestoes) * 100)}%
+                              </span>
+                            ) : (
+                              <span className="text-amber-600 font-medium">
+                                Em andamento
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            setSimuladoToDelete(simulado.id);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Deletar
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                Nenhuma avaliação realizada ainda.
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
         {/* Questões */}
         <TabsContent value="questoes" className="space-y-4">
           <div>
@@ -213,6 +298,38 @@ export default function AdminAvaliacoes() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Dialog de Confirmação de Deleção */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Deletar Avaliação?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja deletar esta avaliação? Esta ação não pode ser desfeita e todos os dados relacionados (respostas e questões) serão permanentemente removidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (!simuladoToDelete) return;
+                try {
+                  await deleteMutation.mutateAsync({ simuladoId: simuladoToDelete });
+                  toast.success("Avaliação deletada com sucesso!");
+                  await refetchSimulados();
+                  setDeleteDialogOpen(false);
+                  setSimuladoToDelete(null);
+                } catch (error: any) {
+                  toast.error(error.message || "Erro ao deletar avaliação");
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Deletar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
