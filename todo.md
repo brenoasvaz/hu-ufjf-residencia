@@ -280,3 +280,12 @@
 - [x] Implementar dialog de confirmação antes de deletar
 - [x] Implementar testes para endpoint de deletar
 - [x] Testar funcionalidade completa
+
+
+## Reforço de Segurança - Restrições de Acesso a Avaliações
+- [x] Auditar todos os endpoints de avaliações para garantir que residentes vejam apenas suas próprias
+- [x] Verificar que respostas corretas não são expostas em nenhum endpoint para residentes
+- [x] Remover visualização de respostas corretas nas páginas de resultado
+- [x] Garantir que apenas pontuação e estatísticas são mostradas, não gabaritos
+- [x] Implementar testes de segurança para validar restrições
+- [x] Testar acesso cruzado entre usuários

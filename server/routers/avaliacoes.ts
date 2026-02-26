@@ -224,6 +224,20 @@ export const avaliacoesRouter = router({
         const questoesComAlternativas = await Promise.all(
           questoes.map(async (q) => {
             const questaoCompleta = await avaliacoesDb.getQuestaoComAlternativas(q.questaoId);
+            
+            // Se não for admin, remover informação de alternativa correta
+            if (ctx.user.role !== 'admin') {
+              return {
+                ...q,
+                ...questaoCompleta,
+                alternativas: questaoCompleta.alternativas.map((alt: any) => ({
+                  id: alt.id,
+                  texto: alt.texto,
+                  // NÃO incluir 'isCorreta' para residentes
+                })),
+              };
+            }
+            
             return {
               ...q,
               ...questaoCompleta,
