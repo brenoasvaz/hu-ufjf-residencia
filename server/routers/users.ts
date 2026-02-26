@@ -104,4 +104,31 @@ export const usersRouter = router({
 
       return user[0];
     }),
+
+  // Deletar usuário (admin apenas)
+  delete: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+      // Verificar se o usuário existe
+      const existingUser = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
+      if (!existingUser[0]) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Usuário não encontrado' });
+      }
+
+      // Não permitir que o admin delete a si mesmo
+      if (input.userId === ctx.user.id) {
+        throw new TRPCError({ 
+          code: 'BAD_REQUEST', 
+          message: 'Você não pode deletar sua própria conta' 
+        });
+      }
+
+      // Deletar usuário
+      await db.delete(users).where(eq(users.id, input.userId));
+
+      return { success: true };
+    }),
 });

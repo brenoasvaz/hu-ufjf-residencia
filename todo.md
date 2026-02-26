@@ -271,3 +271,12 @@
 - [x] Adicionar informações do residente/usuário na listagem de avaliações
 - [x] Garantir que geração de PDF funcione para avaliações de qualquer usuário
 - [x] Testar acesso admin a resultados de avaliações de outros usuários
+
+
+## Nova Funcionalidade - Deletar Usuários
+- [x] Implementar endpoint tRPC para deletar usuário (admin apenas)
+- [x] Adicionar proteção para não deletar o próprio usuário admin
+- [x] Adicionar botão de deletar na interface de gerenciamento de usuários
+- [x] Implementar dialog de confirmação antes de deletar
+- [x] Implementar testes para endpoint de deletar
+- [x] Testar funcionalidade completa

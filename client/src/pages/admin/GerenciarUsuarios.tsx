@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Users, Shield, UserCog, ArrowLeft } from "lucide-react";
+import { Users, Shield, UserCog, ArrowLeft, Trash2 } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -27,13 +27,16 @@ import {
 export default function GerenciarUsuarios() {
   const { user } = useAuth();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editRole, setEditRole] = useState<"admin" | "user">("user");
 
   const { data: usuarios, isLoading, refetch } = trpc.users.list.useQuery();
   const updateMutation = trpc.users.update.useMutation();
+  const deleteMutation = trpc.users.delete.useMutation();
 
   if (!user || user.role !== 'admin') {
     return (
@@ -74,6 +77,28 @@ export default function GerenciarUsuarios() {
       refetch();
     } catch (error: any) {
       toast.error(error.message || "Erro ao atualizar usuário");
+    }
+  };
+
+  const handleDeleteClick = (usuario: any) => {
+    setUserToDelete(usuario);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await deleteMutation.mutateAsync({
+        userId: userToDelete.id,
+      });
+
+      toast.success("Usuário deletado com sucesso!");
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao deletar usuário");
     }
   };
 
@@ -142,14 +167,26 @@ export default function GerenciarUsuarios() {
                         </div>
                       </div>
                       
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditClick(usuario)}
-                      >
-                        <UserCog className="mr-2 h-4 w-4" />
-                        Editar
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditClick(usuario)}
+                        >
+                          <UserCog className="mr-2 h-4 w-4" />
+                          Editar
+                        </Button>
+                        
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDeleteClick(usuario)}
+                          disabled={usuario.id === user.id}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Deletar
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -229,6 +266,38 @@ export default function GerenciarUsuarios() {
               disabled={updateMutation.isPending || (selectedUser?.id === user.id && editRole === 'user')}
             >
               {updateMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Confirmação de Deletar */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja deletar o usuário <strong>{userToDelete?.name || userToDelete?.email}</strong>?
+              Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-sm text-red-800">
+              ⚠️ <strong>Atenção:</strong> Todos os dados associados a este usuário serão permanentemente removidos do sistema.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deletando..." : "Confirmar Exclusão"}
             </Button>
           </DialogFooter>
         </DialogContent>

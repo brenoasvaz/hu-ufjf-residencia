@@ -191,4 +191,24 @@ describe("Gerenciamento de Usuários", () => {
       })
     ).rejects.toThrow("Acesso negado");
   });
+
+  it("Admin NÃO deve conseguir deletar a si mesmo", async () => {
+    const caller = appRouter.createCaller(adminContext);
+    
+    await expect(
+      caller.users.delete({
+        userId: adminContext.user.id,
+      })
+    ).rejects.toThrow("não pode deletar sua própria conta");
+  });
+
+  it("Usuário comum NÃO deve conseguir deletar usuários", async () => {
+    const caller = appRouter.createCaller(userContext);
+    
+    await expect(
+      caller.users.delete({
+        userId: testUserId,
+      })
+    ).rejects.toThrow("Acesso negado");
+  });
 });
