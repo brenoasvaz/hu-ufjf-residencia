@@ -13,7 +13,6 @@ import {
   X,
   Presentation,
   UserCog,
-  ClipboardCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -28,7 +27,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const { user, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const logoutMutation = trpc.auth.logout.useMutation();
-  const utils = trpc.useUtils();
 
   const handleLogout = async () => {
     try {
@@ -37,17 +35,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
       window.location.href = "/";
     } catch (error) {
       toast.error("Erro ao fazer logout");
-    }
-  };
-
-  const handleAvaliacoesClick = async () => {
-    try {
-      const result = await utils.auth.generateSSOToken.fetch();
-      const avaliacoesUrl = `https://simuladosort-pu2svbe6.manus.space/sso-login?token=${result.token}`;
-      window.open(avaliacoesUrl, '_blank');
-    } catch (error) {
-      toast.error("Erro ao acessar plataforma de avaliações");
-      console.error("Erro SSO:", error);
     }
   };
 
@@ -77,12 +64,6 @@ export default function MainLayout({ children }: MainLayoutProps) {
       label: "Reuniões Clínicas",
       icon: Presentation,
     },
-    {
-      href: "#",
-      label: "Avaliações",
-      icon: ClipboardCheck,
-      onClick: handleAvaliacoesClick,
-    },
     ...(user?.role === "admin"
       ? [
           {
@@ -111,12 +92,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
         <div className="container flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/">
-            <div className="flex items-center space-x-2">
+            <a className="flex items-center space-x-2">
               <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
                 <Calendar className="h-5 w-5 text-primary-foreground" />
               </div>
               <span className="font-semibold text-lg">HU UFJF Residência</span>
-            </div>
+            </a>
           </Link>
 
           {/* Desktop Navigation */}
@@ -124,12 +105,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location === item.href;
-              
-              if (item.onClick) {
-                return (
-                  <button
-                    key={item.label}
-                    onClick={item.onClick}
+              return (
+                <Link key={item.href} href={item.href}>
+                  <a
                     className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
                         ? "bg-primary text-primary-foreground"
@@ -138,22 +116,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
-                  </button>
-                );
-              }
-              
-              return (
-                <Link key={item.href} href={item.href}>
-                  <div
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-                      isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    <span>{item.label}</span>
-                  </div>
+                  </a>
                 </Link>
               );
             })}
@@ -203,31 +166,10 @@ export default function MainLayout({ children }: MainLayoutProps) {
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location === item.href;
-                
-                if (item.onClick) {
-                  return (
-                    <button
-                      key={item.label}
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        item.onClick();
-                      }}
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm font-medium transition-colors w-full ${
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                }
-                
                 return (
                   <Link key={item.href} href={item.href}>
-                    <div
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+                    <a
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm font-medium transition-colors ${
                         isActive
                           ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -236,7 +178,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     >
                       <Icon className="h-5 w-5" />
                       <span>{item.label}</span>
-                    </div>
+                    </a>
                   </Link>
                 );
               })}

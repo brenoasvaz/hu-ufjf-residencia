@@ -12,7 +12,6 @@ import * as clinicalMeetingsDb from "./db";
 import { pdfRouter } from "./pdf-upload-router";
 import { registerUser, authenticateUser, getUserByEmail, getAllUsers, approveUser, rejectUser } from "./auth";
 import { sdk } from "./_core/sdk";
-import jwt from "jsonwebtoken";
 
 // Helper para procedures que requerem papel ADMIN
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -38,31 +37,6 @@ export const appRouter = router({
     pendingCount: adminProcedure.query(async () => {
       const pendingUsers = await getAllUsers('pending');
       return pendingUsers.length;
-    }),
-    
-    // Generate SSO token for external platform integration
-    generateSSOToken: protectedProcedure.query(({ ctx }) => {
-      const ssoSecret = process.env.JWT_SSO_SECRET || process.env.JWT_SECRET;
-      
-      if (!ssoSecret) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'JWT_SSO_SECRET não configurado'
-        });
-      }
-      
-      const token = jwt.sign(
-        {
-          userId: ctx.user.id,
-          email: ctx.user.email,
-          name: ctx.user.name,
-          role: ctx.user.role,
-        },
-        ssoSecret,
-        { expiresIn: '5m' } // Token expires in 5 minutes
-      );
-      
-      return { token };
     }),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
