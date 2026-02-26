@@ -7,8 +7,9 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as avaliacoesDb from "../db-helpers/avaliacoes";
 import { getDb } from "../db";
-import { simulados, simuladoQuestoes, respostasUsuario } from "../../drizzle/schema";
+import { simulados, simuladoQuestoes, respostasUsuario, users } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
+import { gerarPDFAvaliacao } from "../pdf-generator";
 
 // Helper para procedures que requerem papel ADMIN
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -305,6 +306,80 @@ export const avaliacoesRouter = router({
         await db.delete(simulados).where(eq(simulados.id, input.simuladoId));
         
         return { success: true };
+      }),
+
+    // Admin: Gerar PDF de avaliação
+    gerarPDF: adminProcedure
+      .input(z.object({ simuladoId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        // Buscar simulado com dados do usuário
+        const simuladoData = await db
+          .select({
+            simuladoId: simulados.id,
+            userId: simulados.userId,
+            dataInicio: simulados.dataInicio,
+            dataFim: simulados.dataFim,
+            duracaoMinutos: simulados.duracaoMinutos,
+            totalQuestoes: simulados.totalQuestoes,
+            totalAcertos: simulados.totalAcertos,
+            concluido: simulados.concluido,
+            userName: users.name,
+            userEmail: users.email,
+          })
+          .from(simulados)
+          .innerJoin(users, eq(simulados.userId, users.id))
+          .where(eq(simulados.id, input.simuladoId))
+          .limit(1);
+
+        if (!simuladoData[0]) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Avaliação não encontrada' });
+        }
+
+        if (simuladoData[0].concluido === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Avaliação ainda não foi concluída' });
+        }
+
+        const simulado = simuladoData[0];
+
+        // Buscar questões com respostas
+        const questoesComRespostas = await avaliacoesDb.getQuestoesComRespostas(input.simuladoId);
+
+        // Formatar dados para o PDF
+        const pdfData = {
+          simuladoId: simulado.simuladoId,
+          residenteNome: simulado.userName || 'Não informado',
+          residenteEmail: simulado.userEmail || 'Não informado',
+          dataInicio: new Date(simulado.dataInicio),
+          dataFim: simulado.dataFim ? new Date(simulado.dataFim) : null,
+          duracaoMinutos: simulado.duracaoMinutos,
+          totalQuestoes: simulado.totalQuestoes,
+          totalAcertos: simulado.totalAcertos || 0,
+          percentual: Math.round(((simulado.totalAcertos || 0) / simulado.totalQuestoes) * 100),
+          questoes: questoesComRespostas.map((q: any, index: number) => ({
+            numero: index + 1,
+            enunciado: q.enunciado,
+            especialidade: q.especialidade,
+            alternativas: q.alternativas.map((alt: any) => ({
+              letra: alt.letra,
+              texto: alt.texto,
+              correta: alt.correta === 1,
+            })),
+            respostaUsuario: q.respostaUsuario,
+            acertou: q.acertou === 1,
+          })),
+        };
+
+        // Gerar PDF
+        const pdfBuffer = await gerarPDFAvaliacao(pdfData);
+
+        // Retornar PDF como base64
+        return {
+          pdf: pdfBuffer.toString('base64'),
+          filename: `avaliacao_${input.simuladoId}_${simulado.userName?.replace(/\s+/g, '_')}.pdf`,
+        };
       }),
   }),
 

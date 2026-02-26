@@ -280,3 +280,106 @@ export async function selecionarQuestoesInteligentes(
 
   return selecionadas;
 }
+
+// ========================================
+// PDF EXPORT
+// ========================================
+
+/**
+ * Busca questões de um simulado com respostas do usuário para geração de PDF
+ */
+export async function getQuestoesComRespostas(simuladoId: number) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  // Buscar questões do simulado
+  const questoesSimulado = await db
+    .select({
+      questaoId: simuladoQuestoes.questaoId,
+      ordem: simuladoQuestoes.ordem,
+    })
+    .from(simuladoQuestoes)
+    .where(eq(simuladoQuestoes.simuladoId, simuladoId))
+    .orderBy(asc(simuladoQuestoes.ordem));
+
+  if (questoesSimulado.length === 0) return [];
+
+  const questaoIds = questoesSimulado.map((q: any) => q.questaoId);
+
+  // Buscar detalhes das questões
+  const questoesDetalhes = await db
+    .select({
+      id: questoes.id,
+      enunciado: questoes.enunciado,
+      especialidadeId: questoes.especialidadeId,
+      especialidadeNome: especialidades.nome,
+    })
+    .from(questoes)
+    .innerJoin(especialidades, eq(questoes.especialidadeId, especialidades.id))
+    .where(inArray(questoes.id, questaoIds));
+
+  // Buscar alternativas
+  const alternativasData = await db
+    .select()
+    .from(alternativas)
+    .where(inArray(alternativas.questaoId, questaoIds))
+    .orderBy(asc(alternativas.id));
+
+  // Buscar respostas do usuário
+  const respostasData = await db
+    .select({
+      questaoId: respostasUsuario.questaoId,
+      alternativaId: respostasUsuario.alternativaId,
+      isCorreta: respostasUsuario.isCorreta,
+    })
+    .from(respostasUsuario)
+    .where(eq(respostasUsuario.simuladoId, simuladoId));
+
+  // Mapear alternativas por questão
+  const alternativasPorQuestao = new Map<number, any[]>();
+  alternativasData.forEach((alt: any) => {
+    if (!alternativasPorQuestao.has(alt.questaoId)) {
+      alternativasPorQuestao.set(alt.questaoId, []);
+    }
+    alternativasPorQuestao.get(alt.questaoId)!.push(alt);
+  });
+
+  // Mapear respostas por questão
+  const respostasPorQuestao = new Map<number, any>();
+  respostasData.forEach((resp: any) => {
+    respostasPorQuestao.set(resp.questaoId, resp);
+  });
+
+  // Montar resultado
+  const resultado = questoesSimulado.map((qs: any) => {
+    const questaoDetalhe = questoesDetalhes.find((qd: any) => qd.id === qs.questaoId);
+    if (!questaoDetalhe) return null;
+
+    const alts = alternativasPorQuestao.get(qs.questaoId) || [];
+    const resposta = respostasPorQuestao.get(qs.questaoId);
+
+    // Encontrar letra da resposta do usuário
+    let respostaLetra = null;
+    if (resposta && resposta.alternativaId) {
+      const altResposta = alts.find((a: any) => a.id === resposta.alternativaId);
+      if (altResposta) {
+        respostaLetra = altResposta.letra;
+      }
+    }
+
+    return {
+      questaoId: qs.questaoId,
+      enunciado: questaoDetalhe.enunciado,
+      especialidade: questaoDetalhe.especialidadeNome,
+      alternativas: alts.map((alt: any) => ({
+        letra: alt.letra,
+        texto: alt.texto,
+        correta: alt.correta,
+      })),
+      respostaUsuario: respostaLetra,
+      acertou: resposta ? resposta.isCorreta : 0,
+    };
+  }).filter((q: any) => q !== null);
+
+  return resultado;
+}

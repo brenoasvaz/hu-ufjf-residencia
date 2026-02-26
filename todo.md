@@ -248,3 +248,10 @@
 - [x] Alterar nomenclatura de "simulado" para "avaliação" em todo o sistema (backend e frontend)
 - [x] Atualizar testes para refletir mudanças
 - [x] Testar funcionalidade completa
+
+
+## Nova Funcionalidade - Gerar PDF de Avaliações
+- [x] Implementar endpoint tRPC para gerar PDF de avaliação com respostas e notas
+- [x] Adicionar botão de exportar PDF na interface admin (aba Avaliações)
+- [x] Formatar PDF com informações do residente, questões, respostas e resultado
+- [x] Testar geração de PDF

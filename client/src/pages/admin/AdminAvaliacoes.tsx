@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ClipboardCheck, Users, TrendingUp, FileText, Settings, Trash2 } from "lucide-react";
+import { ClipboardCheck, Users, TrendingUp, FileText, Settings, Trash2, Download } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -27,6 +27,37 @@ export default function AdminAvaliacoes() {
   const { data: modelos, isLoading: loadingModelos } = trpc.avaliacoes.modelos.list.useQuery();
   const { data: allSimulados, isLoading: loadingSimulados, refetch: refetchSimulados } = trpc.avaliacoes.simulados.list.useQuery();
   const deleteMutation = trpc.avaliacoes.simulados.delete.useMutation();
+  const gerarPDFMutation = trpc.avaliacoes.simulados.gerarPDF.useMutation();
+
+  const handleGerarPDF = async (simuladoId: number) => {
+    try {
+      toast.info("Gerando PDF...");
+      const result = await gerarPDFMutation.mutateAsync({ simuladoId });
+      
+      // Converter base64 para blob e fazer download
+      const byteCharacters = atob(result.pdf);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      
+      // Criar link de download
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.success("PDF gerado com sucesso!");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao gerar PDF");
+    }
+  };
 
   if (!user || user.role !== 'admin') {
     return (
@@ -213,17 +244,30 @@ export default function AdminAvaliacoes() {
                           </div>
                         </div>
                         
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            setSimuladoToDelete(simulado.id);
-                            setDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Deletar
-                        </Button>
+                        <div className="flex gap-2">
+                          {simulado.concluido === 1 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleGerarPDF(simulado.id)}
+                              disabled={gerarPDFMutation.isPending}
+                            >
+                              <Download className="mr-2 h-4 w-4" />
+                              Exportar PDF
+                            </Button>
+                          )}
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => {
+                              setSimuladoToDelete(simulado.id);
+                              setDeleteDialogOpen(true);
+                            }}
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Deletar
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>

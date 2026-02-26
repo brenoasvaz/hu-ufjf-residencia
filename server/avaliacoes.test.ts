@@ -291,6 +291,57 @@ describe("Avaliações - Simulados", () => {
       caller.avaliacoes.simulados.delete({ simuladoId: 999 })
     ).rejects.toThrow();
   });
+
+  it("Admin deve conseguir gerar PDF de avaliação concluída", async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    // Buscar um simulado concluído
+    const simuladosConcluidos = await db
+      .select()
+      .from(simulados)
+      .where(eq(simulados.concluido, 1))
+      .limit(1);
+
+    if (simuladosConcluidos.length === 0) {
+      console.log("Nenhum simulado concluído encontrado, pulando teste de PDF");
+      return;
+    }
+
+    const caller = appRouter.createCaller(adminContext);
+    const result = await caller.avaliacoes.simulados.gerarPDF({
+      simuladoId: simuladosConcluidos[0].id,
+    });
+
+    expect(result).toHaveProperty("pdf");
+    expect(result).toHaveProperty("filename");
+    expect(typeof result.pdf).toBe("string");
+    expect(result.pdf.length).toBeGreaterThan(0);
+    expect(result.filename).toContain(".pdf");
+  });
+
+  it("Admin NÃO deve conseguir gerar PDF de avaliação não concluída", async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    // Buscar um simulado não concluído
+    const simuladosEmAndamento = await db
+      .select()
+      .from(simulados)
+      .where(eq(simulados.concluido, 0))
+      .limit(1);
+
+    if (simuladosEmAndamento.length === 0) {
+      console.log("Nenhum simulado em andamento encontrado, pulando teste");
+      return;
+    }
+
+    const caller = appRouter.createCaller(adminContext);
+    
+    await expect(
+      caller.avaliacoes.simulados.gerarPDF({ simuladoId: simuladosEmAndamento[0].id })
+    ).rejects.toThrow("ainda não foi concluída");
+  });
 });
 
 describe("Avaliações - Dashboard", () => {
