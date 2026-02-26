@@ -13,6 +13,7 @@ import { pdfRouter } from "./pdf-upload-router";
 import { registerUser, authenticateUser, getUserByEmail, getAllUsers, approveUser, rejectUser } from "./auth";
 import { avaliacoesRouter } from "./routers/avaliacoes";
 import { usersRouter } from "./routers/users";
+import { linksRouter } from "./routers/links";
 import { sdk } from "./_core/sdk";
 
 // Helper para procedures que requerem papel ADMIN
@@ -156,6 +157,9 @@ export const appRouter = router({
 
   // ===== USER MANAGEMENT (New - Role & Permissions) =====
   users: usersRouter,
+
+  // ===== LINKS ÚTEIS =====
+  links: linksRouter,
 
   // ===== RESIDENTS =====
   residents: router({

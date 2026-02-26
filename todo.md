@@ -289,3 +289,14 @@
 - [x] Garantir que apenas pontuação e estatísticas são mostradas, não gabaritos
 - [x] Implementar testes de segurança para validar restrições
 - [x] Testar acesso cruzado entre usuários
+
+
+## Nova Funcionalidade - Links Úteis
+- [x] Criar tabela no banco de dados para armazenar links
+- [x] Implementar endpoints tRPC para CRUD de links (admin)
+- [x] Implementar endpoint público para listar links
+- [x] Criar página admin de gerenciamento de links
+- [x] Criar página pública de visualização de links úteis
+- [x] Adicionar item "Links Úteis" no menu de navegação
+- [x] Adicionar primeiro link (avaliações práticas)
+- [x] Testar funcionalidade completa

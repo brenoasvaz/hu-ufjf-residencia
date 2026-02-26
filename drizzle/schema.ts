@@ -298,3 +298,20 @@ export const respostasUsuario = mysqlTable("respostas_usuario", {
 
 export type RespostaUsuario = typeof respostasUsuario.$inferSelect;
 export type InsertRespostaUsuario = typeof respostasUsuario.$inferInsert;
+
+/**
+ * Links Úteis - Links gerenciados pelo administrador
+ */
+export const linksUteis = mysqlTable("links_uteis", {
+  id: int("id").autoincrement().primaryKey(),
+  titulo: varchar("titulo", { length: 255 }).notNull(),
+  url: text("url").notNull(),
+  descricao: text("descricao"),
+  ordem: int("ordem").default(0).notNull(), // Para ordenação customizada
+  ativo: int("ativo").default(1).notNull(), // 1 = ativo, 0 = inativo
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LinkUtil = typeof linksUteis.$inferSelect;
+export type InsertLinkUtil = typeof linksUteis.$inferInsert;

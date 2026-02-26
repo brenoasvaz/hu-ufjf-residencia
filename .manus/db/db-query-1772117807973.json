@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO links_uteis (titulo, url, descricao, ordem, ativo) \nVALUES (\n  'Avaliações Práticas dos Residentes',\n  'https://forms.office.com/r/HS0N4gcMbw',\n  'Formulário para avaliação prática dos residentes de ortopedia',\n  1,\n  1\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute INSERT INTO links_uteis (titulo, url, descricao, ordem, ativo) \nVALUES (\n  'Avaliações Práticas dos Residentes',\n  'https://forms.office.com/r/HS0N4gcMbw',\n  'Formulário para avaliação prática dos residentes de ortopedia',\n  1,\n  1\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 143
+}

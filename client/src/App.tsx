@@ -20,6 +20,8 @@ import DashboardAvaliacoes from "./pages/DashboardAvaliacoes";
 import AdminAvaliacoes from "./pages/admin/AdminAvaliacoes";
 import ModelosProva from "./pages/ModelosProva";
 import GerenciarUsuarios from "./pages/admin/GerenciarUsuarios";
+import LinksUteis from "./pages/LinksUteis";
+import GerenciarLinks from "./pages/admin/GerenciarLinks";
 import MainLayout from "./components/MainLayout";
 
 function Router() {
@@ -47,6 +49,8 @@ function Router() {
             <Route path="/admin/avaliacoes/modelos" component={ModelosProva} />
             <Route path="/admin/usuarios-legado" component={UserManagement} />
             <Route path="/admin/usuarios" component={GerenciarUsuarios} />
+            <Route path="/links-uteis" component={LinksUteis} />
+            <Route path="/admin/links" component={GerenciarLinks} />
             <Route path="/404" component={NotFound} />
             <Route component={NotFound} />
           </Switch>

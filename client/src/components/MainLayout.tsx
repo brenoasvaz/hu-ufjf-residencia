@@ -15,6 +15,7 @@ import {
   UserCog,
   ClipboardCheck,
   BarChart3,
+  Link as LinkIcon,
 } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -68,8 +69,13 @@ export default function MainLayout({ children }: MainLayoutProps) {
     },
     {
       href: "/avaliacoes",
-      label: "Avaliações",
+      label: "Avalia\u00e7\u00f5es",
       icon: ClipboardCheck,
+    },
+    {
+      href: "/links-uteis",
+      label: "Links \u00dateis",
+      icon: LinkIcon,
     },
     ...(user?.role === "admin"
       ? [
