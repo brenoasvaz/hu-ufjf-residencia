@@ -12,6 +12,7 @@ import * as clinicalMeetingsDb from "./db";
 import { pdfRouter } from "./pdf-upload-router";
 import { registerUser, authenticateUser, getUserByEmail, getAllUsers, approveUser, rejectUser } from "./auth";
 import { avaliacoesRouter } from "./routers/avaliacoes";
+import { usersRouter } from "./routers/users";
 import { sdk } from "./_core/sdk";
 
 // Helper para procedures que requerem papel ADMIN
@@ -117,8 +118,8 @@ export const appRouter = router({
       }),
   }),
 
-  // ===== USER MANAGEMENT =====
-  users: router({
+  // ===== USER MANAGEMENT (Legacy - Account Status) =====
+  usersLegacy: router({
     list: adminProcedure
       .input(z.object({
         status: z.enum(['pending', 'approved', 'rejected']).optional(),
@@ -152,6 +153,9 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // ===== USER MANAGEMENT (New - Role & Permissions) =====
+  users: usersRouter,
 
   // ===== RESIDENTS =====
   residents: router({

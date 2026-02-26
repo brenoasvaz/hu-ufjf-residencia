@@ -255,3 +255,12 @@
 - [x] Adicionar botão de exportar PDF na interface admin (aba Avaliações)
 - [x] Formatar PDF com informações do residente, questões, respostas e resultado
 - [x] Testar geração de PDF
+
+
+## Nova Funcionalidade - Gerenciamento de Usuários
+- [x] Implementar endpoints tRPC para listar todos os usuários (admin apenas)
+- [x] Implementar endpoint tRPC para editar usuário (nome, email, role)
+- [x] Criar página de gerenciamento de usuários para administrador
+- [x] Adicionar interface para conceder/revogar credenciais de administrador
+- [x] Implementar testes para endpoints de gerenciamento
+- [x] Testar funcionalidade completa
