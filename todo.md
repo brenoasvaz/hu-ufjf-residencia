@@ -223,3 +223,9 @@
 - [x] Implementar redirect automático com token JWT na URL
 - [x] Documentar variável JWT_SSO_SECRET compartilhada entre projetos
 - [x] Testar fluxo completo de SSO
+
+
+## Correção - Erro ao Clicar em Avaliações
+- [x] Verificar logs do servidor e navegador para identificar erro
+- [x] Corrigir implementação do handler de clique do botão Avaliações
+- [x] Testar geração de token e redirect

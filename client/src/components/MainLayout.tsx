@@ -28,6 +28,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const { user, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const logoutMutation = trpc.auth.logout.useMutation();
+  const utils = trpc.useUtils();
 
   const handleLogout = async () => {
     try {
@@ -41,12 +42,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const handleAvaliacoesClick = async () => {
     try {
-      const utils = trpc.useUtils();
       const result = await utils.auth.generateSSOToken.fetch();
       const avaliacoesUrl = `https://simuladosort-pu2svbe6.manus.space/sso-login?token=${result.token}`;
       window.open(avaliacoesUrl, '_blank');
     } catch (error) {
       toast.error("Erro ao acessar plataforma de avaliações");
+      console.error("Erro SSO:", error);
     }
   };
 
@@ -143,8 +144,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
               
               return (
                 <Link key={item.href} href={item.href}>
-                  <a
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  <div
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                       isActive
                         ? "bg-primary text-primary-foreground"
                         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -152,7 +153,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                   >
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
-                  </a>
+                  </div>
                 </Link>
               );
             })}
@@ -225,8 +226,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                 
                 return (
                   <Link key={item.href} href={item.href}>
-                    <a
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm font-medium transition-colors ${
+                    <div
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-md text-sm font-medium transition-colors cursor-pointer ${
                         isActive
                           ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -235,7 +236,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     >
                       <Icon className="h-5 w-5" />
                       <span>{item.label}</span>
-                    </a>
+                    </div>
                   </Link>
                 );
               })}
