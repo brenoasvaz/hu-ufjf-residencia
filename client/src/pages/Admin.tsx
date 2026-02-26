@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, Users, Calendar, CalendarDays, FileText, MapPin, ArrowRight } from "lucide-react";
+import { Settings, Users, Calendar, CalendarDays, FileText, MapPin, ArrowRight, Link as LinkIcon } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export default function Admin() {
@@ -65,6 +65,12 @@ export default function Admin() {
       description: "Importar cronogramas e escalas a partir de arquivos PDF",
       icon: FileText,
       href: "/admin/imports",
+    },
+    {
+      title: "Gerenciar Links Úteis",
+      description: "Adicionar, editar ou remover links úteis para residentes",
+      icon: LinkIcon,
+      href: "/links-uteis",
     },
     {
       title: "Gerenciar Estágios",

@@ -300,3 +300,9 @@
 - [x] Adicionar item "Links Úteis" no menu de navegação
 - [x] Adicionar primeiro link (avaliações práticas)
 - [x] Testar funcionalidade completa
+
+
+## Melhorias - Links Úteis e Navegação
+- [x] Adicionar botões de gerenciamento (editar/deletar/adicionar) na página pública de Links Úteis para admin
+- [x] Adicionar card de Links Úteis na página de Administração
+- [x] Ocultar menu de Importações temporariamente

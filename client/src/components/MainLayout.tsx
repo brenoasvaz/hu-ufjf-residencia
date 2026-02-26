@@ -81,17 +81,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
       ? [
           {
             href: "/admin",
-            label: "Administração",
+            label: "Administra\u00e7\u00e3o",
             icon: Settings,
           },
-          {
-            href: "/admin/imports",
-            label: "Importações",
-            icon: FileText,
-          },
+          // {
+          //   href: "/admin/imports",
+          //   label: "Importa\u00e7\u00f5es",
+          //   icon: FileText,
+          // },
           {
             href: "/admin/usuarios",
-            label: "Usuários",
+            label: "Usu\u00e1rios",
             icon: UserCog,
           },
           {
