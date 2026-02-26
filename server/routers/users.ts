@@ -8,6 +8,7 @@ import { z } from "zod";
 import { getDb } from "../db";
 import { users } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
+import { approveUser, rejectUser } from "../auth";
 
 // Helper para procedures que requerem papel ADMIN
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -30,6 +31,7 @@ export const usersRouter = router({
         email: users.email,
         name: users.name,
         role: users.role,
+        accountStatus: users.accountStatus,
         createdAt: users.createdAt,
       })
       .from(users)
@@ -128,6 +130,44 @@ export const usersRouter = router({
 
       // Deletar usuário
       await db.delete(users).where(eq(users.id, input.userId));
+
+      return { success: true };
+    }),
+
+  // Aprovar usuário (admin apenas)
+  approve: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+      // Verificar se o usuário existe
+      const existingUser = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
+      if (!existingUser[0]) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Usuário não encontrado' });
+      }
+
+      // Aprovar usuário
+      await approveUser(input.userId);
+
+      return { success: true };
+    }),
+
+  // Rejeitar usuário (admin apenas)
+  reject: adminProcedure
+    .input(z.object({ userId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+      // Verificar se o usuário existe
+      const existingUser = await db.select().from(users).where(eq(users.id, input.userId)).limit(1);
+      if (!existingUser[0]) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Usuário não encontrado' });
+      }
+
+      // Rejeitar usuário
+      await rejectUser(input.userId);
 
       return { success: true };
     }),

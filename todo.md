@@ -306,3 +306,13 @@
 - [x] Adicionar botões de gerenciamento (editar/deletar/adicionar) na página pública de Links Úteis para admin
 - [x] Adicionar card de Links Úteis na página de Administração
 - [x] Ocultar menu de Importações temporariamente
+
+
+## Nova Funcionalidade - Aprovação de Novos Usuários
+- [x] Adicionar campo 'status' ao schema de usuários (pendente/aprovado/rejeitado)
+- [x] Modificar autenticação para bloquear acesso de usuários pendentes
+- [x] Criar endpoints tRPC para admin aprovar/rejeitar usuários
+- [x] Atualizar página de gerenciamento de usuários com status e botões de aprovação
+- [x] Adicionar mensagem na tela de login para usuários pendentes
+- [x] Implementar testes para fluxo de aprovação
+- [x] Testar fluxo completo de cadastro → aprovação → acesso

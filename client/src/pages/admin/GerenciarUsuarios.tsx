@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Users, Shield, UserCog, ArrowLeft, Trash2 } from "lucide-react";
+import { Users, Shield, UserCog, ArrowLeft, Trash2, CheckCircle, XCircle, Clock } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -37,6 +37,8 @@ export default function GerenciarUsuarios() {
   const { data: usuarios, isLoading, refetch } = trpc.users.list.useQuery();
   const updateMutation = trpc.users.update.useMutation();
   const deleteMutation = trpc.users.delete.useMutation();
+  const approveMutation = trpc.users.approve.useMutation();
+  const rejectMutation = trpc.users.reject.useMutation();
 
   if (!user || user.role !== 'admin') {
     return (
@@ -102,6 +104,54 @@ export default function GerenciarUsuarios() {
     }
   };
 
+  const handleApprove = async (userId: number) => {
+    try {
+      await approveMutation.mutateAsync({ userId });
+      toast.success("Usuário aprovado com sucesso!");
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao aprovar usuário");
+    }
+  };
+
+  const handleReject = async (userId: number) => {
+    try {
+      await rejectMutation.mutateAsync({ userId });
+      toast.success("Usuário rejeitado");
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao rejeitar usuário");
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+            <Clock className="h-3 w-3" />
+            Pendente
+          </span>
+        );
+      case 'approved':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+            <CheckCircle className="h-3 w-3" />
+            Aprovado
+          </span>
+        );
+      case 'rejected':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+            <XCircle className="h-3 w-3" />
+            Rejeitado
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="container max-w-6xl py-8">
       <div className="flex items-center gap-4 mb-6">
@@ -157,6 +207,7 @@ export default function GerenciarUsuarios() {
                               Você
                             </span>
                           )}
+                          {getStatusBadge(usuario.accountStatus)}
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span>{usuario.email}</span>
@@ -168,24 +219,63 @@ export default function GerenciarUsuarios() {
                       </div>
                       
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEditClick(usuario)}
-                        >
-                          <UserCog className="mr-2 h-4 w-4" />
-                          Editar
-                        </Button>
+                        {usuario.accountStatus === 'pending' && (
+                          <>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={() => handleApprove(usuario.id)}
+                              disabled={approveMutation.isPending}
+                            >
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Aprovar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleReject(usuario.id)}
+                              disabled={rejectMutation.isPending}
+                            >
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Rejeitar
+                            </Button>
+                          </>
+                        )}
                         
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteClick(usuario)}
-                          disabled={usuario.id === user.id}
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Deletar
-                        </Button>
+                        {usuario.accountStatus === 'approved' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditClick(usuario)}
+                            >
+                              <UserCog className="mr-2 h-4 w-4" />
+                              Editar
+                            </Button>
+                            
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteClick(usuario)}
+                              disabled={usuario.id === user.id}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Deletar
+                            </Button>
+                          </>
+                        )}
+                        
+                        {usuario.accountStatus === 'rejected' && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleApprove(usuario.id)}
+                            disabled={approveMutation.isPending}
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" />
+                            Reaprovar
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>
