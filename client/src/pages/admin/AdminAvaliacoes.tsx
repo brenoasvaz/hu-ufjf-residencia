@@ -220,8 +220,15 @@ export default function AdminAvaliacoes() {
                   <Card key={simulado.id}>
                     <CardContent className="py-4">
                       <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="font-medium">Avaliação #{simulado.id}</p>
+                        <div className="space-y-1 flex-1">
+                          <div className="flex items-center gap-3">
+                            <p className="font-medium">Avaliação #{simulado.id}</p>
+                            {simulado.userName && (
+                              <span className="text-sm text-muted-foreground">
+                                • {simulado.userName}
+                              </span>
+                            )}
+                          </div>
                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
                             <span>
                               Criada em {new Date(simulado.createdAt).toLocaleDateString('pt-BR', {

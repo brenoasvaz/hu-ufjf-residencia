@@ -119,8 +119,13 @@ export const avaliacoesRouter = router({
   // ========================================
   
   simulados: router({
-    // Listar simulados do usuário logado
+    // Listar simulados do usuário logado (ou todos se for admin)
     list: protectedProcedure.query(async ({ ctx }) => {
+      // Se for admin, retorna todos os simulados com informações do usuário
+      if (ctx.user.role === 'admin') {
+        return await avaliacoesDb.getTodosSimuladosComUsuario();
+      }
+      // Se for usuário comum, retorna apenas seus simulados
       return await avaliacoesDb.getSimuladosPorUsuario(ctx.user.id);
     }),
     

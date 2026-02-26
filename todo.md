@@ -264,3 +264,10 @@
 - [x] Adicionar interface para conceder/revogar credenciais de administrador
 - [x] Implementar testes para endpoints de gerenciamento
 - [x] Testar funcionalidade completa
+
+
+## Ajuste - Admin Ver Todas as Avaliações
+- [x] Modificar endpoint de listagem para admin ver todas as avaliações (não apenas próprias)
+- [x] Adicionar informações do residente/usuário na listagem de avaliações
+- [x] Garantir que geração de PDF funcione para avaliações de qualquer usuário
+- [x] Testar acesso admin a resultados de avaliações de outros usuários

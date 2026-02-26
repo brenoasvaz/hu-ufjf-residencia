@@ -143,6 +143,33 @@ describe("Gerenciamento de Usuários", () => {
     });
   });
 
+  it("Admin deve conseguir ver avaliações de todos os usuários", async () => {
+    const caller = appRouter.createCaller(adminContext);
+    const allSimulados = await caller.avaliacoes.simulados.list();
+    
+    expect(Array.isArray(allSimulados)).toBe(true);
+    
+    // Admin deve ver avaliações com informações do usuário
+    if (allSimulados.length > 0) {
+      const firstSimulado = allSimulados[0];
+      expect(firstSimulado).toHaveProperty("userId");
+      expect(firstSimulado).toHaveProperty("userName");
+      expect(firstSimulado).toHaveProperty("userEmail");
+    }
+  });
+
+  it("Usuário comum deve ver apenas suas próprias avaliações", async () => {
+    const caller = appRouter.createCaller(userContext);
+    const mySimulados = await caller.avaliacoes.simulados.list();
+    
+    expect(Array.isArray(mySimulados)).toBe(true);
+    
+    // Todos os simulados devem pertencer ao usuário
+    mySimulados.forEach((simulado: any) => {
+      expect(simulado.userId).toBe(userContext.user.id);
+    });
+  });
+
   it("Admin NÃO deve conseguir remover suas próprias credenciais", async () => {
     const caller = appRouter.createCaller(adminContext);
     

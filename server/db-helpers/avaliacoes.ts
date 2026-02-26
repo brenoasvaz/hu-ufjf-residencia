@@ -12,6 +12,7 @@ import {
   simulados,
   simuladoQuestoes,
   respostasUsuario,
+  users,
 } from "../../drizzle/schema";
 
 // ========================================
@@ -113,6 +114,29 @@ export async function getSimuladosPorUsuario(userId: number) {
     .select()
     .from(simulados)
     .where(eq(simulados.userId, userId))
+    .orderBy(desc(simulados.createdAt));
+}
+
+export async function getTodosSimuladosComUsuario() {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+  return await db
+    .select({
+      id: simulados.id,
+      userId: simulados.userId,
+      userName: users.name,
+      userEmail: users.email,
+      modeloId: simulados.modeloId,
+      dataInicio: simulados.dataInicio,
+      dataFim: simulados.dataFim,
+      duracaoMinutos: simulados.duracaoMinutos,
+      totalQuestoes: simulados.totalQuestoes,
+      totalAcertos: simulados.totalAcertos,
+      concluido: simulados.concluido,
+      createdAt: simulados.createdAt,
+    })
+    .from(simulados)
+    .innerJoin(users, eq(simulados.userId, users.id))
     .orderBy(desc(simulados.createdAt));
 }
 
