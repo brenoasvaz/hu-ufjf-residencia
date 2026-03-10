@@ -39,6 +39,73 @@ export const avaliacoesRouter = router({
   // ========================================
   
   questoes: router({
+    // Contagem total de questões (dinâmica)
+    count: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+      const { count } = await import('drizzle-orm');
+      const [result] = await db
+        .select({ total: count(questoes.id) })
+        .from(questoes)
+        .where(eq(questoes.ativo, 1));
+      return { total: result?.total ?? 0 };
+    }),
+
+    // Listar questões com paginação e filtros (admin)
+    list: adminProcedure
+      .input(z.object({
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(100).default(20),
+        especialidadeId: z.number().optional(),
+        busca: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+        const { count, like, and } = await import('drizzle-orm');
+        const { especialidades } = await import('../../drizzle/schema');
+
+        const conditions: any[] = [eq(questoes.ativo, 1)];
+        if (input.especialidadeId) {
+          conditions.push(eq(questoes.especialidadeId, input.especialidadeId));
+        }
+        if (input.busca && input.busca.trim()) {
+          conditions.push(like(questoes.enunciado, `%${input.busca.trim()}%`));
+        }
+
+        const where = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+        const [{ total }] = await db
+          .select({ total: count(questoes.id) })
+          .from(questoes)
+          .where(where);
+
+        const offset = (input.page - 1) * input.pageSize;
+        const rows = await db
+          .select({
+            id: questoes.id,
+            enunciado: questoes.enunciado,
+            fonte: questoes.fonte,
+            ano: questoes.ano,
+            especialidadeId: questoes.especialidadeId,
+            temImagem: questoes.temImagem,
+            imageUrl: questoes.imageUrl,
+          })
+          .from(questoes)
+          .where(where)
+          .orderBy(questoes.especialidadeId, questoes.id)
+          .limit(input.pageSize)
+          .offset(offset);
+
+        return {
+          questoes: rows,
+          total,
+          page: input.page,
+          pageSize: input.pageSize,
+          totalPages: Math.ceil(total / input.pageSize),
+        };
+      }),
+
     listByEspecialidade: adminProcedure
       .input(z.object({ especialidadeId: z.number() }))
       .query(async ({ input }) => {

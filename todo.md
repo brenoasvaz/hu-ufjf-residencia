@@ -326,3 +326,10 @@
 - [x] Criar interface admin para adicionar/editar imagem no enunciado
 - [x] Exibir imagens nas questões durante a avaliação
 - [x] Testar funcionalidade completa
+
+
+## Correções - Contador e Visualização de Questões
+- [x] Corrigir contador de questões (mostrar 2.233 em vez de 2.044) - agora dinâmico via banco
+- [x] Investigar e corrigir problema de visualização de questões na gestão de avaliações
+- [x] Implementar listagem paginada com busca e filtro por especialidade
+- [x] Adicionar endpoint tRPC de contagem dinâmica e listagem de questões

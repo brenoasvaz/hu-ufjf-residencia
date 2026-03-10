@@ -1,0 +1,25 @@
+{
+  "query": "SELECT COUNT(*) as total FROM questoes; SELECT COUNT(*) as ativas FROM questoes WHERE ativo = 1; SELECT COUNT(*) as inativas FROM questoes WHERE ativo = 0 OR ativo IS NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT COUNT(*) as total FROM questoes; SELECT COUNT(*) as ativas FROM questoes WHERE ativo = 1; SELECT COUNT(*) as inativas FROM questoes WHERE ativo = 0 OR ativo IS NULL;",
+  "rows": [
+    {
+      "total": "2233"
+    },
+    {
+      "total": "ativas"
+    },
+    {
+      "total": "2233"
+    },
+    {
+      "total": "inativas"
+    },
+    {
+      "total": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\n2233\nativas\n2233\ninativas\n0\n",
+  "stderr": "",
+  "execution_time_ms": 75
+}

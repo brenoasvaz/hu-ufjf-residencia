@@ -3,10 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ClipboardCheck, Users, TrendingUp, FileText, Settings, Trash2, Download } from "lucide-react";
+import { ClipboardCheck, Users, TrendingUp, FileText, Settings, Trash2, Download, Search, ChevronLeft, ChevronRight, Image } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,10 +27,27 @@ export default function AdminAvaliacoes() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [simuladoToDelete, setSimuladoToDelete] = useState<number | null>(null);
 
+  const [questoesPage, setQuestoesPage] = useState(1);
+  const [questoesBusca, setQuestoesBusca] = useState("");
+  const [questoesEspecialidade, setQuestoesEspecialidade] = useState<number | undefined>(undefined);
+
   const { data: modelos, isLoading: loadingModelos } = trpc.avaliacoes.modelos.list.useQuery();
   const { data: allSimulados, isLoading: loadingSimulados, refetch: refetchSimulados } = trpc.avaliacoes.simulados.list.useQuery();
+  const { data: totalQuestoes } = trpc.avaliacoes.questoes.count.useQuery();
+  const { data: especialidades } = trpc.avaliacoes.especialidades.list.useQuery();
+  const { data: questoesData, isLoading: loadingQuestoes } = trpc.avaliacoes.questoes.list.useQuery({
+    page: questoesPage,
+    pageSize: 20,
+    especialidadeId: questoesEspecialidade,
+    busca: questoesBusca || undefined,
+  });
   const deleteMutation = trpc.avaliacoes.simulados.delete.useMutation();
   const gerarPDFMutation = trpc.avaliacoes.simulados.gerarPDF.useMutation();
+
+  const especialidadesMap = useMemo(() => {
+    if (!especialidades) return {};
+    return Object.fromEntries(especialidades.map((e: any) => [e.id, e.nome]));
+  }, [especialidades]);
 
   const handleGerarPDF = async (simuladoId: number) => {
     try {
@@ -101,7 +121,7 @@ export default function AdminAvaliacoes() {
             <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">2.044</div>
+            <div className="text-2xl font-bold">{totalQuestoes?.total?.toLocaleString('pt-BR') ?? '...'}</div>
             <p className="text-xs text-muted-foreground">Questões cadastradas</p>
           </CardContent>
         </Card>
@@ -291,29 +311,109 @@ export default function AdminAvaliacoes() {
 
         {/* Questões */}
         <TabsContent value="questoes" className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Banco de Questões</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Visualize e gerencie as questões cadastradas no sistema
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">Banco de Questões</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                {totalQuestoes?.total?.toLocaleString('pt-BR') ?? '...'} questões cadastradas em {especialidades?.length ?? '...'} especialidades
+              </p>
+            </div>
+            <Link href="/admin/questoes/imagens">
+              <Button variant="outline">
+                <Image className="mr-2 h-4 w-4" />
+                Gerenciar Imagens
+              </Button>
+            </Link>
           </div>
 
-          <Card>
-            <CardContent className="py-12 text-center space-y-4">
-              <ClipboardCheck className="h-16 w-16 text-muted-foreground/50 mx-auto" />
-              <div className="space-y-2">
-                <p className="text-lg font-medium">2.044 Questões Cadastradas</p>
+          {/* Filtros */}
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por enunciado..."
+                className="pl-9"
+                value={questoesBusca}
+                onChange={(e) => { setQuestoesBusca(e.target.value); setQuestoesPage(1); }}
+              />
+            </div>
+            <Select
+              value={questoesEspecialidade?.toString() ?? "all"}
+              onValueChange={(v) => { setQuestoesEspecialidade(v === "all" ? undefined : Number(v)); setQuestoesPage(1); }}
+            >
+              <SelectTrigger className="w-56">
+                <SelectValue placeholder="Todas as especialidades" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as especialidades</SelectItem>
+                {especialidades?.map((e: any) => (
+                  <SelectItem key={e.id} value={e.id.toString()}>{e.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Lista de questões */}
+          {loadingQuestoes ? (
+            <div className="text-center py-8 text-muted-foreground">Carregando questões...</div>
+          ) : questoesData && questoesData.questoes.length > 0 ? (
+            <div className="space-y-2">
+              {questoesData.questoes.map((q: any) => (
+                <Card key={q.id} className="hover:shadow-sm transition-shadow">
+                  <CardContent className="py-3 px-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-xs shrink-0">
+                            {especialidadesMap[q.especialidadeId] ?? `Esp. ${q.especialidadeId}`}
+                          </Badge>
+                          {q.fonte && <span className="text-xs text-muted-foreground">{q.fonte}{q.ano ? ` (${q.ano})` : ''}</span>}
+                          {q.temImagem === 1 && (
+                            <Badge variant={q.imageUrl ? "default" : "secondary"} className="text-xs">
+                              <Image className="h-3 w-3 mr-1" />
+                              {q.imageUrl ? "Imagem OK" : "Aguarda imagem"}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm leading-relaxed line-clamp-2">{q.enunciado}</p>
+                      </div>
+                      <span className="text-xs text-muted-foreground shrink-0">#{q.id}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+
+              {/* Paginação */}
+              <div className="flex items-center justify-between pt-2">
                 <p className="text-sm text-muted-foreground">
-                  13 especialidades de Ortopedia e Traumatologia
+                  Mostrando {((questoesPage - 1) * 20) + 1}–{Math.min(questoesPage * 20, questoesData.total)} de {questoesData.total.toLocaleString('pt-BR')} questões
                 </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline" size="sm"
+                    disabled={questoesPage === 1}
+                    onClick={() => setQuestoesPage(p => p - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm px-2 py-1">{questoesPage} / {questoesData.totalPages}</span>
+                  <Button
+                    variant="outline" size="sm"
+                    disabled={questoesPage >= questoesData.totalPages}
+                    onClick={() => setQuestoesPage(p => p + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="pt-4">
-                <p className="text-sm text-muted-foreground">
-                  Funcionalidade de visualização e edição de questões em desenvolvimento.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="py-8 text-center text-muted-foreground">
+                Nenhuma questão encontrada com os filtros aplicados.
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Estatísticas */}
