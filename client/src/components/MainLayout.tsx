@@ -16,10 +16,13 @@ import {
   ClipboardCheck,
   BarChart3,
   Link as LinkIcon,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -29,6 +32,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
   const logoutMutation = trpc.auth.logout.useMutation();
 
   const handleLogout = async () => {
@@ -141,7 +145,20 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </nav>
 
           {/* User Menu */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              title={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
             {isAuthenticated && user ? (
               <div className="hidden md:flex items-center space-x-4">
                 <div className="text-sm">

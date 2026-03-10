@@ -346,3 +346,10 @@
 - [x] Envolver operação de submissão em transação Drizzle ORM (verificação + respostas + finalização)
 - [x] Prevenir gravações conflitantes de totalAcertos em requests simultâneos
 - [x] Testar atomicidade da transação
+
+
+## Padronização de Cores e Tema
+- [x] Login.tsx: substituir bg-blue-600 por bg-primary, from-blue-50 to-blue-100 por from-background to-muted, text-blue-600 por text-primary
+- [x] CalendarioMensal.tsx: adicionar variantes dark em getStageColor (blue, green, purple, amber, rose, orange)
+- [x] CalendarioSemanal.tsx: adicionar variantes dark em getActivityColor (rose, blue, amber, purple, green)
+- [x] MainLayout.tsx: adicionar botão toggle light/dark com ícones Sun/Moon usando useTheme

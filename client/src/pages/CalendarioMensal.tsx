@@ -13,13 +13,13 @@ import { ptBR } from "date-fns/locale";
 
 // Cores para diferentes blocos/estágios
 const getStageColor = (stage: string) => {
-  if (stage === "Bloco A" || stage === "A") return "bg-blue-100 border-blue-300 text-blue-900 hover:bg-blue-200";
-  if (stage === "Bloco B" || stage === "B") return "bg-green-100 border-green-300 text-green-900 hover:bg-green-200";
-  if (stage === "Bloco C" || stage === "C") return "bg-purple-100 border-purple-300 text-purple-900 hover:bg-purple-200";
-  if (stage === "Enfermaria") return "bg-cyan-100 border-cyan-300 text-cyan-900 hover:bg-cyan-200";
-  if (stage === "CC1") return "bg-orange-100 border-orange-300 text-orange-900 hover:bg-orange-200";
-  if (stage === "CC2") return "bg-rose-100 border-rose-300 text-rose-900 hover:bg-rose-200";
-  return "bg-slate-100 border-slate-300 text-slate-900 hover:bg-slate-200";
+  if (stage === "Bloco A" || stage === "A") return "bg-blue-100 border-blue-300 text-blue-900 hover:bg-blue-200 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-200 dark:hover:bg-blue-900/50";
+  if (stage === "Bloco B" || stage === "B") return "bg-green-100 border-green-300 text-green-900 hover:bg-green-200 dark:bg-green-900/30 dark:border-green-700 dark:text-green-200 dark:hover:bg-green-900/50";
+  if (stage === "Bloco C" || stage === "C") return "bg-purple-100 border-purple-300 text-purple-900 hover:bg-purple-200 dark:bg-purple-900/30 dark:border-purple-700 dark:text-purple-200 dark:hover:bg-purple-900/50";
+  if (stage === "Enfermaria") return "bg-cyan-100 border-cyan-300 text-cyan-900 hover:bg-cyan-200 dark:bg-cyan-900/30 dark:border-cyan-700 dark:text-cyan-200 dark:hover:bg-cyan-900/50";
+  if (stage === "CC1") return "bg-orange-100 border-orange-300 text-orange-900 hover:bg-orange-200 dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-200 dark:hover:bg-orange-900/50";
+  if (stage === "CC2") return "bg-rose-100 border-rose-300 text-rose-900 hover:bg-rose-200 dark:bg-rose-900/30 dark:border-rose-700 dark:text-rose-200 dark:hover:bg-rose-900/50";
+  return "bg-slate-100 border-slate-300 text-slate-900 hover:bg-slate-200 dark:bg-slate-800/50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800";
 };
 
 // Mapear bloco para filtro do calendário semanal
