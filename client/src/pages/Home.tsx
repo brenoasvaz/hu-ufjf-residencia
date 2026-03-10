@@ -41,47 +41,44 @@ export default function Home() {
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Cabeçalho da página */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
+    <div className="space-y-10">
+      {/* Hero centralizado */}
+      <div className="flex flex-col items-center text-center py-8 space-y-4">
+        <h1 className="text-2xl font-bold tracking-tight max-w-xl">
           HU UFJF Residência Médica Ortopedia e Traumatologia
         </h1>
-        <p className="text-sm text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground max-w-md">
           Sistema de gerenciamento de rodízios e cronogramas para o Serviço de Ortopedia e
           Traumatologia
         </p>
-      </div>
 
-      {/* Boas-vindas / CTA de login */}
-      {!isAuthenticated ? (
-        <div className="flex flex-col sm:flex-row gap-4 items-start">
-          <Button size="default" asChild>
+        {!isAuthenticated ? (
+          <Button size="default" asChild className="mt-2">
             <a href="/login">
               Fazer Login
               <ArrowRight className="ml-2 h-4 w-4" />
             </a>
           </Button>
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          Bem-vindo, <span className="font-semibold text-foreground">{user?.name}</span>
-          {" — "}
-          {user?.role === "admin" ? "Administrador" : "Visualizador"}
-        </p>
-      )}
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Bem-vindo, <span className="font-semibold text-foreground">{user?.name}</span>
+            {" — "}
+            {user?.role === "admin" ? "Administrador" : "Visualizador"}
+          </p>
+        )}
+      </div>
 
       {/* Grade de funcionalidades */}
       {isAuthenticated && (
         <section className="space-y-4">
-          <div>
+          <div className="text-center">
             <h2 className="text-lg font-semibold">Funcionalidades</h2>
             <p className="text-sm text-muted-foreground mt-1">
               Acesse os recursos disponíveis na plataforma
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
             {features
               .filter((feature) => !feature.adminOnly || user?.role === "admin")
               .map((feature) => {
@@ -111,8 +108,8 @@ export default function Home() {
       )}
 
       {/* Seção informativa */}
-      <section className="bg-muted/50 rounded-lg p-6 space-y-4">
-        <h2 className="text-lg font-semibold">Sobre o Sistema</h2>
+      <section className="bg-muted/50 rounded-lg p-6 space-y-4 max-w-2xl mx-auto w-full">
+        <h2 className="text-lg font-semibold text-center">Sobre o Sistema</h2>
         <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>
             <h3 className="font-medium text-foreground mb-1">Calendário Mensal</h3>

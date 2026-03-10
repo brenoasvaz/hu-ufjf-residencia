@@ -372,3 +372,6 @@
 - [x] admin/GerenciarImagensQuestoes.tsx: H1 text-3xl→text-2xl, contadores text-3xl→text-2xl, estrutura space-y-6
 - [x] admin/GerenciarLinks.tsx: H1 text-3xl→text-2xl, estrutura space-y-6
 - [x] admin/GerenciarUsuarios.tsx: H1 text-3xl→text-2xl, estrutura space-y-6
+
+## Ajustes de Layout
+- [x] Home.tsx: diagramação centralizada (hero + cards centralizados)
