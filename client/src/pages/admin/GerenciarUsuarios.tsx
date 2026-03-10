@@ -153,21 +153,22 @@ export default function GerenciarUsuarios() {
   };
 
   return (
-    <div className="container max-w-6xl py-8">
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/admin">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar
-          </Button>
-        </Link>
-      </div>
-
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Gerenciamento de Usuários</h1>
-        <p className="text-muted-foreground">
-          Visualize e edite informações dos usuários, incluindo permissões de administrador.
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href="/admin">
+            <Button variant="ghost" size="sm">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Gerenciamento de Usuários</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Visualize e edite informações dos usuários, incluindo permissões de administrador.
+            </p>
+          </div>
+        </div>
       </div>
 
       <Card>

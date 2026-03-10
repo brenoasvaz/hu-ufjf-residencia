@@ -353,3 +353,22 @@
 - [x] CalendarioMensal.tsx: adicionar variantes dark em getStageColor (blue, green, purple, amber, rose, orange)
 - [x] CalendarioSemanal.tsx: adicionar variantes dark em getActivityColor (rose, blue, amber, purple, green)
 - [x] MainLayout.tsx: adicionar botão toggle light/dark com ícones Sun/Moon usando useTheme
+
+
+## Padronização de Tipografia e Espaçamento
+- [x] Home.tsx: H1 text-4xl→text-2xl, H2 text-3xl→text-lg, p text-xl→text-sm, estrutura space-y-6
+- [x] Admin.tsx: H1 text-3xl→text-2xl, H2 text-2xl→text-lg, estrutura space-y-6
+- [x] Residentes.tsx: H1 text-3xl→text-2xl, estrutura space-y-6
+- [x] ClinicalMeetings.tsx: labels HTML→Label shadcn, estrutura space-y-6 (H1 já correto)
+- [x] LinksUteis.tsx: H1 text-3xl→text-2xl, estrutura space-y-6
+- [x] CalendarioMensal.tsx: H1 text-3xl→text-2xl, labels HTML→Label shadcn, estrutura space-y-6
+- [x] CalendarioSemanal.tsx: H1 text-3xl→text-2xl, H2 text-xl→text-lg, labels HTML→Label shadcn, estrutura space-y-6
+- [x] Avaliacoes.tsx: H1 text-3xl→text-2xl, H2 text-2xl→text-lg, estrutura space-y-6
+- [x] DashboardAvaliacoes.tsx: H1 text-3xl→text-2xl, estrutura space-y-6
+- [x] ResultadoSimulado.tsx: H1 text-3xl→text-2xl, estrutura space-y-6
+- [x] ModelosProva.tsx: H1 text-3xl→text-2xl, estrutura space-y-6
+- [x] UserManagement.tsx: H1 text-3xl→text-2xl, estrutura space-y-6
+- [x] admin/AdminAvaliacoes.tsx: H1 text-3xl→text-2xl, H2 text-2xl→text-lg, estrutura space-y-6
+- [x] admin/GerenciarImagensQuestoes.tsx: H1 text-3xl→text-2xl, contadores text-3xl→text-2xl, estrutura space-y-6
+- [x] admin/GerenciarLinks.tsx: H1 text-3xl→text-2xl, estrutura space-y-6
+- [x] admin/GerenciarUsuarios.tsx: H1 text-3xl→text-2xl, estrutura space-y-6

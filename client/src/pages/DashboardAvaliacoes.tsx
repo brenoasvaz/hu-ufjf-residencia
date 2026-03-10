@@ -64,12 +64,12 @@ export default function DashboardAvaliacoes() {
   }
 
   return (
-    <div className="container max-w-6xl py-8 space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard de Desempenho</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard de Desempenho</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Acompanhe sua evolução e estatísticas de desempenho
           </p>
         </div>

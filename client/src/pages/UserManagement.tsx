@@ -103,15 +103,15 @@ export default function UserManagement() {
   };
 
   return (
-    <div className="container py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Gerenciamento de Usuários</h1>
-        <p className="text-muted-foreground mt-2">
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Gerenciamento de Usuários</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Aprove ou rejeite solicitações de acesso ao sistema
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pendentes</CardTitle>

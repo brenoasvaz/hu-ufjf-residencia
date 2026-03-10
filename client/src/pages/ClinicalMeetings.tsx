@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { EditClinicalMeetingDialog } from "@/components/EditClinicalMeetingDialog";
 import { toast } from "sonner";
 import {
@@ -167,12 +168,12 @@ export default function ClinicalMeetings() {
   };
 
   return (
-    <div className="container py-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Reuniões Clínicas</h1>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground mt-1">
             Programação científica semanal do Serviço de Ortopedia e Traumatologia
           </p>
         </div>
@@ -199,7 +200,7 @@ export default function ClinicalMeetings() {
               <div className="space-y-4">
                 {/* Campo de busca */}
                 <div>
-                  <label className="text-sm font-medium mb-2 block">Buscar por tema ou preceptor</label>
+                  <Label className="mb-2 block">Buscar por tema ou preceptor</Label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <input
@@ -215,7 +216,7 @@ export default function ClinicalMeetings() {
                 {/* Filtros de ano e mês */}
                 <div className="flex flex-col gap-4 sm:flex-row">
                   <div className="flex-1">
-                    <label className="text-sm font-medium mb-2 block">Ano</label>
+                    <Label className="mb-2 block">Ano</Label>
                   <Select
                     value={selectedYear.toString()}
                     onValueChange={(value) => setSelectedYear(parseInt(value))}
@@ -233,7 +234,7 @@ export default function ClinicalMeetings() {
                   </Select>
                 </div>
                 <div className="flex-1">
-                  <label className="text-sm font-medium mb-2 block">Mês</label>
+                  <Label className="mb-2 block">Mês</Label>
                   <Select
                     value={selectedMonth.toString()}
                     onValueChange={(value) => setSelectedMonth(parseInt(value))}

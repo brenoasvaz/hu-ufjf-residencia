@@ -107,12 +107,11 @@ export default function LinksUteis() {
   };
 
   return (
-    <div className="container max-w-4xl py-8">
-      <div className="mb-8 space-y-2">
-        <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Links Úteis</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl font-bold tracking-tight">Links Úteis</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Recursos e ferramentas importantes para os residentes
             </p>
           </div>
@@ -122,7 +121,6 @@ export default function LinksUteis() {
               Novo Link
             </Button>
           )}
-        </div>
       </div>
 
       {isLoading ? (
@@ -135,7 +133,7 @@ export default function LinksUteis() {
             <div className="text-center space-y-4">
               <LinkIcon className="h-12 w-12 mx-auto text-muted-foreground" />
               <div>
-                <p className="text-lg font-medium">Nenhum link disponível</p>
+                <p className="text-sm font-medium">Nenhum link disponível</p>
                 <p className="text-sm text-muted-foreground">
                   {isAdmin 
                     ? 'Clique em "Novo Link" para adicionar o primeiro link útil'
@@ -151,7 +149,7 @@ export default function LinksUteis() {
           {links.map((link) => (
             <Card key={link.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <LinkIcon className="h-5 w-5 text-primary" />
                   {link.titulo}
                 </CardTitle>

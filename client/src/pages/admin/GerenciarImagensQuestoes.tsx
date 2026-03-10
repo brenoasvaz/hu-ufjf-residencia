@@ -141,9 +141,19 @@ export default function GerenciarImagensQuestoes() {
   };
 
   return (
-    <div className="container max-w-6xl py-8">
+    <div className="space-y-6">
       {/* Cabeçalho */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <Image className="h-5 w-5 text-primary" />
+            Imagens das Questões
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerencie as imagens das questões que requerem ilustração no enunciado.
+            Adicione as imagens antes de liberar as avaliações para os residentes.
+          </p>
+        </div>
         <Link href="/admin/avaliacoes">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -152,19 +162,8 @@ export default function GerenciarImagensQuestoes() {
         </Link>
       </div>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-          <Image className="h-8 w-8 text-primary" />
-          Imagens das Questões
-        </h1>
-        <p className="text-muted-foreground">
-          Gerencie as imagens das questões que requerem ilustração no enunciado.
-          Adicione as imagens antes de liberar as avaliações para os residentes.
-        </p>
-      </div>
-
       {/* Cards de resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card
           className={`cursor-pointer transition-all ${filtroStatus === "todas" ? "ring-2 ring-primary" : "hover:shadow-md"}`}
           onClick={() => setFiltroStatus("todas")}
@@ -173,7 +172,7 @@ export default function GerenciarImagensQuestoes() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total com Imagem</p>
-                <p className="text-3xl font-bold">{questoes?.length || 0}</p>
+                <p className="text-2xl font-bold">{questoes?.length || 0}</p>
               </div>
               <Image className="h-10 w-10 text-muted-foreground" />
             </div>
@@ -188,7 +187,7 @@ export default function GerenciarImagensQuestoes() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Imagem Adicionada</p>
-                <p className="text-3xl font-bold text-green-600">{totalComImagem}</p>
+                <p className="text-2xl font-bold text-green-600">{totalComImagem}</p>
               </div>
               <CheckCircle className="h-10 w-10 text-green-500" />
             </div>
@@ -203,7 +202,7 @@ export default function GerenciarImagensQuestoes() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Aguardando Imagem</p>
-                <p className="text-3xl font-bold text-orange-600">{totalSemImagem}</p>
+                <p className="text-2xl font-bold text-orange-600">{totalSemImagem}</p>
               </div>
               <AlertCircle className="h-10 w-10 text-orange-500" />
             </div>
@@ -212,7 +211,7 @@ export default function GerenciarImagensQuestoes() {
       </div>
 
       {/* Barra de busca */}
-      <div className="flex gap-3 mb-6">
+      <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input

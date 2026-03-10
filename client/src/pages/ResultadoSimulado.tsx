@@ -103,11 +103,11 @@ export default function ResultadoSimulado() {
   }
 
   return (
-    <div className="container max-w-4xl py-8 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Resultado da Avaliação</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight">Resultado da Avaliação</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Avaliação #{simuladoId} • Concluída em {new Date(simulado.dataFim!).toLocaleDateString('pt-BR', {
             day: '2-digit',
             month: '2-digit',

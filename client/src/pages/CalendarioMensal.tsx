@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Users, MapPin, Clock, ExternalLink } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -137,11 +138,11 @@ export default function CalendarioMensal() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <CalendarIcon className="h-8 w-8 text-primary" />
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <CalendarIcon className="h-5 w-5 text-primary" />
             Calendário Mensal
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Visualize os rodízios de residentes organizados por mês
           </p>
         </div>
@@ -155,7 +156,7 @@ export default function CalendarioMensal() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Ano de Residência</label>
+              <Label className="mb-2 block">Ano de Residência</Label>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
@@ -170,7 +171,7 @@ export default function CalendarioMensal() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Estágio/Local</label>
+              <Label className="mb-2 block">Estágio/Local</Label>
               <Select value={selectedStage} onValueChange={setSelectedStage}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
@@ -187,7 +188,7 @@ export default function CalendarioMensal() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Residente</label>
+              <Label className="mb-2 block">Residente</Label>
               <Select value={selectedResident} onValueChange={setSelectedResident}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />

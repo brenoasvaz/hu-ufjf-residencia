@@ -45,11 +45,11 @@ export default function Avaliacoes() {
   }
 
   return (
-    <div className="container max-w-6xl py-8 space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Avaliações</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight">Avaliações</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Pratique com questões de Ortopedia e acompanhe seu desempenho
         </p>
       </div>
@@ -123,7 +123,7 @@ export default function Avaliacoes() {
       {/* Available Templates */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Modelos de Prova Disponíveis</h2>
+          <h2 className="text-lg font-semibold">Modelos de Prova Disponíveis</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Selecione um modelo para gerar uma nova avaliação
           </p>
@@ -179,7 +179,7 @@ export default function Avaliacoes() {
       {/* My Exams History */}
       <div className="space-y-4">
         <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Minhas Avaliações</h2>
+          <h2 className="text-lg font-semibold">Minhas Avaliações</h2>
           <p className="text-sm text-muted-foreground mt-1">
             Histórico de avaliações realizadas e em andamento
           </p>

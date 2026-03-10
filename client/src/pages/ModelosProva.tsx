@@ -143,11 +143,11 @@ export default function ModelosProva() {
   }
 
   return (
-    <div className="container py-8">
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Modelos de Prova</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl font-bold tracking-tight">Modelos de Prova</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Crie e gerencie modelos de prova para geração de simulados
           </p>
         </div>

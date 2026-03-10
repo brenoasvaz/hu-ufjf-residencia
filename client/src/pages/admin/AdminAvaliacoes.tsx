@@ -100,11 +100,11 @@ export default function AdminAvaliacoes() {
   }
 
   return (
-    <div className="container max-w-6xl py-8 space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Gestão de Avaliações</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold tracking-tight">Gestão de Avaliações</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Gerencie modelos de prova, questões e acompanhe o desempenho dos residentes
         </p>
       </div>
@@ -169,7 +169,7 @@ export default function AdminAvaliacoes() {
         <TabsContent value="modelos" className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight">Modelos de Prova</h2>
+              <h2 className="text-lg font-semibold">Modelos de Prova</h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Gerencie os modelos de prova disponíveis para os residentes
               </p>
@@ -231,7 +231,7 @@ export default function AdminAvaliacoes() {
         {/* Avaliações */}
         <TabsContent value="avaliacoes" className="space-y-4">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Gerenciar Avaliações</h2>
+            <h2 className="text-lg font-semibold">Gerenciar Avaliações</h2>
             <p className="text-sm text-muted-foreground mt-1">
               Visualize e gerencie todas as avaliações realizadas pelos residentes
             </p>
@@ -320,7 +320,7 @@ export default function AdminAvaliacoes() {
         <TabsContent value="questoes" className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight">Banco de Questões</h2>
+              <h2 className="text-lg font-semibold">Banco de Questões</h2>
               <p className="text-sm text-muted-foreground mt-1">
                 {totalQuestoes?.total?.toLocaleString('pt-BR') ?? '...'} questões cadastradas em {especialidades?.length ?? '...'} especialidades
               </p>
@@ -469,7 +469,7 @@ export default function AdminAvaliacoes() {
         {/* Estatísticas */}
         <TabsContent value="estatisticas" className="space-y-4">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Estatísticas Gerais</h2>
+            <h2 className="text-lg font-semibold">Estatísticas Gerais</h2>
             <p className="text-sm text-muted-foreground mt-1">
               Acompanhe o desempenho geral dos residentes e estatísticas do sistema
             </p>
@@ -479,7 +479,7 @@ export default function AdminAvaliacoes() {
             <CardContent className="py-12 text-center space-y-4">
               <TrendingUp className="h-16 w-16 text-muted-foreground/50 mx-auto" />
               <div className="space-y-2">
-                <p className="text-lg font-medium">Dashboard Agregado</p>
+                <p className="text-sm font-medium">Dashboard Agregado</p>
                 <p className="text-sm text-muted-foreground">
                   Visualização de estatísticas consolidadas, ranking de residentes e análise de questões mais erradas
                 </p>

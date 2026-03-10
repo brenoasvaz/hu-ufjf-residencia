@@ -121,18 +121,20 @@ export default function GerenciarLinks() {
   };
 
   return (
-    <div className="container max-w-6xl py-8">
-      <div className="flex items-center gap-4 mb-6">
-        <Link href="/admin">
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-        </Link>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">Gerenciar Links Úteis</h1>
-          <p className="text-muted-foreground">
-            Adicione e organize links úteis para os residentes
-          </p>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link href="/admin">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Gerenciar Links Úteis</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Adicione e organize links úteis para os residentes
+            </p>
+          </div>
         </div>
         <Button onClick={handleNewClick}>
           <Plus className="mr-2 h-4 w-4" />
@@ -150,7 +152,7 @@ export default function GerenciarLinks() {
             <div className="text-center space-y-4">
               <LinkIcon className="h-12 w-12 mx-auto text-muted-foreground" />
               <div>
-                <p className="text-lg font-medium">Nenhum link cadastrado</p>
+                <p className="text-sm font-medium">Nenhum link cadastrado</p>
                 <p className="text-sm text-muted-foreground">
                   Clique em "Novo Link" para adicionar o primeiro link útil
                 </p>
@@ -166,7 +168,7 @@ export default function GerenciarLinks() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-2">
                     <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold">{link.titulo}</h3>
+                      <h3 className="text-base font-semibold">{link.titulo}</h3>
                       {link.ativo === 0 && (
                         <span className="inline-flex items-center px-2 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-medium">
                           Inativo

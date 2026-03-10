@@ -90,11 +90,11 @@ export default function Admin() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-          <Settings className="h-8 w-8 text-primary" />
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <Settings className="h-5 w-5 text-primary" />
           Painel Administrativo
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-sm text-muted-foreground mt-1">
           Gerencie todos os aspectos do sistema de residência
         </p>
       </div>
@@ -125,7 +125,7 @@ export default function Admin() {
 
       {/* Admin Actions */}
       <div>
-        <h2 className="text-2xl font-semibold mb-4">Ações Administrativas</h2>
+        <h2 className="text-lg font-semibold mb-4">Ações Administrativas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {adminActions.map((action) => {
             const Icon = action.icon;

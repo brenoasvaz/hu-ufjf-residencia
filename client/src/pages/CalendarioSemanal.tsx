@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CalendarDays, Clock, MapPin, Info } from "lucide-react";
+import { Label } from "@/components/ui/label";
 
 const DIAS_SEMANA = [
   { index: 1, nome: "Segunda", abrev: "Seg" },
@@ -167,11 +168,11 @@ export default function CalendarioSemanal() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <CalendarDays className="h-8 w-8 text-primary" />
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-primary" />
             Escala Semanal
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Visualize todas as atividades da semana por horário e dia
           </p>
         </div>
@@ -185,7 +186,7 @@ export default function CalendarioSemanal() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Ano de Residência</label>
+              <Label className="mb-2 block">Ano de Residência</Label>
               <Select value={selectedYear} onValueChange={(value) => {
                 setSelectedYear(value);
                 // Auto-selecionar primeiro bloco do ano
@@ -205,7 +206,7 @@ export default function CalendarioSemanal() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Bloco / Estágio</label>
+              <Label className="mb-2 block">Bloco / Estágio</Label>
               <Select value={selectedBloco} onValueChange={setSelectedBloco}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
@@ -236,7 +237,7 @@ export default function CalendarioSemanal() {
 
       {/* Título do Bloco */}
       <div className="text-center py-2">
-        <h2 className="text-xl font-semibold text-primary">{getBlocoTitle()}</h2>
+        <h2 className="text-lg font-semibold text-primary">{getBlocoTitle()}</h2>
         {selectedYear !== "all" && (
           <p className="text-muted-foreground">{selectedYear}</p>
         )}

@@ -41,52 +41,47 @@ export default function Home() {
   ];
 
   return (
-    <div className="space-y-12">
-      {/* Hero Section */}
-      <section className="text-center space-y-6 py-12">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-primary/10 mb-4">
-          <Calendar className="w-10 h-10 text-primary" />
-        </div>
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+    <div className="space-y-6">
+      {/* Cabeçalho da página */}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">
           HU UFJF Residência Médica Ortopedia e Traumatologia
         </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+        <p className="text-sm text-muted-foreground mt-1">
           Sistema de gerenciamento de rodízios e cronogramas para o Serviço de Ortopedia e
           Traumatologia
         </p>
+      </div>
 
-        {!isAuthenticated ? (
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-            <Button size="lg" asChild>
-              <a href="/login">
-                Fazer Login
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </a>
-            </Button>
-          </div>
-        ) : (
-          <div className="pt-4">
-            <p className="text-lg">
-              Bem-vindo, <span className="font-semibold">{user?.name}</span>!
-            </p>
-            <p className="text-sm text-muted-foreground">
-              {user?.role === "admin" ? "Administrador" : "Visualizador"}
-            </p>
-          </div>
-        )}
-      </section>
+      {/* Boas-vindas / CTA de login */}
+      {!isAuthenticated ? (
+        <div className="flex flex-col sm:flex-row gap-4 items-start">
+          <Button size="default" asChild>
+            <a href="/login">
+              Fazer Login
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </a>
+          </Button>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">
+          Bem-vindo, <span className="font-semibold text-foreground">{user?.name}</span>
+          {" — "}
+          {user?.role === "admin" ? "Administrador" : "Visualizador"}
+        </p>
+      )}
 
-      {/* Features Grid */}
+      {/* Grade de funcionalidades */}
       {isAuthenticated && (
-        <section className="space-y-6">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold">Funcionalidades</h2>
-            <p className="text-muted-foreground mt-2">
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold">Funcionalidades</h2>
+            <p className="text-sm text-muted-foreground mt-1">
               Acesse os recursos disponíveis na plataforma
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {features
               .filter((feature) => !feature.adminOnly || user?.role === "admin")
               .map((feature) => {
@@ -115,12 +110,12 @@ export default function Home() {
         </section>
       )}
 
-      {/* Info Section */}
-      <section className="bg-muted/50 rounded-lg p-8 space-y-4">
-        <h3 className="text-2xl font-semibold">Sobre o Sistema</h3>
-        <div className="grid md:grid-cols-2 gap-6 text-sm text-muted-foreground">
+      {/* Seção informativa */}
+      <section className="bg-muted/50 rounded-lg p-6 space-y-4">
+        <h2 className="text-lg font-semibold">Sobre o Sistema</h2>
+        <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>
-            <h4 className="font-medium text-foreground mb-2">Calendário Mensal</h4>
+            <h3 className="font-medium text-foreground mb-1">Calendário Mensal</h3>
             <p>
               Visualize os rodízios dos residentes organizados por mês, com informações sobre
               estágios, duplas e locais de atuação. Filtre por residente, ano (R1/R2/R3) ou
@@ -128,21 +123,21 @@ export default function Home() {
             </p>
           </div>
           <div>
-            <h4 className="font-medium text-foreground mb-2">Calendário Semanal</h4>
+            <h3 className="font-medium text-foreground mb-1">Calendário Semanal</h3>
             <p>
               Acompanhe as atividades semanais (aulas, reuniões clínicas, ambulatórios) com
               horários detalhados. Filtre por ano de residência e bloco de atuação.
             </p>
           </div>
           <div>
-            <h4 className="font-medium text-foreground mb-2">Gerenciamento de Residentes</h4>
+            <h3 className="font-medium text-foreground mb-1">Gerenciamento de Residentes</h3>
             <p>
               Cadastre e gerencie informações dos residentes, incluindo nome, apelido, ano de
               residência e status. Visualize o histórico de rodízios de cada residente.
             </p>
           </div>
           <div>
-            <h4 className="font-medium text-foreground mb-2">Importação de Dados</h4>
+            <h3 className="font-medium text-foreground mb-1">Importação de Dados</h3>
             <p>
               Importe cronogramas e escalas diretamente de arquivos PDF com extração automática de
               dados. Confira e valide as informações antes de salvar no sistema.
