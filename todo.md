@@ -333,3 +333,10 @@
 - [x] Investigar e corrigir problema de visualização de questões na gestão de avaliações
 - [x] Implementar listagem paginada com busca e filtro por especialidade
 - [x] Adicionar endpoint tRPC de contagem dinâmica e listagem de questões
+
+
+## Melhoria - Visualização de Alternativas nas Questões
+- [x] Implementar expansão de alternativas ao clicar em questão na listagem
+- [x] Buscar alternativas via endpoint tRPC ao expandir
+- [x] Exibir alternativas com indicação visual da correta (apenas para admin)
+- [x] Testar expansão/colapso das questões

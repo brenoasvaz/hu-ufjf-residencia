@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ClipboardCheck, Users, TrendingUp, FileText, Settings, Trash2, Download, Search, ChevronLeft, ChevronRight, Image } from "lucide-react";
+import { ClipboardCheck, Users, TrendingUp, FileText, Settings, Trash2, Download, Search, ChevronLeft, ChevronRight, Image, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
@@ -30,6 +30,7 @@ export default function AdminAvaliacoes() {
   const [questoesPage, setQuestoesPage] = useState(1);
   const [questoesBusca, setQuestoesBusca] = useState("");
   const [questoesEspecialidade, setQuestoesEspecialidade] = useState<number | undefined>(undefined);
+  const [expandedQuestaoId, setExpandedQuestaoId] = useState<number | null>(null);
 
   const { data: modelos, isLoading: loadingModelos } = trpc.avaliacoes.modelos.list.useQuery();
   const { data: allSimulados, isLoading: loadingSimulados, refetch: refetchSimulados } = trpc.avaliacoes.simulados.list.useQuery();
@@ -43,6 +44,12 @@ export default function AdminAvaliacoes() {
   });
   const deleteMutation = trpc.avaliacoes.simulados.delete.useMutation();
   const gerarPDFMutation = trpc.avaliacoes.simulados.gerarPDF.useMutation();
+
+  // Buscar alternativas da questão expandida
+  const { data: questaoExpandida, isLoading: loadingAlternativas } = trpc.avaliacoes.questoes.getWithAlternativas.useQuery(
+    { questaoId: expandedQuestaoId! },
+    { enabled: expandedQuestaoId !== null }
+  );
 
   const especialidadesMap = useMemo(() => {
     if (!especialidades) return {};
@@ -359,7 +366,11 @@ export default function AdminAvaliacoes() {
           ) : questoesData && questoesData.questoes.length > 0 ? (
             <div className="space-y-2">
               {questoesData.questoes.map((q: any) => (
-                <Card key={q.id} className="hover:shadow-sm transition-shadow">
+                <Card
+                  key={q.id}
+                  className={`transition-shadow cursor-pointer ${expandedQuestaoId === q.id ? 'ring-1 ring-primary shadow-md' : 'hover:shadow-sm'}`}
+                  onClick={() => setExpandedQuestaoId(expandedQuestaoId === q.id ? null : q.id)}
+                >
                   <CardContent className="py-3 px-4">
                     <div className="flex items-start gap-3">
                       <div className="flex-1 min-w-0">
@@ -375,10 +386,49 @@ export default function AdminAvaliacoes() {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm leading-relaxed line-clamp-2">{q.enunciado}</p>
+                        <p className={`text-sm leading-relaxed ${expandedQuestaoId === q.id ? '' : 'line-clamp-2'}`}>{q.enunciado}</p>
                       </div>
-                      <span className="text-xs text-muted-foreground shrink-0">#{q.id}</span>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs text-muted-foreground">#{q.id}</span>
+                        {expandedQuestaoId === q.id
+                          ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </div>
                     </div>
+
+                    {/* Painel de alternativas expandido */}
+                    {expandedQuestaoId === q.id && (
+                      <div className="mt-3 pt-3 border-t space-y-2" onClick={e => e.stopPropagation()}>
+                        {loadingAlternativas ? (
+                          <p className="text-xs text-muted-foreground text-center py-2">Carregando alternativas...</p>
+                        ) : questaoExpandida ? (
+                          <>
+                            {q.imageUrl && (
+                              <div className="mb-3">
+                                <img src={q.imageUrl} alt="Imagem da questão" className="max-h-48 rounded border object-contain" />
+                              </div>
+                            )}
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Alternativas</p>
+                            {(questaoExpandida as any).alternativas?.map((alt: any, idx: number) => (
+                              <div
+                                key={alt.id}
+                                className={`flex items-start gap-2 rounded-md px-3 py-2 text-sm ${
+                                  alt.isCorreta
+                                    ? 'bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800'
+                                    : 'bg-muted/40'
+                                }`}
+                              >
+                                <span className="font-semibold shrink-0 w-5">{String.fromCharCode(65 + idx)})</span>
+                                <span className="flex-1">{alt.texto}</span>
+                                {alt.isCorreta && (
+                                  <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0 mt-0.5" />
+                                )}
+                              </div>
+                            ))}
+                          </>
+                        ) : null}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
