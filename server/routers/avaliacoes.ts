@@ -8,7 +8,7 @@ import { z } from "zod";
 import * as avaliacoesDb from "../db-helpers/avaliacoes";
 import { getDb } from "../db";
 import { simulados, simuladoQuestoes, respostasUsuario, users, questoes } from "../../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { gerarPDFAvaliacao } from "../pdf-generator";
 import { storagePut } from "../storage";
 
@@ -408,54 +408,92 @@ export const avaliacoesRouter = router({
         })),
       }))
       .mutation(async ({ input, ctx }) => {
-        // Verificar acesso
-        const simulado = await avaliacoesDb.getSimuladoPorId(input.simuladoId);
-        if (!simulado) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'Simulado não encontrado' });
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+        // Pré-carregar todas as alternativas corretas em um único query (evita N+1)
+        const questaoIds = input.respostas
+          .filter(r => r.alternativaId !== null)
+          .map(r => r.questaoId);
+
+        const alternativasCorretas: Map<number, number> = new Map();
+        if (questaoIds.length > 0) {
+          const { alternativas } = await import('../../drizzle/schema');
+          const { and: andOp } = await import('drizzle-orm');
+          // 1 query: buscar apenas alternativas corretas das questões respondidas
+          const altsCorretas = await db
+            .select({ questaoId: alternativas.questaoId, id: alternativas.id })
+            .from(alternativas)
+            .where(
+              andOp(
+                inArray(alternativas.questaoId, questaoIds),
+                eq(alternativas.isCorreta, 1)
+              )
+            );
+          for (const alt of altsCorretas) {
+            alternativasCorretas.set(alt.questaoId, alt.id);
+          }
         }
-        if (simulado.userId !== ctx.user.id) {
-          throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso negado' });
-        }
-        if (simulado.concluido === 1) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Simulado já foi concluído' });
-        }
-        
-        // Salvar respostas e calcular acertos
-        let totalAcertos = 0;
-        const agora = new Date();
-        
-        for (const resposta of input.respostas) {
-          let isCorreta = 0;
-          
-          if (resposta.alternativaId) {
-            // Buscar questão com alternativas para verificar se está correta
-            const questao = await avaliacoesDb.getQuestaoComAlternativas(resposta.questaoId);
-            if (questao) {
-              const alternativaCorreta = questao.alternativas.find(a => a.isCorreta === 1);
-              if (alternativaCorreta && alternativaCorreta.id === resposta.alternativaId) {
+
+        // Toda a operação dentro de uma única transação para evitar race condition
+        const resultado = await db.transaction(async (tx) => {
+          // 1. Re-verificar estado dentro da transação (leitura consistente)
+          const [simuladoAtual] = await tx
+            .select()
+            .from(simulados)
+            .where(eq(simulados.id, input.simuladoId))
+            .limit(1);
+
+          if (!simuladoAtual) {
+            throw new TRPCError({ code: 'NOT_FOUND', message: 'Simulado não encontrado' });
+          }
+          if (simuladoAtual.userId !== ctx.user.id) {
+            throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso negado' });
+          }
+          if (simuladoAtual.concluido === 1) {
+            throw new TRPCError({ code: 'BAD_REQUEST', message: 'Simulado já foi concluído' });
+          }
+
+          // 2. Calcular acertos e preparar registros de resposta
+          let totalAcertos = 0;
+          const agora = new Date();
+          const registros = input.respostas.map(resposta => {
+            let isCorreta = 0;
+            if (resposta.alternativaId !== null) {
+              const corretaId = alternativasCorretas.get(resposta.questaoId);
+              if (corretaId !== undefined && corretaId === resposta.alternativaId) {
                 isCorreta = 1;
                 totalAcertos++;
               }
             }
-          }
-          
-          await avaliacoesDb.salvarResposta({
-            simuladoId: input.simuladoId,
-            questaoId: resposta.questaoId,
-            alternativaId: resposta.alternativaId,
-            isCorreta,
-            respondidaEm: agora,
+            return {
+              simuladoId: input.simuladoId,
+              questaoId: resposta.questaoId,
+              alternativaId: resposta.alternativaId,
+              isCorreta,
+              respondidaEm: agora,
+            };
           });
-        }
-        
-        // Finalizar simulado
-        await avaliacoesDb.finalizarSimulado(input.simuladoId, totalAcertos);
-        
-        return { 
-          totalAcertos, 
-          totalQuestoes: simulado.totalQuestoes,
-          percentual: Math.round((totalAcertos / simulado.totalQuestoes) * 100),
-        };
+
+          // 3. Inserir todas as respostas em batch (uma única query)
+          if (registros.length > 0) {
+            await tx.insert(respostasUsuario).values(registros);
+          }
+
+          // 4. Finalizar simulado atomicamente
+          await tx
+            .update(simulados)
+            .set({ dataFim: agora, totalAcertos, concluido: 1 })
+            .where(eq(simulados.id, input.simuladoId));
+
+          return {
+            totalAcertos,
+            totalQuestoes: simuladoAtual.totalQuestoes,
+            percentual: Math.round((totalAcertos / simuladoAtual.totalQuestoes) * 100),
+          };
+        });
+
+        return resultado;
       }),
 
     // Admin: Deletar simulado

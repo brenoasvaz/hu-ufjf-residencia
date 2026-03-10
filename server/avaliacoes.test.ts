@@ -418,3 +418,146 @@ describe("Avaliações - Especialidades", () => {
     expect(primeiraEsp).toHaveProperty("nome");
   });
 });
+
+describe("Avaliações - Atomicidade da Transação (Race Condition)", () => {
+  let userContext: any;
+  let adminContext: any;
+
+  beforeAll(async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    const regularUser = await db.select().from(users).where(eq(users.role, "user")).limit(1);
+    const adminUser = await db.select().from(users).where(eq(users.role, "admin")).limit(1);
+
+    if (!regularUser[0] || !adminUser[0]) {
+      throw new Error("Test users not found");
+    }
+
+    userContext = {
+      user: {
+        id: regularUser[0].id,
+        email: regularUser[0].email,
+        name: regularUser[0].name,
+        role: regularUser[0].role,
+      },
+      req: {} as any,
+      res: {} as any,
+    };
+
+    adminContext = {
+      user: {
+        id: adminUser[0].id,
+        email: adminUser[0].email,
+        name: adminUser[0].name,
+        role: adminUser[0].role,
+      },
+      req: {} as any,
+      res: {} as any,
+    };
+  });
+
+  it("Submissão duplicada deve ser rejeitada (proteção contra race condition)", async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    // Criar um simulado para testar
+    const modelos = await db.select().from(modelosProva).where(eq(modelosProva.ativo, 1)).limit(1);
+    if (!modelos[0]) {
+      console.log("Nenhum modelo ativo encontrado, pulando teste");
+      return;
+    }
+
+    const caller = appRouter.createCaller(userContext);
+    const gerado = await caller.avaliacoes.simulados.gerar({ modeloId: modelos[0].id });
+    const simuladoId = gerado.simuladoId;
+
+    // Buscar questões do simulado
+    const questoes = await caller.avaliacoes.simulados.getQuestoes({ simuladoId });
+    if (questoes.length === 0) {
+      console.log("Nenhuma questão encontrada, pulando teste");
+      return;
+    }
+
+    const respostas = questoes.map((q: any) => ({
+      questaoId: q.questaoId,
+      alternativaId: q.alternativas[0]?.id || null,
+    }));
+
+    // Primeira submissão deve funcionar
+    const resultado1 = await caller.avaliacoes.simulados.submeter({ simuladoId, respostas });
+    expect(resultado1).toHaveProperty("totalAcertos");
+    expect(resultado1).toHaveProperty("percentual");
+
+    // Segunda submissão do mesmo simulado deve ser rejeitada (já concluído)
+    await expect(
+      caller.avaliacoes.simulados.submeter({ simuladoId, respostas })
+    ).rejects.toThrow("já foi concluído");
+
+    // Verificar que totalAcertos não foi duplicado (integridade dos dados)
+    const [simuladoFinal] = await db
+      .select()
+      .from(simulados)
+      .where(eq(simulados.id, simuladoId))
+      .limit(1);
+
+    expect(simuladoFinal.concluido).toBe(1);
+    expect(simuladoFinal.totalAcertos).toBe(resultado1.totalAcertos);
+
+    // Limpar
+    await db.delete(simulados).where(eq(simulados.id, simuladoId));
+  });
+
+  it("Dois requests simultâneos não devem duplicar totalAcertos", async () => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+
+    const modelos = await db.select().from(modelosProva).where(eq(modelosProva.ativo, 1)).limit(1);
+    if (!modelos[0]) {
+      console.log("Nenhum modelo ativo encontrado, pulando teste");
+      return;
+    }
+
+    const caller = appRouter.createCaller(userContext);
+    const gerado = await caller.avaliacoes.simulados.gerar({ modeloId: modelos[0].id });
+    const simuladoId = gerado.simuladoId;
+
+    const questoes = await caller.avaliacoes.simulados.getQuestoes({ simuladoId });
+    if (questoes.length === 0) {
+      console.log("Nenhuma questão encontrada, pulando teste");
+      return;
+    }
+
+    const respostas = questoes.map((q: any) => ({
+      questaoId: q.questaoId,
+      alternativaId: q.alternativas[0]?.id || null,
+    }));
+
+    // Disparar dois requests simultâneos (simula race condition)
+    const [res1, res2] = await Promise.allSettled([
+      caller.avaliacoes.simulados.submeter({ simuladoId, respostas }),
+      caller.avaliacoes.simulados.submeter({ simuladoId, respostas }),
+    ]);
+
+    // Exatamente um deve ter sucesso e o outro deve falhar
+    const sucessos = [res1, res2].filter(r => r.status === "fulfilled");
+    const falhas = [res1, res2].filter(r => r.status === "rejected");
+
+    expect(sucessos.length).toBe(1);
+    expect(falhas.length).toBe(1);
+
+    // Verificar que totalAcertos não foi duplicado
+    const [simuladoFinal] = await db
+      .select()
+      .from(simulados)
+      .where(eq(simulados.id, simuladoId))
+      .limit(1);
+
+    const resultadoSucesso = (sucessos[0] as PromiseFulfilledResult<any>).value;
+    expect(simuladoFinal.totalAcertos).toBe(resultadoSucesso.totalAcertos);
+    expect(simuladoFinal.concluido).toBe(1);
+
+    // Limpar
+    await db.delete(simulados).where(eq(simulados.id, simuladoId));
+  });
+});

@@ -340,3 +340,9 @@
 - [x] Buscar alternativas via endpoint tRPC ao expandir
 - [x] Exibir alternativas com indicação visual da correta (apenas para admin)
 - [x] Testar expansão/colapso das questões
+
+
+## Correção de Segurança - Race Condition no Endpoint Submeter
+- [x] Envolver operação de submissão em transação Drizzle ORM (verificação + respostas + finalização)
+- [x] Prevenir gravações conflitantes de totalAcertos em requests simultâneos
+- [x] Testar atomicidade da transação
