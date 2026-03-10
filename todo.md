@@ -316,3 +316,13 @@
 - [x] Adicionar mensagem na tela de login para usuários pendentes
 - [x] Implementar testes para fluxo de aprovação
 - [x] Testar fluxo completo de cadastro → aprovação → acesso
+
+
+## Atualização - Banco de Questões Revisado e Imagens
+- [x] Analisar planilha revisada (nova coluna de imagens, redistribuição de áreas)
+- [x] Adicionar campo imageUrl ao schema de questões e migrar banco
+- [x] Criar script para atualizar banco com dados revisados da planilha
+- [x] Implementar endpoint tRPC para upload de imagem em questão
+- [x] Criar interface admin para adicionar/editar imagem no enunciado
+- [x] Exibir imagens nas questões durante a avaliação
+- [x] Testar funcionalidade completa

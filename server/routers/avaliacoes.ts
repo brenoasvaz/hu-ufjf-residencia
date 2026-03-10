@@ -7,9 +7,10 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as avaliacoesDb from "../db-helpers/avaliacoes";
 import { getDb } from "../db";
-import { simulados, simuladoQuestoes, respostasUsuario, users } from "../../drizzle/schema";
+import { simulados, simuladoQuestoes, respostasUsuario, users, questoes } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { gerarPDFAvaliacao } from "../pdf-generator";
+import { storagePut } from "../storage";
 
 // Helper para procedures que requerem papel ADMIN
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -44,6 +45,26 @@ export const avaliacoesRouter = router({
         return await avaliacoesDb.getQuestoesPorEspecialidade(input.especialidadeId);
       }),
     
+    // Listar questões que requerem imagem (admin)
+    listComImagem: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+      const rows = await db
+        .select({
+          id: questoes.id,
+          enunciado: questoes.enunciado,
+          fonte: questoes.fonte,
+          ano: questoes.ano,
+          especialidadeId: questoes.especialidadeId,
+          temImagem: questoes.temImagem,
+          imageUrl: questoes.imageUrl,
+        })
+        .from(questoes)
+        .where(eq(questoes.temImagem, 1))
+        .orderBy(questoes.especialidadeId);
+      return rows;
+    }),
+
     getWithAlternativas: adminProcedure
       .input(z.object({ questaoId: z.number() }))
       .query(async ({ input }) => {
@@ -52,6 +73,67 @@ export const avaliacoesRouter = router({
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Questão não encontrada' });
         }
         return questao;
+      }),
+
+    // Upload de imagem para questão (admin apenas)
+    uploadImagem: adminProcedure
+      .input(z.object({
+        questaoId: z.number(),
+        imageBase64: z.string(), // base64 da imagem
+        mimeType: z.string().default('image/jpeg'),
+        fileName: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // Verificar se questão existe e requer imagem
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+        const [questao] = await db
+          .select()
+          .from(questoes)
+          .where(eq(questoes.id, input.questaoId))
+          .limit(1);
+
+        if (!questao) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Questão não encontrada' });
+        }
+
+        // Converter base64 para buffer
+        const base64Data = input.imageBase64.replace(/^data:[^;]+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        // Verificar tamanho (máx 5MB)
+        if (buffer.length > 5 * 1024 * 1024) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Imagem muito grande. Máximo 5MB.' });
+        }
+
+        // Gerar key única no S3
+        const ext = input.mimeType.split('/')[1] || 'jpg';
+        const randomSuffix = Math.random().toString(36).substring(2, 10);
+        const fileKey = `questoes-imagens/questao-${input.questaoId}-${randomSuffix}.${ext}`;
+
+        // Upload para S3
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+
+        // Atualizar questão com URL da imagem
+        await db
+          .update(questoes)
+          .set({ imageUrl: url, imageKey: fileKey })
+          .where(eq(questoes.id, input.questaoId));
+
+        return { success: true, imageUrl: url };
+      }),
+
+    // Remover imagem de questão (admin apenas)
+    removeImagem: adminProcedure
+      .input(z.object({ questaoId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+        await db
+          .update(questoes)
+          .set({ imageUrl: null, imageKey: null })
+          .where(eq(questoes.id, input.questaoId));
+        return { success: true };
       }),
   }),
 
@@ -224,6 +306,7 @@ export const avaliacoesRouter = router({
         const questoesComAlternativas = await Promise.all(
           questoes.map(async (q) => {
             const questaoCompleta = await avaliacoesDb.getQuestaoComAlternativas(q.questaoId);
+            if (!questaoCompleta) return { ...q, alternativas: [] };
             
             // Se não for admin, remover informação de alternativa correta
             if (ctx.user.role !== 'admin') {

@@ -22,6 +22,7 @@ import ModelosProva from "./pages/ModelosProva";
 import GerenciarUsuarios from "./pages/admin/GerenciarUsuarios";
 import LinksUteis from "./pages/LinksUteis";
 import GerenciarLinks from "./pages/admin/GerenciarLinks";
+import GerenciarImagensQuestoes from "./pages/admin/GerenciarImagensQuestoes";
 import MainLayout from "./components/MainLayout";
 
 function Router() {
@@ -51,6 +52,7 @@ function Router() {
             <Route path="/admin/usuarios" component={GerenciarUsuarios} />
             <Route path="/links-uteis" component={LinksUteis} />
             <Route path="/admin/links" component={GerenciarLinks} />
+            <Route path="/admin/questoes/imagens" component={GerenciarImagensQuestoes} />
             <Route path="/404" component={NotFound} />
             <Route component={NotFound} />
           </Switch>

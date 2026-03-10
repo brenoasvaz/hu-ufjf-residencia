@@ -220,6 +220,17 @@ export default function ExecucaoSimulado() {
             <p className="text-base leading-relaxed whitespace-pre-wrap">{currentQuestion.enunciado}</p>
           </div>
 
+          {/* Imagem da questão (quando houver) */}
+          {(currentQuestion as any).imageUrl && (
+            <div className="flex justify-center">
+              <img
+                src={(currentQuestion as any).imageUrl}
+                alt="Imagem da questão"
+                className="max-w-full max-h-96 rounded-lg border shadow-sm object-contain"
+              />
+            </div>
+          )}
+
           <RadioGroup
             value={answers[currentQuestion.questaoId]?.toString() || ""}
             onValueChange={(value) => {

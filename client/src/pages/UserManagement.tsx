@@ -21,13 +21,12 @@ type UserStatus = 'pending' | 'approved' | 'rejected';
 
 interface User {
   id: number;
+  openId: string | null;
   email: string;
   name: string | null;
   role: string;
   accountStatus: UserStatus;
-  loginMethod: string | null;
   createdAt: Date;
-  lastSignedIn: Date;
 }
 
 export default function UserManagement() {
@@ -40,7 +39,7 @@ export default function UserManagement() {
 
   const utils = trpc.useUtils();
   
-  const { data: users, isLoading } = trpc.users.list.useQuery({ status: activeTab });
+  const { data: users, isLoading } = trpc.users.list.useQuery();
   const { data: pendingCount } = trpc.auth.pendingCount.useQuery();
 
   const approveMutation = trpc.users.approve.useMutation({
@@ -186,7 +185,7 @@ export default function UserManagement() {
                         <p className="text-sm text-muted-foreground">{user.email}</p>
                         <div className="flex gap-4 text-xs text-muted-foreground mt-2">
                           <span>Cadastro: {formatDate(user.createdAt)}</span>
-                          <span>Método: {user.loginMethod || 'interno'}</span>
+                          <span>Papel: {user.role === 'admin' ? 'Administrador' : 'Residente'}</span>
                         </div>
                       </div>
                       

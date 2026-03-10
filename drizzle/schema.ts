@@ -214,8 +214,12 @@ export const questoes = mysqlTable("questoes", {
   fonte: varchar("fonte", { length: 64 }), // 'TARO' | 'TEOT' | 'SBOT 1000'
   ano: int("ano"),
   subcategoria: varchar("subcategoria", { length: 255 }),
+  temImagem: int("tem_imagem").default(0).notNull(), // 1 = requer imagem, 0 = sem imagem
+  imageUrl: text("image_url"), // URL da imagem no S3 (preenchida pelo admin antes da prova)
+  imageKey: varchar("image_key", { length: 500 }), // Key S3 para gerenciamento
   ativo: int("ativo").default(1).notNull(), // 1 = ativo, 0 = inativo
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Questao = typeof questoes.$inferSelect;

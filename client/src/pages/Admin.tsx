@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, Users, Calendar, CalendarDays, FileText, MapPin, ArrowRight, Link as LinkIcon } from "lucide-react";
+import { Settings, Users, Calendar, CalendarDays, FileText, MapPin, ArrowRight, Link as LinkIcon, Image } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export default function Admin() {
@@ -71,6 +71,12 @@ export default function Admin() {
       description: "Adicionar, editar ou remover links úteis para residentes",
       icon: LinkIcon,
       href: "/links-uteis",
+    },
+    {
+      title: "Imagens de Questões",
+      description: "Adicionar e gerenciar imagens para questões que requerem ilustração",
+      icon: Image,
+      href: "/admin/questoes/imagens",
     },
     {
       title: "Gerenciar Estágios",
