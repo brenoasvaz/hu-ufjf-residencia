@@ -406,3 +406,7 @@
 
 ## Melhorias na Execução do Simulado
 - [x] ExecucaoSimulado.tsx: exibir imageUrl da questão entre enunciado e alternativas quando preenchido
+
+## Edição de Questões - Especialidade
+- [x] Backend: adicionar especialidadeId no input da procedure editar
+- [x] Frontend: adicionar Select de especialidades no modal de edição de questões

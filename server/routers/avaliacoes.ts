@@ -200,6 +200,7 @@ export const avaliacoesRouter = router({
         fonte: z.string().optional(),
         ano: z.number().optional(),
         subcategoria: z.string().optional(),
+        especialidadeId: z.number().optional(),
         alternativas: z.array(z.object({
           id: z.number(),
           texto: z.string().min(1, 'Texto da alternativa não pode ser vazio'),
@@ -216,7 +217,13 @@ export const avaliacoesRouter = router({
           throw new TRPCError({ code: 'BAD_REQUEST', message: 'Exatamente uma alternativa deve ser marcada como correta.' });
         }
 
-        // Atualizar enunciado
+        // Verificar que especialidade existe (se informada)
+        if (input.especialidadeId !== undefined) {
+          const [esp] = await db.select({ id: especialidades.id }).from(especialidades).where(eq(especialidades.id, input.especialidadeId)).limit(1);
+          if (!esp) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Especialidade não encontrada.' });
+        }
+
+        // Atualizar enunciado e metadados
         await db
           .update(questoes)
           .set({
@@ -224,6 +231,7 @@ export const avaliacoesRouter = router({
             ...(input.fonte !== undefined && { fonte: input.fonte }),
             ...(input.ano !== undefined && { ano: input.ano }),
             ...(input.subcategoria !== undefined && { subcategoria: input.subcategoria }),
+            ...(input.especialidadeId !== undefined && { especialidadeId: input.especialidadeId }),
           })
           .where(eq(questoes.id, input.questaoId));
 

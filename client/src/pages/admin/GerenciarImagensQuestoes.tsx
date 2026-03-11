@@ -62,6 +62,7 @@ export default function GerenciarImagensQuestoes() {
   const [editEnunciado, setEditEnunciado] = useState("");
   const [editFonte, setEditFonte] = useState("");
   const [editAno, setEditAno] = useState("");
+  const [editEspecialidadeId, setEditEspecialidadeId] = useState<string>("");
   const [editAlternativas, setEditAlternativas] = useState<any[]>([]);
 
   // Queries
@@ -77,6 +78,7 @@ export default function GerenciarImagensQuestoes() {
   const { data: questoesData, isLoading, refetch } = trpc.avaliacoes.questoes.listComImagem.useQuery(queryInput);
   const { data: fontes } = trpc.avaliacoes.questoes.listFontes.useQuery();
   const { data: anos } = trpc.avaliacoes.questoes.listAnos.useQuery();
+  const { data: especialidades } = trpc.avaliacoes.especialidades.list.useQuery();
 
   // Queries separadas para os totais reais dos cards (ignoram o filtro de statusImagem)
   const baseFilters = {
@@ -187,6 +189,7 @@ export default function GerenciarImagensQuestoes() {
     setEditEnunciado(questao.enunciado);
     setEditFonte(questao.fonte || "");
     setEditAno(questao.ano ? String(questao.ano) : "");
+    setEditEspecialidadeId(questao.especialidadeId ? String(questao.especialidadeId) : "");
     setEditAlternativas([]);
     setEditDialogOpen(true);
   };
@@ -199,6 +202,7 @@ export default function GerenciarImagensQuestoes() {
       enunciado: editEnunciado,
       fonte: editFonte || undefined,
       ano: editAno ? parseInt(editAno) : undefined,
+      especialidadeId: editEspecialidadeId ? parseInt(editEspecialidadeId) : undefined,
       alternativas: alts.map((a: any) => ({
         id: a.id,
         texto: a.texto,
@@ -539,6 +543,26 @@ export default function GerenciarImagensQuestoes() {
                   placeholder="Ex.: 2023"
                 />
               </div>
+            </div>
+
+            {/* Especialidade */}
+            <div className="space-y-2">
+              <Label>Especialidade / Área de Conhecimento</Label>
+              <Select
+                value={editEspecialidadeId}
+                onValueChange={setEditEspecialidadeId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a especialidade..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {(especialidades ?? []).map((esp: any) => (
+                    <SelectItem key={esp.id} value={String(esp.id)}>
+                      {esp.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Enunciado */}
