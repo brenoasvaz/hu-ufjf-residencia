@@ -135,7 +135,11 @@ export const avaliacoesRouter = router({
         if (input?.especialidadeId) conditions.push(eq(questoes.especialidadeId, input.especialidadeId));
         if (input?.busca?.trim()) conditions.push(like(questoes.enunciado, `%${input.busca.trim()}%`));
         if (input?.statusImagem === 'com_imagem') conditions.push(isNotNull(questoes.imageUrl));
-        if (input?.statusImagem === 'sem_imagem') conditions.push(isNull(questoes.imageUrl));
+        // 'sem_imagem' = marcadas na planilha como precisando de imagem (temImagem=1) mas ainda sem arquivo enviado
+        if (input?.statusImagem === 'sem_imagem') {
+          conditions.push(eq(questoes.temImagem, 1));
+          conditions.push(isNull(questoes.imageUrl));
+        }
 
         const where = conditions.length > 1 ? and(...conditions) : conditions[0];
 

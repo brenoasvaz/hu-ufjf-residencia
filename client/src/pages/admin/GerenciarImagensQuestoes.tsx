@@ -292,8 +292,9 @@ export default function GerenciarImagensQuestoes() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Sem Imagem</p>
+                <p className="text-sm text-muted-foreground">Pendente de Imagem</p>
                 <p className="text-2xl font-bold text-orange-600">{totalSemImagem}</p>
+                <p className="text-xs text-muted-foreground mt-1">Marcadas na planilha, sem upload</p>
               </div>
               <AlertCircle className="h-10 w-10 text-orange-500" />
             </div>

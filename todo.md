@@ -414,3 +414,7 @@
 ## Filtro por Especialidade nas Questões
 - [x] Backend: adicionar especialidadeId no input de listComImagem
 - [x] Frontend: adicionar Select de especialidade nos filtros de GerenciarImagensQuestoes
+
+## Bug - Filtro "Sem Imagem"
+- [x] Backend: filtro sem_imagem deve usar temImagem=1 AND imageUrl IS NULL (não apenas imageUrl IS NULL)
+- [x] Frontend: card "Sem Imagem" deve ser renomeado para "Pendente de Imagem" e refletir a nova lógica
