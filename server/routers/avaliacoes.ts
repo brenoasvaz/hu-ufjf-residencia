@@ -113,11 +113,12 @@ export const avaliacoesRouter = router({
       }),
     
     // Listar questões para gerenciamento de imagens e edição (admin)
-    // Retorna TODAS as questões ativas, com filtros opcionais por fonte, ano e status de imagem
+    // Retorna TODAS as questões ativas, com filtros opcionais por fonte, ano, especialidade e status de imagem
     listComImagem: adminProcedure
       .input(z.object({
         fonte: z.string().optional(),
         ano: z.number().optional(),
+        especialidadeId: z.number().optional(),
         statusImagem: z.enum(['todas', 'com_imagem', 'sem_imagem']).default('todas'),
         busca: z.string().optional(),
         page: z.number().min(1).default(1),
@@ -131,6 +132,7 @@ export const avaliacoesRouter = router({
         const conditions: any[] = [eq(questoes.ativo, 1)];
         if (input?.fonte) conditions.push(eq(questoes.fonte, input.fonte));
         if (input?.ano) conditions.push(eq(questoes.ano, input.ano));
+        if (input?.especialidadeId) conditions.push(eq(questoes.especialidadeId, input.especialidadeId));
         if (input?.busca?.trim()) conditions.push(like(questoes.enunciado, `%${input.busca.trim()}%`));
         if (input?.statusImagem === 'com_imagem') conditions.push(isNotNull(questoes.imageUrl));
         if (input?.statusImagem === 'sem_imagem') conditions.push(isNull(questoes.imageUrl));

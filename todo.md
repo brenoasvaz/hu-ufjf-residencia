@@ -410,3 +410,7 @@
 ## Edição de Questões - Especialidade
 - [x] Backend: adicionar especialidadeId no input da procedure editar
 - [x] Frontend: adicionar Select de especialidades no modal de edição de questões
+
+## Filtro por Especialidade nas Questões
+- [x] Backend: adicionar especialidadeId no input de listComImagem
+- [x] Frontend: adicionar Select de especialidade nos filtros de GerenciarImagensQuestoes

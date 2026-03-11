@@ -44,6 +44,7 @@ export default function GerenciarImagensQuestoes() {
   const [busca, setBusca] = useState("");
   const [filtroFonte, setFiltroFonte] = useState<string>("todas");
   const [filtroAno, setFiltroAno] = useState<string>("todos");
+  const [filtroEspecialidade, setFiltroEspecialidade] = useState<string>("todas");
   const [filtroStatus, setFiltroStatus] = useState<"todas" | "com_imagem" | "sem_imagem">("todas");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
@@ -69,6 +70,7 @@ export default function GerenciarImagensQuestoes() {
   const queryInput = {
     fonte: filtroFonte !== "todas" ? filtroFonte : undefined,
     ano: filtroAno !== "todos" ? parseInt(filtroAno) : undefined,
+    especialidadeId: filtroEspecialidade !== "todas" ? parseInt(filtroEspecialidade) : undefined,
     statusImagem: filtroStatus,
     busca: busca || undefined,
     page,
@@ -84,6 +86,7 @@ export default function GerenciarImagensQuestoes() {
   const baseFilters = {
     fonte: filtroFonte !== "todas" ? filtroFonte : undefined,
     ano: filtroAno !== "todos" ? parseInt(filtroAno) : undefined,
+    especialidadeId: filtroEspecialidade !== "todas" ? parseInt(filtroEspecialidade) : undefined,
     busca: busca || undefined,
     pageSize: 1,
     page: 1,
@@ -334,6 +337,19 @@ export default function GerenciarImagensQuestoes() {
             <SelectItem value="todos">Todos os anos</SelectItem>
             {(anos ?? []).map((a: number) => (
               <SelectItem key={a} value={String(a)}>{a}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Filtro por Especialidade */}
+        <Select value={filtroEspecialidade} onValueChange={(v) => { setFiltroEspecialidade(v); handleFiltroChange(); }}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Especialidade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todas">Todas as especialidades</SelectItem>
+            {(especialidades ?? []).map((esp: any) => (
+              <SelectItem key={esp.id} value={String(esp.id)}>{esp.nome}</SelectItem>
             ))}
           </SelectContent>
         </Select>
