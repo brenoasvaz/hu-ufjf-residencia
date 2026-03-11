@@ -30,6 +30,8 @@ export default function AdminAvaliacoes() {
   const [questoesPage, setQuestoesPage] = useState(1);
   const [questoesBusca, setQuestoesBusca] = useState("");
   const [questoesEspecialidade, setQuestoesEspecialidade] = useState<number | undefined>(undefined);
+  const [questoesFonte, setQuestoesFonte] = useState<string>("todas");
+  const [questoesAno, setQuestoesAno] = useState<string>("todos");
   const [expandedQuestaoId, setExpandedQuestaoId] = useState<number | null>(null);
   const [gerandoTemplateId, setGerandoTemplateId] = useState<number | null>(null);
 
@@ -37,6 +39,8 @@ export default function AdminAvaliacoes() {
   const { data: allSimulados, isLoading: loadingSimulados, refetch: refetchSimulados } = trpc.avaliacoes.simulados.list.useQuery();
   const { data: totalQuestoes } = trpc.avaliacoes.questoes.count.useQuery();
   const { data: especialidades } = trpc.avaliacoes.especialidades.list.useQuery();
+  const { data: fontes } = trpc.avaliacoes.questoes.listFontes.useQuery();
+  const { data: anosDisponiveis } = trpc.avaliacoes.questoes.listAnos.useQuery();
   const { data: questoesData, isLoading: loadingQuestoes } = trpc.avaliacoes.questoes.list.useQuery({
     page: questoesPage,
     pageSize: 20,
@@ -387,14 +391,14 @@ export default function AdminAvaliacoes() {
             <Link href="/admin/questoes/imagens">
               <Button variant="outline">
                 <Image className="mr-2 h-4 w-4" />
-                Gerenciar Imagens
+                Gerenciar Questões
               </Button>
             </Link>
           </div>
 
           {/* Filtros */}
-          <div className="flex gap-3">
-            <div className="relative flex-1">
+          <div className="flex flex-wrap gap-3">
+            <div className="relative flex-1 min-w-[180px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por enunciado..."
@@ -407,13 +411,37 @@ export default function AdminAvaliacoes() {
               value={questoesEspecialidade?.toString() ?? "all"}
               onValueChange={(v) => { setQuestoesEspecialidade(v === "all" ? undefined : Number(v)); setQuestoesPage(1); }}
             >
-              <SelectTrigger className="w-56">
-                <SelectValue placeholder="Todas as especialidades" />
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Especialidade" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas as especialidades</SelectItem>
                 {especialidades?.map((e: any) => (
                   <SelectItem key={e.id} value={e.id.toString()}>{e.nome}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* Filtro por Prova/Fonte */}
+            <Select value={questoesFonte} onValueChange={(v) => { setQuestoesFonte(v); setQuestoesPage(1); }}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Prova" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todas">Todas as provas</SelectItem>
+                {fontes?.map((f: string) => (
+                  <SelectItem key={f} value={f}>{f}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* Filtro por Ano */}
+            <Select value={questoesAno} onValueChange={(v) => { setQuestoesAno(v); setQuestoesPage(1); }}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Ano" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os anos</SelectItem>
+                {anosDisponiveis?.map((a: number) => (
+                  <SelectItem key={a} value={String(a)}>{a}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

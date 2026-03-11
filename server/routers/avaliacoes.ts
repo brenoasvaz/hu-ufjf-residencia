@@ -112,25 +112,131 @@ export const avaliacoesRouter = router({
         return await avaliacoesDb.getQuestoesPorEspecialidade(input.especialidadeId);
       }),
     
-    // Listar questões que requerem imagem (admin)
-    listComImagem: adminProcedure.query(async () => {
+    // Listar questões para gerenciamento de imagens e edição (admin)
+    // Retorna TODAS as questões ativas, com filtros opcionais por fonte, ano e status de imagem
+    listComImagem: adminProcedure
+      .input(z.object({
+        fonte: z.string().optional(),
+        ano: z.number().optional(),
+        statusImagem: z.enum(['todas', 'com_imagem', 'sem_imagem']).default('todas'),
+        busca: z.string().optional(),
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(200).default(50),
+      }).optional())
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+        const { count: countFn, like, and, isNull, isNotNull, or } = await import('drizzle-orm');
+
+        const conditions: any[] = [eq(questoes.ativo, 1)];
+        if (input?.fonte) conditions.push(eq(questoes.fonte, input.fonte));
+        if (input?.ano) conditions.push(eq(questoes.ano, input.ano));
+        if (input?.busca?.trim()) conditions.push(like(questoes.enunciado, `%${input.busca.trim()}%`));
+        if (input?.statusImagem === 'com_imagem') conditions.push(isNotNull(questoes.imageUrl));
+        if (input?.statusImagem === 'sem_imagem') conditions.push(isNull(questoes.imageUrl));
+
+        const where = conditions.length > 1 ? and(...conditions) : conditions[0];
+
+        const [{ total }] = await db
+          .select({ total: countFn(questoes.id) })
+          .from(questoes)
+          .where(where);
+
+        const page = input?.page ?? 1;
+        const pageSize = input?.pageSize ?? 50;
+        const offset = (page - 1) * pageSize;
+
+        const rows = await db
+          .select({
+            id: questoes.id,
+            enunciado: questoes.enunciado,
+            fonte: questoes.fonte,
+            ano: questoes.ano,
+            especialidadeId: questoes.especialidadeId,
+            subcategoria: questoes.subcategoria,
+            temImagem: questoes.temImagem,
+            imageUrl: questoes.imageUrl,
+          })
+          .from(questoes)
+          .where(where)
+          .orderBy(questoes.fonte, questoes.ano, questoes.id)
+          .limit(pageSize)
+          .offset(offset);
+
+        return { questoes: rows, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+      }),
+
+    // Listar fontes distintas disponíveis (para filtro)
+    listFontes: adminProcedure.query(async () => {
       const db = await getDb();
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+      const { isNotNull, asc, and: andOp } = await import('drizzle-orm');
       const rows = await db
-        .select({
-          id: questoes.id,
-          enunciado: questoes.enunciado,
-          fonte: questoes.fonte,
-          ano: questoes.ano,
-          especialidadeId: questoes.especialidadeId,
-          temImagem: questoes.temImagem,
-          imageUrl: questoes.imageUrl,
-        })
+        .selectDistinct({ fonte: questoes.fonte })
         .from(questoes)
-        .where(eq(questoes.temImagem, 1))
-        .orderBy(questoes.especialidadeId);
-      return rows;
+        .where(andOp(eq(questoes.ativo, 1), isNotNull(questoes.fonte)))
+        .orderBy(asc(questoes.fonte));
+      return rows.map((r: any) => r.fonte).filter(Boolean);
     }),
+
+    // Listar anos distintos disponíveis (para filtro)
+    listAnos: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+      const { isNotNull, asc, and: andOp } = await import('drizzle-orm');
+      const rows = await db
+        .selectDistinct({ ano: questoes.ano })
+        .from(questoes)
+        .where(andOp(eq(questoes.ativo, 1), isNotNull(questoes.ano)))
+        .orderBy(asc(questoes.ano));
+      return rows.map((r: any) => r.ano).filter(Boolean);
+    }),
+
+    // Editar questão completa (enunciado + alternativas) — admin
+    editar: adminProcedure
+      .input(z.object({
+        questaoId: z.number(),
+        enunciado: z.string().min(10, 'Enunciado deve ter pelo menos 10 caracteres'),
+        fonte: z.string().optional(),
+        ano: z.number().optional(),
+        subcategoria: z.string().optional(),
+        alternativas: z.array(z.object({
+          id: z.number(),
+          texto: z.string().min(1, 'Texto da alternativa não pode ser vazio'),
+          isCorreta: z.number().min(0).max(1),
+        })).length(4, 'Deve ter exatamente 4 alternativas'),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+        // Verificar que exatamente 1 alternativa é correta
+        const corretas = input.alternativas.filter(a => a.isCorreta === 1);
+        if (corretas.length !== 1) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Exatamente uma alternativa deve ser marcada como correta.' });
+        }
+
+        // Atualizar enunciado
+        await db
+          .update(questoes)
+          .set({
+            enunciado: input.enunciado,
+            ...(input.fonte !== undefined && { fonte: input.fonte }),
+            ...(input.ano !== undefined && { ano: input.ano }),
+            ...(input.subcategoria !== undefined && { subcategoria: input.subcategoria }),
+          })
+          .where(eq(questoes.id, input.questaoId));
+
+        // Atualizar cada alternativa
+        for (const alt of input.alternativas) {
+          await db
+            .update(alternativas)
+            .set({ texto: alt.texto, isCorreta: alt.isCorreta })
+            .where(eq(alternativas.id, alt.id));
+        }
+
+        return { success: true };
+      }),
 
     getWithAlternativas: adminProcedure
       .input(z.object({ questaoId: z.number() }))
@@ -181,10 +287,10 @@ export const avaliacoesRouter = router({
         // Upload para S3
         const { url } = await storagePut(fileKey, buffer, input.mimeType);
 
-        // Atualizar questão com URL da imagem
+        // Atualizar questão com URL da imagem e marcar temImagem=1
         await db
           .update(questoes)
-          .set({ imageUrl: url, imageKey: fileKey })
+          .set({ imageUrl: url, imageKey: fileKey, temImagem: 1 })
           .where(eq(questoes.id, input.questaoId));
 
         return { success: true, imageUrl: url };

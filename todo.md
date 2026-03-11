@@ -391,3 +391,12 @@
 - [x] Tela admin: badge de status (Rascunho / Em Revisão / Liberado) nos cards de modelos
 - [x] Fluxo residente: bloquear geração de simulado se o modelo não estiver com status "liberado"
 - [x] Fluxo residente: exibir aviso "Aguardando liberação pelo preceptor" para modelos não liberados
+
+## Melhorias no Módulo de Questões
+- [x] Backend: expandir listComImagem para listar TODAS as questões (não só temImagem=1), com filtros por fonte/prova e ano
+- [x] Backend: adicionar procedure editarQuestao (atualizar enunciado + alternativas)
+- [x] Backend: atualizar uploadImagem para não exigir temImagem=1 e marcar temImagem=1 ao fazer upload
+- [x] Frontend GerenciarImagensQuestoes: renomear para "Gerenciar Questões", mostrar todas as questões
+- [x] Frontend: adicionar filtros por fonte (TARO/TEOT/SBOT 1000) e ano na barra de busca
+- [x] Frontend: botão "Editar" em cada questão abrindo modal com enunciado + alternativas editáveis + upload de imagem
+- [x] Frontend: botão "Adicionar Imagem" disponível em qualquer questão (não apenas as marcadas com temImagem)
