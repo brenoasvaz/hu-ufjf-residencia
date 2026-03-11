@@ -194,7 +194,9 @@ export default function Avaliacoes() {
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <p className="font-medium">Avaliação #{exam.id}</p>
+                      <p className="font-medium">
+                        {exam.modeloNome ? exam.modeloNome : `Avaliação #${exam.id}`}
+                      </p>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>
                           {new Date(exam.createdAt).toLocaleDateString('pt-BR', {

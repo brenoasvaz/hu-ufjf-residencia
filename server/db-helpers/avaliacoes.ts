@@ -111,8 +111,21 @@ export async function getSimuladosPorUsuario(userId: number) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
   return await db
-    .select()
+    .select({
+      id: simulados.id,
+      userId: simulados.userId,
+      modeloId: simulados.modeloId,
+      modeloNome: modelosProva.nome,
+      dataInicio: simulados.dataInicio,
+      dataFim: simulados.dataFim,
+      duracaoMinutos: simulados.duracaoMinutos,
+      totalQuestoes: simulados.totalQuestoes,
+      totalAcertos: simulados.totalAcertos,
+      concluido: simulados.concluido,
+      createdAt: simulados.createdAt,
+    })
     .from(simulados)
+    .leftJoin(modelosProva, eq(simulados.modeloId, modelosProva.id))
     .where(eq(simulados.userId, userId))
     .orderBy(desc(simulados.createdAt));
 }
@@ -127,6 +140,7 @@ export async function getTodosSimuladosComUsuario() {
       userName: users.name,
       userEmail: users.email,
       modeloId: simulados.modeloId,
+      modeloNome: modelosProva.nome,
       dataInicio: simulados.dataInicio,
       dataFim: simulados.dataFim,
       duracaoMinutos: simulados.duracaoMinutos,
@@ -137,13 +151,31 @@ export async function getTodosSimuladosComUsuario() {
     })
     .from(simulados)
     .innerJoin(users, eq(simulados.userId, users.id))
+    .leftJoin(modelosProva, eq(simulados.modeloId, modelosProva.id))
     .orderBy(desc(simulados.createdAt));
 }
 
 export async function getSimuladoPorId(simuladoId: number) {
   const db = await getDb();
   if (!db) throw new Error('Database not available');
-  const result = await db.select().from(simulados).where(eq(simulados.id, simuladoId)).limit(1);
+  const result = await db
+    .select({
+      id: simulados.id,
+      userId: simulados.userId,
+      modeloId: simulados.modeloId,
+      modeloNome: modelosProva.nome,
+      dataInicio: simulados.dataInicio,
+      dataFim: simulados.dataFim,
+      duracaoMinutos: simulados.duracaoMinutos,
+      totalQuestoes: simulados.totalQuestoes,
+      totalAcertos: simulados.totalAcertos,
+      concluido: simulados.concluido,
+      createdAt: simulados.createdAt,
+    })
+    .from(simulados)
+    .leftJoin(modelosProva, eq(simulados.modeloId, modelosProva.id))
+    .where(eq(simulados.id, simuladoId))
+    .limit(1);
   return result[0] || null;
 }
 
@@ -237,6 +269,7 @@ export async function getRespostasDoSimulado(simuladoId: number) {
 /**
  * Seleciona questões de forma inteligente para um usuário
  * Prioridade: não respondidas → erradas → acertadas
+ * Retorna exatamente `quantidade` questões (ou menos, se o banco for menor que o pedido).
  */
 export async function selecionarQuestoesInteligentes(
   userId: number,
@@ -300,6 +333,8 @@ export async function selecionarQuestoesInteligentes(
   shuffle(acertadas);
 
   // 5. Selecionar questões na ordem de prioridade
+  // Se a especialidade tiver menos questões que o pedido, retorna todas disponíveis.
+  // O router de geração compensará o déficit com questões de outras especialidades.
   const selecionadas = [...naoRespondidas, ...erradas, ...acertadas].slice(0, quantidade);
 
   return selecionadas;

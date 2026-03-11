@@ -375,3 +375,8 @@
 
 ## Ajustes de Layout
 - [x] Home.tsx: diagramação centralizada (hero + cards centralizados)
+
+## Bugs - Módulo de Avaliações
+- [x] Bug 1: simulado gera menos questões que o configurado (ex.: 10 configuradas → 5 entregues). Causa: selecionarQuestoesInteligentes limita ao total disponível por especialidade sem compensar com outras especialidades, e o modelo pode ter especialidades com poucas questões.
+- [x] Bug 2: todos os residentes compartilham a mesma instância do simulado. Cada residente deve gerar sua própria instância independente ao clicar "Iniciar Avaliação".
+- [x] Bug 3: admin deve ver os resultados nomeados por residente (ex.: "Prova 1 - Mariana Moraes") na aba Avaliações do painel admin.

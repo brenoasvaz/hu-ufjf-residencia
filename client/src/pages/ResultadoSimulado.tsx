@@ -106,9 +106,11 @@ export default function ResultadoSimulado() {
     <div className="space-y-6">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight">Resultado da Avaliação</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {(simulado as any).modeloNome ? `Resultado — ${(simulado as any).modeloNome}` : 'Resultado da Avaliação'}
+        </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Avaliação #{simuladoId} • Concluída em {new Date(simulado.dataFim!).toLocaleDateString('pt-BR', {
+          Concluída em {new Date(simulado.dataFim!).toLocaleDateString('pt-BR', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric',

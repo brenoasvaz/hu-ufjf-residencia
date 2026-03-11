@@ -297,7 +297,11 @@ export const avaliacoesRouter = router({
         
         // 4. Selecionar questões inteligentemente para cada especialidade
         const questoesSelecionadas: number[] = [];
+        const questoesSelecionadasSet = new Set<number>(); // evitar duplicatas
+        let totalSolicitado = 0;
+
         for (const [nomeEsp, quantidade] of Object.entries(config)) {
+          totalSolicitado += quantidade;
           const espId = especialidadeMap.get(nomeEsp);
           if (!espId) {
             console.warn(`Especialidade não encontrada: ${nomeEsp}`);
@@ -309,7 +313,12 @@ export const avaliacoesRouter = router({
             espId,
             quantidade
           );
-          questoesSelecionadas.push(...questoesEsp);
+          questoesEsp.forEach((id: number) => {
+            if (!questoesSelecionadasSet.has(id)) {
+              questoesSelecionadasSet.add(id);
+              questoesSelecionadas.push(id);
+            }
+          });
         }
         
         if (questoesSelecionadas.length === 0) {
@@ -317,6 +326,31 @@ export const avaliacoesRouter = router({
             code: 'BAD_REQUEST', 
             message: 'Não há questões disponíveis para este modelo' 
           });
+        }
+
+        // Compensar déficit: se alguma especialidade tinha menos questões que o pedido,
+        // completar com questões de qualquer especialidade já não incluída
+        const deficit = totalSolicitado - questoesSelecionadas.length;
+        if (deficit > 0) {
+          const db = await getDb();
+          if (db) {
+            const { not, and: andOp2 } = await import('drizzle-orm');
+            const extras = await db
+              .select({ id: questoes.id })
+              .from(questoes)
+              .where(andOp2(
+                eq(questoes.ativo, 1),
+                not(inArray(questoes.id, questoesSelecionadas))
+              ))
+              .limit(deficit * 3); // buscar mais para poder embaralhar
+            const shuffled = extras.sort(() => Math.random() - 0.5).slice(0, deficit);
+            shuffled.forEach((q: any) => {
+              if (!questoesSelecionadasSet.has(q.id)) {
+                questoesSelecionadasSet.add(q.id);
+                questoesSelecionadas.push(q.id);
+              }
+            });
+          }
         }
         
         // 5. Criar simulado
