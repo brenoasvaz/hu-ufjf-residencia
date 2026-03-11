@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ClipboardCheck, Clock, FileText, TrendingUp } from "lucide-react";
+import { ClipboardCheck, Clock, FileText, TrendingUp, Lock } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -131,9 +131,11 @@ export default function Avaliacoes() {
 
         {loadingTemplates ? (
           <div className="text-center py-8 text-muted-foreground">Carregando modelos...</div>
-        ) : templates && templates.length > 0 ? (
+        ) : templates && templates.filter((t: any) => t.status === 'liberado').length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2">
-            {templates.map((template: any) => (
+            {templates
+              .filter((t: any) => t.status === 'liberado')
+              .map((template: any) => (
               <Card key={template.id} className="hover:border-primary/50 transition-colors">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -169,8 +171,12 @@ export default function Avaliacoes() {
           </div>
         ) : (
           <Card>
-            <CardContent className="py-8 text-center text-muted-foreground">
-              Nenhum modelo de prova disponível no momento.
+            <CardContent className="py-8 text-center">
+              <Lock className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground font-medium">Nenhuma avaliação disponível no momento</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Aguarde a liberação pelo preceptor.
+              </p>
             </CardContent>
           </Card>
         )}

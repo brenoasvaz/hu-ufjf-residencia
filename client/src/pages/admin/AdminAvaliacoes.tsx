@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ClipboardCheck, Users, TrendingUp, FileText, Settings, Trash2, Download, Search, ChevronLeft, ChevronRight, Image, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
+import { ClipboardCheck, Users, TrendingUp, FileText, Settings, Trash2, Download, Search, ChevronLeft, ChevronRight, Image, ChevronDown, ChevronUp, CheckCircle2, Eye, RefreshCw } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
@@ -31,6 +31,7 @@ export default function AdminAvaliacoes() {
   const [questoesBusca, setQuestoesBusca] = useState("");
   const [questoesEspecialidade, setQuestoesEspecialidade] = useState<number | undefined>(undefined);
   const [expandedQuestaoId, setExpandedQuestaoId] = useState<number | null>(null);
+  const [gerandoTemplateId, setGerandoTemplateId] = useState<number | null>(null);
 
   const { data: modelos, isLoading: loadingModelos } = trpc.avaliacoes.modelos.list.useQuery();
   const { data: allSimulados, isLoading: loadingSimulados, refetch: refetchSimulados } = trpc.avaliacoes.simulados.list.useQuery();
@@ -42,15 +43,23 @@ export default function AdminAvaliacoes() {
     especialidadeId: questoesEspecialidade,
     busca: questoesBusca || undefined,
   });
+  const utils = trpc.useUtils();
   const deleteMutation = trpc.avaliacoes.simulados.delete.useMutation();
   const gerarPDFMutation = trpc.avaliacoes.simulados.gerarPDF.useMutation();
+  const gerarTemplateMutation = trpc.avaliacoes.template.gerar.useMutation({
+    onSuccess: (data: any, variables: any) => {
+      utils.avaliacoes.modelos.list.invalidate();
+      toast.success("Simulado de revisão gerado! Redirecionando...");
+      setLocation(`/admin/avaliacoes/${variables.modeloId}/revisao`);
+    },
+    onError: (e: any) => toast.error(e.message || "Erro ao gerar simulado de revisão"),
+  });
 
   // Buscar alternativas da questão expandida
   const { data: questaoExpandida, isLoading: loadingAlternativas } = trpc.avaliacoes.questoes.getWithAlternativas.useQuery(
     { questaoId: expandedQuestaoId! },
     { enabled: expandedQuestaoId !== null }
   );
-
   const especialidadesMap = useMemo(() => {
     if (!especialidades) return {};
     return Object.fromEntries(especialidades.map((e: any) => [e.id, e.nome]));
@@ -197,7 +206,7 @@ export default function AdminAvaliacoes() {
                       <CardDescription>{modelo.descricao}</CardDescription>
                     )}
                   </CardHeader>
-                  <CardContent className="space-y-2">
+                  <CardContent className="space-y-3">
                     <div className="text-sm space-y-1">
                       <p className="text-muted-foreground">
                         <span className="font-medium">Total de questões:</span>{' '}
@@ -214,6 +223,57 @@ export default function AdminAvaliacoes() {
                         <span className="font-medium">Criado em:</span>{' '}
                         {new Date(modelo.createdAt).toLocaleDateString('pt-BR')}
                       </p>
+                    </div>
+                    {/* Badges de status */}
+                    <div className="flex gap-2 flex-wrap">
+                      {modelo.status === 'rascunho' && (
+                        <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-300">
+                          Rascunho
+                        </Badge>
+                      )}
+                      {modelo.status === 'em_revisao' && (
+                        <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-300">
+                          Em Revisão
+                        </Badge>
+                      )}
+                      {modelo.status === 'liberado' && (
+                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-300">
+                          Liberado
+                        </Badge>
+                      )}
+                    </div>
+                    {/* Ações de revisão */}
+                    <div className="flex gap-2">
+                      {modelo.status === 'rascunho' ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          disabled={gerandoTemplateId === modelo.id}
+                          onClick={async () => {
+                            setGerandoTemplateId(modelo.id);
+                            try {
+                              await gerarTemplateMutation.mutateAsync({ modeloId: modelo.id });
+                            } finally {
+                              setGerandoTemplateId(null);
+                            }
+                          }}
+                        >
+                          {gerandoTemplateId === modelo.id ? (
+                            <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                          ) : (
+                            <RefreshCw className="mr-2 h-3 w-3" />
+                          )}
+                          Gerar Simulado para Revisão
+                        </Button>
+                      ) : (
+                        <Link href={`/admin/avaliacoes/${modelo.id}/revisao`} className="flex-1">
+                          <Button variant="outline" size="sm" className="w-full">
+                            <Eye className="mr-2 h-3 w-3" />
+                            {modelo.status === 'liberado' ? 'Ver / Revogar' : 'Revisar Simulado'}
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

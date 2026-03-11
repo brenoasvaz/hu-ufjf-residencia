@@ -380,3 +380,14 @@
 - [x] Bug 1: simulado gera menos questões que o configurado (ex.: 10 configuradas → 5 entregues). Causa: selecionarQuestoesInteligentes limita ao total disponível por especialidade sem compensar com outras especialidades, e o modelo pode ter especialidades com poucas questões.
 - [x] Bug 2: todos os residentes compartilham a mesma instância do simulado. Cada residente deve gerar sua própria instância independente ao clicar "Iniciar Avaliação".
 - [x] Bug 3: admin deve ver os resultados nomeados por residente (ex.: "Prova 1 - Mariana Moraes") na aba Avaliações do painel admin.
+
+## Fluxo de Revisão Prévia do Simulado (Admin)
+- [x] Schema: adicionar campo status ao modelosProva (rascunho | em_revisao | liberado) e tabela simuladoTemplate para o simulado-gabarito do admin
+- [x] DB: procedure adminGerarSimuladoTemplate — cria instância de revisão vinculada ao modelo (não a um userId de residente)
+- [x] DB: procedure adminTrocarQuestao — substitui uma questão do template por outra da mesma especialidade
+- [x] DB: procedure adminLiberarSimulado — muda status do modelo para "liberado", permitindo que residentes iniciem
+- [x] Tela admin: página SimuladoRevisao.tsx — lista questões do template, permite trocar questão, adicionar imagem e liberar
+- [x] Tela admin: botão "Gerar Simulado para Revisão" na aba Modelos de AdminAvaliacoes.tsx
+- [x] Tela admin: badge de status (Rascunho / Em Revisão / Liberado) nos cards de modelos
+- [x] Fluxo residente: bloquear geração de simulado se o modelo não estiver com status "liberado"
+- [x] Fluxo residente: exibir aviso "Aguardando liberação pelo preceptor" para modelos não liberados

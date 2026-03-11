@@ -23,6 +23,7 @@ import GerenciarUsuarios from "./pages/admin/GerenciarUsuarios";
 import LinksUteis from "./pages/LinksUteis";
 import GerenciarLinks from "./pages/admin/GerenciarLinks";
 import GerenciarImagensQuestoes from "./pages/admin/GerenciarImagensQuestoes";
+import SimuladoRevisao from "./pages/admin/SimuladoRevisao";
 import MainLayout from "./components/MainLayout";
 
 function Router() {
@@ -53,6 +54,7 @@ function Router() {
             <Route path="/links-uteis" component={LinksUteis} />
             <Route path="/admin/links" component={GerenciarLinks} />
             <Route path="/admin/questoes/imagens" component={GerenciarImagensQuestoes} />
+            <Route path="/admin/avaliacoes/:modeloId/revisao" component={SimuladoRevisao} />
             <Route path="/404" component={NotFound} />
             <Route component={NotFound} />
           </Switch>

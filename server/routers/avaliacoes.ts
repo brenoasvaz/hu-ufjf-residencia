@@ -7,7 +7,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import * as avaliacoesDb from "../db-helpers/avaliacoes";
 import { getDb } from "../db";
-import { simulados, simuladoQuestoes, respostasUsuario, users, questoes } from "../../drizzle/schema";
+import { simulados, simuladoQuestoes, respostasUsuario, users, questoes, modelosProva, simuladoTemplates, simuladoTemplateQuestoes, especialidades, alternativas } from "../../drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
 import { gerarPDFAvaliacao } from "../pdf-generator";
 import { storagePut } from "../storage";
@@ -621,6 +621,278 @@ export const avaliacoesRouter = router({
           pdf: pdfBuffer.toString('base64'),
           filename: `avaliacao_${input.simuladoId}_${simulado.userName?.replace(/\s+/g, '_')}.pdf`,
         };
+      }),
+  }),
+
+  // ========================================
+  // REVISÃO DE TEMPLATE (Admin)
+  // ========================================
+
+  template: router({
+    // Gerar simulado-gabarito para revisão (admin)
+    gerar: adminProcedure
+      .input(z.object({ modeloId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+        // Verificar se modelo existe
+        const modelo = await avaliacoesDb.getModeloPorId(input.modeloId);
+        if (!modelo) throw new TRPCError({ code: 'NOT_FOUND', message: 'Modelo não encontrado' });
+
+        // Remover template anterior se existir
+        const [existing] = await db
+          .select({ id: simuladoTemplates.id })
+          .from(simuladoTemplates)
+          .where(eq(simuladoTemplates.modeloId, input.modeloId))
+          .limit(1);
+
+        if (existing) {
+          await db.delete(simuladoTemplateQuestoes).where(eq(simuladoTemplateQuestoes.templateId, existing.id));
+          await db.delete(simuladoTemplates).where(eq(simuladoTemplates.id, existing.id));
+        }
+
+        // Sortear questões (mesma lógica do gerar simulado de residente)
+        const config = JSON.parse(modelo.configuracao) as Record<string, number>;
+        const especialidadesRows = await avaliacoesDb.getAllEspecialidades();
+        const especialidadeMap = new Map(especialidadesRows.map(e => [e.nome, e.id]));
+
+        const questoesSelecionadas: number[] = [];
+        const questoesSelecionadasSet = new Set<number>();
+        let totalSolicitado = 0;
+
+        for (const [nomeEsp, quantidade] of Object.entries(config)) {
+          totalSolicitado += quantidade;
+          const espId = especialidadeMap.get(nomeEsp);
+          if (!espId) continue;
+          // Usar userId=0 para admin (sem histórico pessoal)
+          const questoesEsp = await avaliacoesDb.selecionarQuestoesInteligentes(0, espId, quantidade);
+          questoesEsp.forEach((id: number) => {
+            if (!questoesSelecionadasSet.has(id)) {
+              questoesSelecionadasSet.add(id);
+              questoesSelecionadas.push(id);
+            }
+          });
+        }
+
+        // Compensar déficit
+        const deficit = totalSolicitado - questoesSelecionadas.length;
+        if (deficit > 0) {
+          const { not, and: andOp3 } = await import('drizzle-orm');
+          const extras = await db
+            .select({ id: questoes.id })
+            .from(questoes)
+            .where(andOp3(eq(questoes.ativo, 1), not(inArray(questoes.id, questoesSelecionadas))))
+            .limit(deficit * 3);
+          extras.sort(() => Math.random() - 0.5).slice(0, deficit).forEach((q: any) => {
+            if (!questoesSelecionadasSet.has(q.id)) {
+              questoesSelecionadasSet.add(q.id);
+              questoesSelecionadas.push(q.id);
+            }
+          });
+        }
+
+        // Criar template
+        const [templateResult] = await db.insert(simuladoTemplates).values({
+          modeloId: input.modeloId,
+          totalQuestoes: questoesSelecionadas.length,
+          criadoPorId: ctx.user.id,
+        });
+        const templateId = (templateResult as any).insertId;
+
+        // Inserir questões
+        for (let i = 0; i < questoesSelecionadas.length; i++) {
+          await db.insert(simuladoTemplateQuestoes).values({
+            templateId,
+            questaoId: questoesSelecionadas[i],
+            ordem: i + 1,
+          });
+        }
+
+        // Atualizar status do modelo para em_revisao
+        await db.update(modelosProva)
+          .set({ status: 'em_revisao' })
+          .where(eq(modelosProva.id, input.modeloId));
+
+        return { templateId, totalQuestoes: questoesSelecionadas.length };
+      }),
+
+    // Buscar template com questões completas (admin)
+    get: adminProcedure
+      .input(z.object({ modeloId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+        const [template] = await db
+          .select()
+          .from(simuladoTemplates)
+          .where(eq(simuladoTemplates.modeloId, input.modeloId))
+          .limit(1);
+
+        if (!template) return null;
+
+        // Buscar questões com especialidade e alternativas
+        const tqs = await db
+          .select({
+            id: simuladoTemplateQuestoes.id,
+            questaoId: simuladoTemplateQuestoes.questaoId,
+            ordem: simuladoTemplateQuestoes.ordem,
+            enunciado: questoes.enunciado,
+            fonte: questoes.fonte,
+            ano: questoes.ano,
+            temImagem: questoes.temImagem,
+            imageUrl: questoes.imageUrl,
+            especialidadeId: questoes.especialidadeId,
+            especialidadeNome: especialidades.nome,
+          })
+          .from(simuladoTemplateQuestoes)
+          .innerJoin(questoes, eq(simuladoTemplateQuestoes.questaoId, questoes.id))
+          .innerJoin(especialidades, eq(questoes.especialidadeId, especialidades.id))
+          .where(eq(simuladoTemplateQuestoes.templateId, template.id))
+          .orderBy(simuladoTemplateQuestoes.ordem);
+
+        // Buscar alternativas de todas as questões
+        const questaoIds = tqs.map((q: any) => q.questaoId);
+        const alts = questaoIds.length > 0
+          ? await db
+              .select()
+              .from(alternativas)
+              .where(inArray(alternativas.questaoId, questaoIds))
+          : [];
+
+        const altsMap = new Map<number, typeof alts>();
+        alts.forEach((a: any) => {
+          if (!altsMap.has(a.questaoId)) altsMap.set(a.questaoId, []);
+          altsMap.get(a.questaoId)!.push(a);
+        });
+
+        return {
+          ...template,
+          questoes: tqs.map((q: any) => ({
+            ...q,
+            alternativas: (altsMap.get(q.questaoId) || []).sort((a: any, b: any) => a.letra.localeCompare(b.letra)),
+          })),
+        };
+      }),
+
+    // Trocar uma questão do template por outra da mesma especialidade (admin)
+    trocarQuestao: adminProcedure
+      .input(z.object({
+        templateId: z.number(),
+        templateQuestaoId: z.number(), // id da linha em simulado_template_questoes
+        questaoAtualId: z.number(),
+        especialidadeId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+        // Buscar questões já no template para excluir da seleção
+        const jaNoTemplate = await db
+          .select({ questaoId: simuladoTemplateQuestoes.questaoId })
+          .from(simuladoTemplateQuestoes)
+          .where(eq(simuladoTemplateQuestoes.templateId, input.templateId));
+        const excluirIds = jaNoTemplate.map((q: any) => q.questaoId);
+
+        // Buscar questões da mesma especialidade não usadas no template
+        const { and: andOp4, not: notOp4 } = await import('drizzle-orm');
+        const candidatas = await db
+          .select({ id: questoes.id, enunciado: questoes.enunciado })
+          .from(questoes)
+          .where(andOp4(
+            eq(questoes.especialidadeId, input.especialidadeId),
+            eq(questoes.ativo, 1),
+            notOp4(inArray(questoes.id, excluirIds))
+          ))
+          .limit(50);
+
+        if (candidatas.length === 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Não há outras questões disponíveis nesta especialidade para substituição'
+          });
+        }
+
+        // Escolher aleatoriamente
+        const nova = candidatas[Math.floor(Math.random() * candidatas.length)];
+
+        // Atualizar a linha
+        await db
+          .update(simuladoTemplateQuestoes)
+          .set({ questaoId: nova.id })
+          .where(eq(simuladoTemplateQuestoes.id, input.templateQuestaoId));
+
+        return { novaQuestaoId: nova.id, enunciado: nova.enunciado };
+      }),
+
+    // Liberar modelo para os residentes (admin)
+    liberar: adminProcedure
+      .input(z.object({ modeloId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+        // Verificar que o template existe
+        const [template] = await db
+          .select({ id: simuladoTemplates.id })
+          .from(simuladoTemplates)
+          .where(eq(simuladoTemplates.modeloId, input.modeloId))
+          .limit(1);
+
+        if (!template) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Gere o simulado de revisão antes de liberar'
+          });
+        }
+
+        await db.update(modelosProva)
+          .set({ status: 'liberado' })
+          .where(eq(modelosProva.id, input.modeloId));
+
+        return { success: true };
+      }),
+
+    // Revogar liberação (voltar para em_revisao)
+    revogar: adminProcedure
+      .input(z.object({ modeloId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+        await db.update(modelosProva)
+          .set({ status: 'em_revisao' })
+          .where(eq(modelosProva.id, input.modeloId));
+        return { success: true };
+      }),
+
+    // Upload de imagem para questão via template (admin)
+    uploadImagemQuestao: adminProcedure
+      .input(z.object({
+        questaoId: z.number(),
+        imageBase64: z.string(),
+        mimeType: z.string().default('image/jpeg'),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+        const base64Data = input.imageBase64.replace(/^data:[^;]+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        if (buffer.length > 5 * 1024 * 1024) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Imagem muito grande. Máximo 5MB.' });
+        }
+
+        const ext = input.mimeType.split('/')[1] || 'jpg';
+        const randomSuffix = Math.random().toString(36).substring(2, 10);
+        const fileKey = `questoes-imagens/questao-${input.questaoId}-${randomSuffix}.${ext}`;
+        const { url } = await storagePut(fileKey, buffer, input.mimeType);
+
+        await db.update(questoes)
+          .set({ imageUrl: url, imageKey: fileKey, temImagem: 1 })
+          .where(eq(questoes.id, input.questaoId));
+
+        return { success: true, imageUrl: url };
       }),
   }),
 

@@ -249,12 +249,48 @@ export const modelosProva = mysqlTable("modelos_prova", {
   duracaoMinutos: int("duracao_minutos").default(60).notNull(),
   configuracao: text("configuracao").notNull(), // JSON: { "Coluna": 10, "Joelho": 5, ... }
   ativo: int("ativo").default(1).notNull(), // 1 = ativo, 0 = inativo
+  /**
+   * status do modelo:
+   * - rascunho: recém-criado, sem simulado de revisão gerado
+   * - em_revisao: admin gerou o simulado-gabarito e está revisando
+   * - liberado: admin aprovou e residentes podem iniciar
+   */
+  status: mysqlEnum("status", ["rascunho", "em_revisao", "liberado"]).default("rascunho").notNull(),
   criadoPorId: int("criado_por_id").notNull(), // FK → users.id
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type ModeloProva = typeof modelosProva.$inferSelect;
 export type InsertModeloProva = typeof modelosProva.$inferInsert;
+
+/**
+ * Simulado Template - Instância de revisão criada pelo admin antes de liberar o modelo
+ * Contém as questões sorteadas que o admin pode revisar, trocar e enriquecer com imagens
+ */
+export const simuladoTemplates = mysqlTable("simulado_templates", {
+  id: int("id").autoincrement().primaryKey(),
+  modeloId: int("modelo_id").notNull().unique(), // 1:1 com modelosProva
+  totalQuestoes: int("total_questoes").notNull(),
+  criadoPorId: int("criado_por_id").notNull(), // FK → users.id (admin)
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SimuladoTemplate = typeof simuladoTemplates.$inferSelect;
+export type InsertSimuladoTemplate = typeof simuladoTemplates.$inferInsert;
+
+/**
+ * Simulado Template Questões - Questões do simulado-gabarito do admin
+ */
+export const simuladoTemplateQuestoes = mysqlTable("simulado_template_questoes", {
+  id: int("id").autoincrement().primaryKey(),
+  templateId: int("template_id").notNull(), // FK → simulado_templates.id
+  questaoId: int("questao_id").notNull(), // FK → questoes.id
+  ordem: int("ordem").notNull(),
+});
+
+export type SimuladoTemplateQuestao = typeof simuladoTemplateQuestoes.$inferSelect;
+export type InsertSimuladoTemplateQuestao = typeof simuladoTemplateQuestoes.$inferInsert;
 
 /**
  * Simulados - Instâncias de prova geradas para um residente
