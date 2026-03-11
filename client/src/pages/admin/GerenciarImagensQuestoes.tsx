@@ -78,6 +78,24 @@ export default function GerenciarImagensQuestoes() {
   const { data: fontes } = trpc.avaliacoes.questoes.listFontes.useQuery();
   const { data: anos } = trpc.avaliacoes.questoes.listAnos.useQuery();
 
+  // Queries separadas para os totais reais dos cards (ignoram o filtro de statusImagem)
+  const baseFilters = {
+    fonte: filtroFonte !== "todas" ? filtroFonte : undefined,
+    ano: filtroAno !== "todos" ? parseInt(filtroAno) : undefined,
+    busca: busca || undefined,
+    pageSize: 1,
+    page: 1,
+  };
+  const { data: totalTodasData } = trpc.avaliacoes.questoes.listComImagem.useQuery(
+    { ...baseFilters, statusImagem: "todas" }
+  );
+  const { data: totalComImagemData } = trpc.avaliacoes.questoes.listComImagem.useQuery(
+    { ...baseFilters, statusImagem: "com_imagem" }
+  );
+  const { data: totalSemImagemData } = trpc.avaliacoes.questoes.listComImagem.useQuery(
+    { ...baseFilters, statusImagem: "sem_imagem" }
+  );
+
   // Buscar alternativas ao abrir edição
   const { data: questaoComAlts, isLoading: loadingAlts } = trpc.avaliacoes.questoes.getWithAlternativas.useQuery(
     { questaoId: questaoSelecionada?.id ?? 0 },
@@ -87,8 +105,10 @@ export default function GerenciarImagensQuestoes() {
   const questoes = questoesData?.questoes ?? [];
   const totalQuestoes = questoesData?.total ?? 0;
   const totalPages = questoesData?.totalPages ?? 1;
-  const totalComImagem = questoes.filter((q: any) => q.imageUrl).length;
-  const totalSemImagem = questoes.filter((q: any) => !q.imageUrl).length;
+  // Totais reais vindos do backend (não da página atual)
+  const totalComImagem = totalComImagemData?.total ?? 0;
+  const totalSemImagem = totalSemImagemData?.total ?? 0;
+  const totalTodas = totalTodasData?.total ?? 0;
 
   const uploadMutation = trpc.avaliacoes.questoes.uploadImagem.useMutation({
     onSuccess: () => {
@@ -226,7 +246,7 @@ export default function GerenciarImagensQuestoes() {
         </Link>
       </div>
 
-      {/* Cards de resumo (da página atual) */}
+      {/* Cards de resumo com totais reais do banco */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card
           className={`cursor-pointer transition-all ${filtroStatus === "todas" ? "ring-2 ring-primary" : "hover:shadow-md"}`}
@@ -236,7 +256,7 @@ export default function GerenciarImagensQuestoes() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total de Questões</p>
-                <p className="text-2xl font-bold">{totalQuestoes}</p>
+                <p className="text-2xl font-bold">{totalTodas}</p>
               </div>
               <Image className="h-10 w-10 text-muted-foreground" />
             </div>

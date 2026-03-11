@@ -400,3 +400,6 @@
 - [x] Frontend: adicionar filtros por fonte (TARO/TEOT/SBOT 1000) e ano na barra de busca
 - [x] Frontend: botão "Editar" em cada questão abrindo modal com enunciado + alternativas editáveis + upload de imagem
 - [x] Frontend: botão "Adicionar Imagem" disponível em qualquer questão (não apenas as marcadas com temImagem)
+
+## Bugs - Gerenciar Questões
+- [x] Bug: filtro "Sem Imagem" exibe todas as questões em vez de filtrar apenas as sem imageUrl; os contadores dos cards também mostram contagem da página atual e não do total real
