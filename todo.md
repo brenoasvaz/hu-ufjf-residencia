@@ -403,3 +403,6 @@
 
 ## Bugs - Gerenciar Questões
 - [x] Bug: filtro "Sem Imagem" exibe todas as questões em vez de filtrar apenas as sem imageUrl; os contadores dos cards também mostram contagem da página atual e não do total real
+
+## Melhorias na Execução do Simulado
+- [x] ExecucaoSimulado.tsx: exibir imageUrl da questão entre enunciado e alternativas quando preenchido

@@ -229,6 +229,8 @@ export async function getQuestoesDoSimulado(simuladoId: number) {
       ordem: simuladoQuestoes.ordem,
       enunciado: questoes.enunciado,
       especialidadeId: questoes.especialidadeId,
+      imageUrl: questoes.imageUrl,
+      temImagem: questoes.temImagem,
     })
     .from(simuladoQuestoes)
     .innerJoin(questoes, eq(simuladoQuestoes.questaoId, questoes.id))
