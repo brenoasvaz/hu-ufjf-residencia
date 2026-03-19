@@ -399,6 +399,85 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return weeklyActivitiesDb.deleteWeeklyActivity(input.id);
       }),
+
+    // Retorna todas as atividades com seus audiences (para o editor admin)
+    listWithAudiences: adminProcedure
+      .input(z.object({
+        anoResidencia: z.enum(["R1", "R2", "R3"]).optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        return weeklyActivitiesDb.getAllActivitiesWithAudiences(input?.anoResidencia);
+      }),
+
+    // Atualiza os audiences de uma atividade (substitui todos)
+    updateAudiences: adminProcedure
+      .input(z.object({
+        activityId: z.number(),
+        audiences: z.array(z.object({
+          anoResidencia: z.enum(["R1", "R2", "R3"]).nullable().optional(),
+          bloco: z.string().nullable().optional(),
+          opcional: z.number().optional(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        return weeklyActivitiesDb.replaceActivityAudiences(input.activityId, input.audiences);
+      }),
+
+    // Cria atividade com audiences em uma operação
+    createWithAudiences: adminProcedure
+      .input(z.object({
+        diaSemana: z.number().min(0).max(6),
+        horaInicio: z.string(),
+        horaFim: z.string(),
+        titulo: z.string(),
+        descricao: z.string().optional(),
+        local: z.string().optional(),
+        recorrente: z.number().optional(),
+        observacao: z.string().optional(),
+        audiences: z.array(z.object({
+          anoResidencia: z.enum(["R1", "R2", "R3"]).nullable().optional(),
+          bloco: z.string().nullable().optional(),
+          opcional: z.number().optional(),
+        })).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { audiences, ...activityData } = input;
+        const result = await weeklyActivitiesDb.createWeeklyActivity(activityData);
+        const insertId = Number((result as any).insertId);
+        if (audiences) {
+          for (const aud of audiences) {
+            await weeklyActivitiesDb.addActivityAudience({ activityId: insertId, ...aud });
+          }
+        }
+        return weeklyActivitiesDb.getActivityWithAudiences(insertId);
+      }),
+
+    // Atualiza atividade + audiences em uma operação
+    updateWithAudiences: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        diaSemana: z.number().min(0).max(6).optional(),
+        horaInicio: z.string().optional(),
+        horaFim: z.string().optional(),
+        titulo: z.string().optional(),
+        descricao: z.string().optional(),
+        local: z.string().optional(),
+        recorrente: z.number().optional(),
+        observacao: z.string().optional(),
+        audiences: z.array(z.object({
+          anoResidencia: z.enum(["R1", "R2", "R3"]).nullable().optional(),
+          bloco: z.string().nullable().optional(),
+          opcional: z.number().optional(),
+        })).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, audiences, ...data } = input;
+        await weeklyActivitiesDb.updateWeeklyActivity(id, data);
+        if (audiences !== undefined) {
+          await weeklyActivitiesDb.replaceActivityAudiences(id, audiences);
+        }
+        return weeklyActivitiesDb.getActivityWithAudiences(id);
+      }),
   }),
 
   // ===== IMPORTS =====

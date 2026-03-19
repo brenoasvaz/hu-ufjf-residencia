@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Settings, Users, Calendar, CalendarDays, FileText, MapPin, ArrowRight, Link as LinkIcon, Image } from "lucide-react";
+import { Settings, Users, Calendar, CalendarDays, FileText, MapPin, ArrowRight, Link as LinkIcon, Image, LayoutGrid } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 export default function Admin() {
@@ -77,6 +77,12 @@ export default function Admin() {
       description: "Adicionar e gerenciar imagens para questões que requerem ilustração",
       icon: Image,
       href: "/admin/questoes/imagens",
+    },
+    {
+      title: "Editar Escala Semanal",
+      description: "Criar, editar e reorganizar atividades da escala semanal por ano de residência",
+      icon: LayoutGrid,
+      href: "/admin/escala-semanal",
     },
     {
       title: "Gerenciar Estágios",

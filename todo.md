@@ -418,3 +418,15 @@
 ## Bug - Filtro "Sem Imagem"
 - [x] Backend: filtro sem_imagem deve usar temImagem=1 AND imageUrl IS NULL (não apenas imageUrl IS NULL)
 - [x] Frontend: card "Sem Imagem" deve ser renomeado para "Pendente de Imagem" e refletir a nova lógica
+
+## Módulo de Edição da Escala Semanal (Admin)
+- [x] Backend: procedure updateAudiences para atualizar público-alvo de uma atividade
+- [x] Backend: procedure listWithAudiences para retornar todas as atividades com seus audiences
+- [x] Frontend: instalar @dnd-kit/core e @dnd-kit/sortable para drag-and-drop
+- [x] Frontend: criar página AdminEscalaSemanal com grade horária semanal editável
+- [x] Frontend: modal de edição de atividade (título, horário, local, ano de residência, bloco)
+- [x] Frontend: drag-and-drop para mover atividades entre dias/horários
+- [x] Frontend: botão de nova atividade e exclusão
+- [x] Frontend: filtro por ano de residência (R1/R2/R3) para editar apenas um grupo
+- [x] App.tsx: adicionar rota /admin/escala-semanal
+- [x] MainLayout/Admin: adicionar link para edição da escala no menu admin

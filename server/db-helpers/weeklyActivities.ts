@@ -129,3 +129,58 @@ export async function removeActivityAudience(id: number) {
   await db.delete(activityAudiences).where(eq(activityAudiences.id, id));
   return { success: true };
 }
+
+/**
+ * Retorna todas as atividades com seus audiences.
+ * Se anoResidencia for fornecido, filtra apenas atividades que incluem aquele ano.
+ */
+export async function getAllActivitiesWithAudiences(anoResidencia?: "R1" | "R2" | "R3") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const activities = await db
+    .select()
+    .from(weeklyActivities)
+    .orderBy(weeklyActivities.diaSemana, weeklyActivities.horaInicio);
+
+  const withAudiences = await Promise.all(
+    activities.map(async (activity) => {
+      const audiences = await getActivityAudiences(activity.id);
+      return { ...activity, audiences };
+    })
+  );
+
+  if (!anoResidencia) return withAudiences;
+
+  // Filtrar atividades que têm audience para o ano solicitado
+  return withAudiences.filter((a) =>
+    a.audiences.length === 0 || // atividades sem audience específico são globais
+    a.audiences.some((aud) => aud.anoResidencia === anoResidencia || aud.anoResidencia === null)
+  );
+}
+
+/**
+ * Substitui todos os audiences de uma atividade pelos novos fornecidos.
+ */
+export async function replaceActivityAudiences(
+  activityId: number,
+  audiences: Array<{ anoResidencia?: "R1" | "R2" | "R3" | null; bloco?: string | null; opcional?: number }>
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Deletar todos os audiences existentes
+  await db.delete(activityAudiences).where(eq(activityAudiences.activityId, activityId));
+
+  // Inserir os novos
+  for (const aud of audiences) {
+    await db.insert(activityAudiences).values({
+      activityId,
+      anoResidencia: aud.anoResidencia ?? undefined,
+      bloco: aud.bloco ?? undefined,
+      opcional: aud.opcional ?? 0,
+    });
+  }
+
+  return { success: true };
+}
