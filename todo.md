@@ -436,3 +436,15 @@
 - [x] CalendarioSemanal.tsx: botões de navegação prev/next dia no mobile
 - [x] AdminEscalaSemanal.tsx: layout mobile com lista por dia e swipe entre dias
 - [x] AdminEscalaSemanal.tsx: botões de navegação prev/next dia no mobile
+
+## Sistema de Pastas/Categorias - Links Úteis
+- [x] Schema: adicionar tabela linksCategorias (id, nome, descricao, icone, ordem, ativo)
+- [x] Schema: adicionar campo categoriaId em linksUteis (FK para linksCategorias, nullable)
+- [x] DB: migrar banco com pnpm db:push
+- [x] Backend: procedures CRUD para categorias (list, listAll, create, update, delete)
+- [x] Backend: atualizar procedures de links para incluir categoriaId no create/update
+- [x] Backend: procedure listComCategorias que retorna links agrupados por categoria
+- [x] Frontend LinksUteis.tsx: exibir links em acordeão por categoria (Accordion shadcn/ui)
+- [x] Frontend LinksUteis.tsx: links sem categoria em seção "Geral" no final
+- [x] Frontend GerenciarLinks.tsx: CRUD de pastas/categorias (criar, editar, excluir)
+- [x] Frontend GerenciarLinks.tsx: campo de categoria no formulário de criação/edição de link

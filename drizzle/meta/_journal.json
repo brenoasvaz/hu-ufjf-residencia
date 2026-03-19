@@ -64,6 +64,13 @@
       "when": 1773226258750,
       "tag": "0008_chubby_magus",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1773922329717,
+      "tag": "0009_optimal_clea",
+      "breakpoints": true
     }
   ]
 }

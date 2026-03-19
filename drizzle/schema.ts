@@ -340,6 +340,23 @@ export type RespostaUsuario = typeof respostasUsuario.$inferSelect;
 export type InsertRespostaUsuario = typeof respostasUsuario.$inferInsert;
 
 /**
+ * Categorias de Links Úteis - Pastas para organizar links
+ */
+export const linksCategorias = mysqlTable("links_categorias", {
+  id: int("id").autoincrement().primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  icone: varchar("icone", { length: 64 }), // nome do ícone lucide-react
+  ordem: int("ordem").default(0).notNull(),
+  ativo: int("ativo").default(1).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type LinksCategoria = typeof linksCategorias.$inferSelect;
+export type InsertLinksCategoria = typeof linksCategorias.$inferInsert;
+
+/**
  * Links Úteis - Links gerenciados pelo administrador
  */
 export const linksUteis = mysqlTable("links_uteis", {
@@ -347,6 +364,7 @@ export const linksUteis = mysqlTable("links_uteis", {
   titulo: varchar("titulo", { length: 255 }).notNull(),
   url: text("url").notNull(),
   descricao: text("descricao"),
+  categoriaId: int("categoria_id"), // FK para linksCategorias (nullable = sem categoria)
   ordem: int("ordem").default(0).notNull(), // Para ordenação customizada
   ativo: int("ativo").default(1).notNull(), // 1 = ativo, 0 = inativo
   createdAt: timestamp("created_at").defaultNow().notNull(),
