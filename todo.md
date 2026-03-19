@@ -18,7 +18,7 @@
 - [x] Implementar calendário semanal com grade de horários
 - [x] Adicionar filtros no calendário semanal (ano R1/R2/R3, blocos)
 - [x] Criar cards de atividade com tooltip/modal de detalhes
-- [ ] Implementar responsividade mobile (lista por dia com swipe)
+- [x] Implementar responsividade mobile (lista por dia com swipe)
 
 ## Interface - Admin
 - [x] Criar painel de importação de PDFs com upload
@@ -430,3 +430,9 @@
 - [x] Frontend: filtro por ano de residência (R1/R2/R3) para editar apenas um grupo
 - [x] App.tsx: adicionar rota /admin/escala-semanal
 - [x] MainLayout/Admin: adicionar link para edição da escala no menu admin
+
+## Responsividade Mobile - Calendário Semanal
+- [x] CalendarioSemanal.tsx: layout mobile com lista por dia e swipe entre dias
+- [x] CalendarioSemanal.tsx: botões de navegação prev/next dia no mobile
+- [x] AdminEscalaSemanal.tsx: layout mobile com lista por dia e swipe entre dias
+- [x] AdminEscalaSemanal.tsx: botões de navegação prev/next dia no mobile

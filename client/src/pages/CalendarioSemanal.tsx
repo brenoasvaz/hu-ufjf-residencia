@@ -1,12 +1,13 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CalendarDays, Clock, MapPin, Info } from "lucide-react";
+import { CalendarDays, Clock, MapPin, Info, ChevronLeft, ChevronRight } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
 const DIAS_SEMANA = [
@@ -27,7 +28,6 @@ const HORARIOS = [
 const BLOCOS_R1 = ["Enfermaria", "CC1", "CC2"];
 const BLOCOS_R2_R3 = ["A", "B", "C"];
 
-// Cores para diferentes tipos de atividades
 const getActivityColor = (titulo: string) => {
   if (titulo.includes("CC HU") || titulo.includes("Centro Cirúrgico")) return "bg-rose-100 border-rose-300 text-rose-900 dark:bg-rose-900/30 dark:border-rose-700 dark:text-rose-200";
   if (titulo.includes("Ambulatório")) return "bg-blue-100 border-blue-300 text-blue-900 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-200";
@@ -43,116 +43,105 @@ export default function CalendarioSemanal() {
   const searchString = useSearch();
   const [selectedYear, setSelectedYear] = useState<string>("R1");
   const [selectedBloco, setSelectedBloco] = useState<string>("Enfermaria");
+  // Mobile: índice do dia selecionado (0 = Segunda, 4 = Sexta)
+  const [mobileDayIndex, setMobileDayIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
-  // Ler parâmetros da URL ao carregar
   useEffect(() => {
     const params = new URLSearchParams(searchString);
     const blocoParam = params.get("bloco");
     const yearParam = params.get("ano");
-    
     if (blocoParam) {
       setSelectedBloco(blocoParam);
-      // Auto-selecionar ano baseado no bloco
-      if (["A", "B", "C"].includes(blocoParam)) {
-        setSelectedYear("R2");
-      } else if (["Enfermaria", "CC1", "CC2"].includes(blocoParam)) {
-        setSelectedYear("R1");
-      }
+      if (["A", "B", "C"].includes(blocoParam)) setSelectedYear("R2");
+      else if (["Enfermaria", "CC1", "CC2"].includes(blocoParam)) setSelectedYear("R1");
     }
-    if (yearParam) {
-      setSelectedYear(yearParam);
-    }
+    if (yearParam) setSelectedYear(yearParam);
   }, [searchString]);
 
-  // Buscar atividades semanais
   const { data: activities, isLoading } = trpc.weeklyActivities.list.useQuery({
     anoResidencia: selectedYear !== "all" ? (selectedYear as "R1" | "R2" | "R3") : undefined,
     bloco: selectedBloco !== "all" ? selectedBloco : undefined,
   });
 
-  // Buscar estágios para obter descrições
   const { data: stages } = trpc.stages.list.useQuery({ activeOnly: true });
 
-  // Agrupar atividades por dia e horário
+  // Dias úteis para mobile (Seg–Sex)
+  const DIAS_UTEIS = DIAS_SEMANA.slice(0, 5);
+
   const activitiesGrid = useMemo(() => {
     if (!activities) return {};
-
     const grid: Record<number, Record<string, any[]>> = {};
-    
     DIAS_SEMANA.forEach(dia => {
       grid[dia.index] = {};
-      HORARIOS.forEach(hora => {
-        grid[dia.index][hora] = [];
-      });
+      HORARIOS.forEach(hora => { grid[dia.index][hora] = []; });
     });
-
-    // Helper para converter hora em minutos
     const timeToMinutes = (time: string) => {
       const [h, m] = time.split(":").map(Number);
       return h * 60 + m;
     };
-
     activities.forEach((activity: any) => {
       const startTime = activity.horaInicio?.substring(0, 5) || "07:00";
       const endTime = activity.horaFim?.substring(0, 5) || "08:00";
       const dayIndex = activity.diaSemana;
-      
       const startMinutes = timeToMinutes(startTime);
       const endMinutes = timeToMinutes(endTime);
-      
       let isFirstBlock = true;
-      
-      // Preencher todos os horários ocupados pela atividade
       HORARIOS.forEach(hora => {
         const horaMinutes = timeToMinutes(hora);
-        
-        // Se o horário está dentro do intervalo da atividade
         if (horaMinutes >= startMinutes && horaMinutes < endMinutes) {
           if (grid[dayIndex] && grid[dayIndex][hora]) {
-            grid[dayIndex][hora].push({
-              ...activity,
-              isFirstBlock,
-            });
-            isFirstBlock = false; // Próximos blocos não são o primeiro
+            grid[dayIndex][hora].push({ ...activity, isFirstBlock });
+            isFirstBlock = false;
           }
         }
       });
     });
-
     return grid;
   }, [activities]);
 
-  // Blocos disponíveis baseado no ano selecionado
+  // Atividades do dia selecionado no mobile (agrupadas por horário, sem duplicatas de bloco)
+  const mobileDayActivities = useMemo(() => {
+    if (!activities) return [];
+    const dia = DIAS_UTEIS[mobileDayIndex];
+    if (!dia) return [];
+    const timeToMinutes = (time: string) => {
+      const [h, m] = time.split(":").map(Number);
+      return h * 60 + m;
+    };
+    const seen = new Set<number>();
+    const result: any[] = [];
+    activities.forEach((activity: any) => {
+      if (activity.diaSemana === dia.index && !seen.has(activity.id)) {
+        seen.add(activity.id);
+        result.push(activity);
+      }
+    });
+    return result.sort((a, b) =>
+      timeToMinutes(a.horaInicio || "07:00") - timeToMinutes(b.horaInicio || "07:00")
+    );
+  }, [activities, mobileDayIndex]);
+
   const availableBlocks = useMemo(() => {
     if (selectedYear === "all") return [...BLOCOS_R1, ...BLOCOS_R2_R3];
     if (selectedYear === "R1") return BLOCOS_R1;
     return BLOCOS_R2_R3;
   }, [selectedYear]);
 
-  // Função para obter descrição do bloco
   const getBlocoDescription = (bloco: string) => {
-    const blocoMap: Record<string, string> = {
-      "A": "Bloco A",
-      "B": "Bloco B",
-      "C": "Bloco C",
-      "Enfermaria": "Enfermaria",
-      "CC1": "CC1",
-      "CC2": "CC2",
-    };
-    const blocoNome = blocoMap[bloco] || bloco;
-    const stage = stages?.find((s: any) => s.nome === blocoNome);
+    const blocoMap: Record<string, string> = { "A": "Bloco A", "B": "Bloco B", "C": "Bloco C", "Enfermaria": "Enfermaria", "CC1": "CC1", "CC2": "CC2" };
+    const stage = stages?.find((s: any) => s.nome === (blocoMap[bloco] || bloco));
     return stage?.descricao || null;
   };
 
-  // Calcular altura do bloco baseado na duração
   const getActivityHeight = (activity: any) => {
     const start = activity.horaInicio?.split(":").map(Number) || [7, 0];
     const end = activity.horaFim?.split(":").map(Number) || [8, 0];
     const duration = (end[0] * 60 + end[1]) - (start[0] * 60 + start[1]);
-    return Math.max(duration / 60, 1); // Mínimo 1 hora
+    return Math.max(duration / 60, 1);
   };
 
-  // Título do bloco selecionado
   const getBlocoTitle = () => {
     if (selectedBloco === "A") return "Bloco A - Ombro, Pé e Mão";
     if (selectedBloco === "B") return "Bloco B - Coluna e Quadril";
@@ -161,6 +150,28 @@ export default function CalendarioSemanal() {
     if (selectedBloco === "CC1") return "Centro Cirúrgico 1";
     if (selectedBloco === "CC2") return "Centro Cirúrgico 2";
     return selectedBloco;
+  };
+
+  // Swipe handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    // Só swipe horizontal (dx > dy em módulo)
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      if (dx < 0 && mobileDayIndex < DIAS_UTEIS.length - 1) {
+        setMobileDayIndex(prev => prev + 1);
+      } else if (dx > 0 && mobileDayIndex > 0) {
+        setMobileDayIndex(prev => prev - 1);
+      }
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
   };
 
   return (
@@ -189,7 +200,6 @@ export default function CalendarioSemanal() {
               <Label className="mb-2 block">Ano de Residência</Label>
               <Select value={selectedYear} onValueChange={(value) => {
                 setSelectedYear(value);
-                // Auto-selecionar primeiro bloco do ano
                 if (value === "R1") setSelectedBloco("Enfermaria");
                 else if (value === "R2" || value === "R3") setSelectedBloco("A");
               }}>
@@ -204,7 +214,6 @@ export default function CalendarioSemanal() {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <Label className="mb-2 block">Bloco / Estágio</Label>
               <Select value={selectedBloco} onValueChange={setSelectedBloco}>
@@ -221,12 +230,7 @@ export default function CalendarioSemanal() {
                     else if (bloco === "Enfermaria") label = "Enfermaria";
                     else if (bloco === "CC1") label = "Centro Cirúrgico 1";
                     else if (bloco === "CC2") label = "Centro Cirúrgico 2";
-                    
-                    return (
-                      <SelectItem key={bloco} value={bloco}>
-                        {label}
-                      </SelectItem>
-                    );
+                    return <SelectItem key={bloco} value={bloco}>{label}</SelectItem>;
                   })}
                 </SelectContent>
               </Select>
@@ -243,8 +247,118 @@ export default function CalendarioSemanal() {
         )}
       </div>
 
-      {/* Grade Semanal em Colunas */}
-      <Card className="overflow-hidden">
+      {/* ── MOBILE: lista por dia com swipe ── */}
+      <div className="block md:hidden">
+        {/* Navegação de dias */}
+        <div className="flex items-center justify-between mb-3">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setMobileDayIndex(prev => Math.max(0, prev - 1))}
+            disabled={mobileDayIndex === 0}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+
+          {/* Pills de dias */}
+          <div className="flex gap-1">
+            {DIAS_UTEIS.map((dia, i) => (
+              <button
+                key={dia.index}
+                onClick={() => setMobileDayIndex(i)}
+                className={`w-9 h-9 rounded-full text-xs font-semibold transition-colors ${
+                  i === mobileDayIndex
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {dia.abrev}
+              </button>
+            ))}
+          </div>
+
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setMobileDayIndex(prev => Math.min(DIAS_UTEIS.length - 1, prev + 1))}
+            disabled={mobileDayIndex === DIAS_UTEIS.length - 1}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Área com swipe */}
+        <Card
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className="overflow-hidden select-none"
+        >
+          <CardHeader className="pb-2 bg-muted/40">
+            <CardTitle className="text-base text-center">
+              {DIAS_UTEIS[mobileDayIndex]?.nome}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="p-4 space-y-3">
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+              </div>
+            ) : mobileDayActivities.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground text-sm">
+                Nenhuma atividade neste dia
+              </div>
+            ) : (
+              <div className="divide-y">
+                {mobileDayActivities.map((activity: any) => (
+                  <div
+                    key={activity.id}
+                    className={`flex gap-3 p-3 ${getActivityColor(activity.titulo)}`}
+                  >
+                    {/* Horário */}
+                    <div className="flex-shrink-0 text-center w-14">
+                      <div className="text-xs font-bold">{activity.horaInicio?.substring(0, 5)}</div>
+                      <div className="text-[10px] opacity-70">até</div>
+                      <div className="text-xs font-bold">{activity.horaFim?.substring(0, 5)}</div>
+                    </div>
+                    {/* Separador */}
+                    <div className="w-px bg-current opacity-20 flex-shrink-0" />
+                    {/* Conteúdo */}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm leading-tight">{activity.titulo}</div>
+                      {activity.local && (
+                        <div className="flex items-center gap-1 mt-1 text-xs opacity-75">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{activity.local}</span>
+                        </div>
+                      )}
+                      {activity.descricao && (
+                        <div className="text-xs opacity-70 mt-1 line-clamp-2">{activity.descricao}</div>
+                      )}
+                      {activity.audiences?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {activity.audiences.map((aud: any) => (
+                            <Badge key={aud.id} variant="secondary" className="text-[10px] px-1 py-0">
+                              {aud.anoResidencia}{aud.bloco && ` · ${aud.bloco}`}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Dica de swipe */}
+        <p className="text-center text-xs text-muted-foreground mt-2">
+          Deslize para navegar entre os dias
+        </p>
+      </div>
+
+      {/* ── DESKTOP: grade semanal em colunas ── */}
+      <Card className="overflow-hidden hidden md:block">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-6 space-y-4">
@@ -261,8 +375,7 @@ export default function CalendarioSemanal() {
                   </div>
                   {DIAS_SEMANA.map((dia) => (
                     <div key={dia.index} className="p-3 font-medium text-center border-r last:border-r-0">
-                      <span className="hidden md:inline">{dia.nome}</span>
-                      <span className="md:hidden">{dia.abrev}</span>
+                      {dia.nome}
                     </div>
                   ))}
                 </div>
@@ -271,20 +384,13 @@ export default function CalendarioSemanal() {
                 <div className="divide-y">
                   {HORARIOS.map((hora) => (
                     <div key={hora} className="grid grid-cols-8 min-h-[80px]">
-                      {/* Coluna de horário */}
                       <div className="p-2 border-r bg-muted/30 flex items-start justify-center">
                         <span className="text-sm font-medium text-muted-foreground">{hora}</span>
                       </div>
-
-                      {/* Colunas dos dias */}
                       {DIAS_SEMANA.map((dia) => {
                         const dayActivities = activitiesGrid[dia.index]?.[hora] || [];
-                        
                         return (
-                          <div 
-                            key={`${dia.index}-${hora}`} 
-                            className="p-1 border-r last:border-r-0 relative"
-                          >
+                          <div key={`${dia.index}-${hora}`} className="p-1 border-r last:border-r-0 relative">
                             {dayActivities.length === 0 ? (
                               <div className="h-full" />
                             ) : (
@@ -294,19 +400,15 @@ export default function CalendarioSemanal() {
                                     <TooltipTrigger asChild>
                                       <div
                                         className={`rounded border text-xs cursor-pointer transition-all hover:shadow-md ${
-                                          activity.isFirstBlock 
-                                            ? `p-2 ${getActivityColor(activity.titulo)}` 
+                                          activity.isFirstBlock
+                                            ? `p-2 ${getActivityColor(activity.titulo)}`
                                             : `p-1 ${getActivityColor(activity.titulo)} opacity-60`
                                         }`}
-                                        style={{
-                                          minHeight: activity.isFirstBlock ? `${Math.min(getActivityHeight(activity) * 60, 120)}px` : '60px'
-                                        }}
+                                        style={{ minHeight: activity.isFirstBlock ? `${Math.min(getActivityHeight(activity) * 60, 120)}px` : '60px' }}
                                       >
                                         {activity.isFirstBlock ? (
                                           <>
-                                            <div className="font-bold line-clamp-2 mb-1">
-                                              {activity.titulo}
-                                            </div>
+                                            <div className="font-bold line-clamp-2 mb-1">{activity.titulo}</div>
                                             <div className="text-[10px] opacity-75 font-semibold">
                                               {activity.horaInicio} - {activity.horaFim}
                                             </div>
@@ -319,7 +421,7 @@ export default function CalendarioSemanal() {
                                           </>
                                         ) : (
                                           <div className="h-full flex items-center justify-center">
-                                            <div className="w-1 h-8 bg-current opacity-30 rounded"></div>
+                                            <div className="w-1 h-8 bg-current opacity-30 rounded" />
                                           </div>
                                         )}
                                       </div>
@@ -344,8 +446,7 @@ export default function CalendarioSemanal() {
                                           <div className="flex flex-wrap gap-1 pt-1">
                                             {activity.audiences.map((aud: any) => (
                                               <Badge key={aud.id} variant="secondary" className="text-xs">
-                                                {aud.anoResidencia}
-                                                {aud.bloco && ` - ${aud.bloco}`}
+                                                {aud.anoResidencia}{aud.bloco && ` - ${aud.bloco}`}
                                               </Badge>
                                             ))}
                                           </div>
@@ -379,44 +480,39 @@ export default function CalendarioSemanal() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-rose-100 border border-rose-300" />
+              <div className="w-4 h-4 rounded bg-rose-100 border border-rose-300 flex-shrink-0" />
               <span className="text-sm">Centro Cirúrgico</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300" />
+              <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300 flex-shrink-0" />
               <span className="text-sm">Ambulatório</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-emerald-100 border border-emerald-300" />
+              <div className="w-4 h-4 rounded bg-emerald-100 border border-emerald-300 flex-shrink-0" />
               <span className="text-sm">Visita</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-amber-100 border border-amber-300" />
+              <div className="w-4 h-4 rounded bg-amber-100 border border-amber-300 flex-shrink-0" />
               <span className="text-sm">Estudo Dirigido</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-violet-100 border border-violet-300" />
+              <div className="w-4 h-4 rounded bg-violet-100 border border-violet-300 flex-shrink-0" />
               <span className="text-sm">Reunião / Clube</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300" />
+              <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300 flex-shrink-0" />
               <span className="text-sm">Plantão HPS</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-cyan-100 border border-cyan-300" />
+              <div className="w-4 h-4 rounded bg-cyan-100 border border-cyan-300 flex-shrink-0" />
               <span className="text-sm">Enfermaria</span>
             </div>
           </div>
-
           <div className="mt-4 pt-4 border-t">
             <p className="text-sm text-muted-foreground mb-2 font-medium">Blocos de Residência:</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-              <div>
-                <strong>R1:</strong> Enfermaria, CC1 (Centro Cirúrgico 1), CC2 (Centro Cirúrgico 2)
-              </div>
-              <div>
-                <strong>R2/R3:</strong> Bloco A (Ombro/Pé/Mão), Bloco B (Coluna/Quadril), Bloco C (Joelho/Tumor)
-              </div>
+              <div><strong>R1:</strong> Enfermaria, CC1 (Centro Cirúrgico 1), CC2 (Centro Cirúrgico 2)</div>
+              <div><strong>R2/R3:</strong> Bloco A (Ombro/Pé/Mão), Bloco B (Coluna/Quadril), Bloco C (Joelho/Tumor)</div>
             </div>
           </div>
         </CardContent>

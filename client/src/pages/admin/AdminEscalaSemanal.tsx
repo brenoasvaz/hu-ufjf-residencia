@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, GripVertical, Clock, MapPin, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, GripVertical, Clock, MapPin, Users, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   DndContext,
   DragEndEvent,
@@ -382,6 +382,10 @@ export default function AdminEscalaSemanal() {
   const [defaultDia, setDefaultDia] = useState<number>(1);
   const [defaultHora, setDefaultHora] = useState<string>("08:00");
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Mobile: índice do dia selecionado (0 = Segunda, 4 = Sexta)
+  const [mobileDayIndex, setMobileDayIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+  const touchStartY = useRef<number | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -482,6 +486,34 @@ export default function AdminEscalaSemanal() {
     setModalOpen(true);
   };
 
+  // Swipe handlers para mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null || touchStartY.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+      if (dx < 0 && mobileDayIndex < DIAS_SEMANA.length - 1) setMobileDayIndex(prev => prev + 1);
+      else if (dx > 0 && mobileDayIndex > 0) setMobileDayIndex(prev => prev - 1);
+    }
+    touchStartX.current = null;
+    touchStartY.current = null;
+  };
+
+  // Atividades do dia selecionado no mobile
+  const mobileDayActivities = useMemo(() => {
+    const dia = DIAS_SEMANA[mobileDayIndex];
+    if (!dia) return [];
+    const timeToMinutes = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+    return (activities as any[])
+      .filter((a) => a.diaSemana === dia.index)
+      .sort((a, b) => timeToMinutes(a.horaInicio || "07:00") - timeToMinutes(b.horaInicio || "07:00"));
+  }, [activities, mobileDayIndex]);
+
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
@@ -526,10 +558,134 @@ export default function AdminEscalaSemanal() {
         ))}
       </div>
 
-      {/* Grade semanal */}
+      {/* ── MOBILE: lista por dia com swipe ── */}
+      <div className="block md:hidden">
+        {/* Navegação de dias */}
+        <div className="flex items-center justify-between mb-3">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setMobileDayIndex(prev => Math.max(0, prev - 1))}
+            disabled={mobileDayIndex === 0}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <div className="flex gap-1">
+            {DIAS_SEMANA.map((dia, i) => (
+              <button
+                key={dia.index}
+                onClick={() => setMobileDayIndex(i)}
+                className={`w-9 h-9 rounded-full text-xs font-semibold transition-colors ${
+                  i === mobileDayIndex
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {dia.abrev}
+              </button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setMobileDayIndex(prev => Math.min(DIAS_SEMANA.length - 1, prev + 1))}
+            disabled={mobileDayIndex === DIAS_SEMANA.length - 1}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Área com swipe */}
+        <Card
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          className="overflow-hidden select-none"
+        >
+          <CardHeader className="pb-2 bg-muted/40 flex flex-row items-center justify-between">
+            <CardTitle className="text-base">{DIAS_SEMANA[mobileDayIndex]?.nome}</CardTitle>
+            <Button
+              size="sm"
+              onClick={() => {
+                setEditingActivity(null);
+                setDefaultDia(DIAS_SEMANA[mobileDayIndex]?.index ?? 1);
+                setDefaultHora("08:00");
+                setModalOpen(true);
+              }}
+            >
+              <Plus className="h-3 w-3 mr-1" /> Adicionar
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isLoading ? (
+              <div className="p-4 space-y-3">
+                {[1, 2, 3].map(i => <div key={i} className="h-16 bg-muted animate-pulse rounded" />)}
+              </div>
+            ) : mobileDayActivities.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground text-sm">
+                Nenhuma atividade neste dia
+              </div>
+            ) : (
+              <div className="divide-y">
+                {mobileDayActivities.map((activity: any) => (
+                  <div
+                    key={activity.id}
+                    className={`flex gap-3 p-3 ${getActivityColor(activity.titulo)}`}
+                  >
+                    {/* Horário */}
+                    <div className="flex-shrink-0 text-center w-14">
+                      <div className="text-xs font-bold">{activity.horaInicio?.substring(0, 5)}</div>
+                      <div className="text-[10px] opacity-70">até</div>
+                      <div className="text-xs font-bold">{activity.horaFim?.substring(0, 5)}</div>
+                    </div>
+                    <div className="w-px bg-current opacity-20 flex-shrink-0" />
+                    {/* Conteúdo */}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm leading-tight">{activity.titulo}</div>
+                      {activity.local && (
+                        <div className="flex items-center gap-1 mt-1 text-xs opacity-75">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{activity.local}</span>
+                        </div>
+                      )}
+                      {activity.audiences?.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {activity.audiences.map((aud: any, i: number) => (
+                            <Badge key={i} variant="secondary" className="text-[10px] px-1 py-0">
+                              {aud.anoResidencia ?? "Todos"}{aud.bloco ? ` · ${aud.bloco}` : ""}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {/* Ações */}
+                    <div className="flex flex-col gap-1 flex-shrink-0">
+                      <button
+                        className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10"
+                        onClick={() => handleEdit(activity)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400"
+                        onClick={() => setDeleteTarget(activity)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <p className="text-center text-xs text-muted-foreground mt-2">Deslize para navegar entre os dias</p>
+      </div>
+
+      {/* ── DESKTOP: grade semanal ── */}
       {isLoading ? (
-        <div className="text-center py-16 text-muted-foreground">Carregando escala...</div>
+        <div className="text-center py-16 text-muted-foreground hidden md:block">Carregando escala...</div>
       ) : (
+        <div className="hidden md:block">
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
@@ -600,6 +756,7 @@ export default function AdminEscalaSemanal() {
             )}
           </DragOverlay>
         </DndContext>
+        </div>
       )}
 
       {/* Modal de criação/edição */}
