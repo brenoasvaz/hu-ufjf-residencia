@@ -8,7 +8,7 @@ import {
   FolderOpen, Folder, ChevronDown, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle,
@@ -62,7 +62,7 @@ export default function LinksUteis() {
   const [editOrdem, setEditOrdem] = useState(0);
   const [editCategoriaId, setEditCategoriaId] = useState<string>("__none__");
 
-  // ── Estado de diálogos de categoria ───────────────────────────────────────
+  // ── Estado de diálogos de categoria ───────────────────────────────────────────────
   const [catDialogOpen, setCatDialogOpen] = useState(false);
   const [deleteCatDialogOpen, setDeleteCatDialogOpen] = useState(false);
   const [selectedCat, setSelectedCat] = useState<any>(null);
@@ -70,6 +70,32 @@ export default function LinksUteis() {
   const [catNome, setCatNome] = useState("");
   const [catDescricao, setCatDescricao] = useState("");
   const [catOrdem, setCatOrdem] = useState(0);
+
+  // ── Edição inline do nome da pasta ──────────────────────────────────────
+  const [inlineEditId, setInlineEditId] = useState<number | null>(null);
+  const [inlineEditNome, setInlineEditNome] = useState("");
+  const inlineInputRef = useRef<HTMLInputElement>(null);
+
+  const handleInlineEdit = useCallback((e: React.MouseEvent, group: any) => {
+    e.stopPropagation();
+    setInlineEditId(group.id);
+    setInlineEditNome(group.nome);
+    setTimeout(() => inlineInputRef.current?.select(), 50);
+  }, []);
+
+  const handleInlineSave = useCallback(async (groupId: number) => {
+    if (!inlineEditNome.trim()) { setInlineEditId(null); return; }
+    try {
+      await updateCategoriaMutation.mutateAsync({ id: groupId, nome: inlineEditNome.trim() });
+      toast.success("Nome atualizado!");
+      refetchCategorias();
+      refetchLinks();
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao atualizar nome");
+    } finally {
+      setInlineEditId(null);
+    }
+  }, [inlineEditNome, updateCategoriaMutation, refetchCategorias, refetchLinks]);
 
   // ── Agrupamento de links por categoria ────────────────────────────────────
   const grouped = useMemo(() => {
@@ -276,9 +302,30 @@ export default function LinksUteis() {
                       ? <FolderOpen className="h-5 w-5 text-primary flex-shrink-0" />
                       : <Folder className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     }
-                    <div>
-                      <span className="font-semibold text-sm">{group.nome}</span>
-                      <Badge variant="secondary" className="ml-2 text-xs">
+                    <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                      {isAdmin && group.id !== null && inlineEditId === group.id ? (
+                        <input
+                          ref={inlineInputRef}
+                          className="font-semibold text-sm border-b border-primary bg-transparent outline-none min-w-[120px] max-w-[220px] px-1"
+                          value={inlineEditNome}
+                          onChange={e => setInlineEditNome(e.target.value)}
+                          onBlur={() => handleInlineSave(group.id!)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') handleInlineSave(group.id!);
+                            if (e.key === 'Escape') setInlineEditId(null);
+                          }}
+                          autoFocus
+                        />
+                      ) : (
+                        <span
+                          className={`font-semibold text-sm${isAdmin && group.id !== null ? ' cursor-text hover:underline decoration-dotted' : ''}`}
+                          title={isAdmin && group.id !== null ? 'Clique para editar o nome' : undefined}
+                          onClick={e => isAdmin && group.id !== null ? handleInlineEdit(e, group) : undefined}
+                        >
+                          {group.nome}
+                        </span>
+                      )}
+                      <Badge variant="secondary" className="text-xs flex-shrink-0">
                         {group.links.length} {group.links.length === 1 ? "link" : "links"}
                       </Badge>
                     </div>

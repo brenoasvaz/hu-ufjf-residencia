@@ -451,3 +451,6 @@
 
 ## Bug - CalendarioSemanal Mobile
 - [x] Sábado e domingo não aparecem na navegação mobile (pills e swipe)
+
+## Bug - Links Úteis Edição de Pasta
+- [x] Nome da pasta não é editável no modal de edição de categoria
