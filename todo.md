@@ -448,3 +448,6 @@
 - [x] Frontend LinksUteis.tsx: links sem categoria em seção "Geral" no final
 - [x] Frontend GerenciarLinks.tsx: CRUD de pastas/categorias (criar, editar, excluir)
 - [x] Frontend GerenciarLinks.tsx: campo de categoria no formulário de criação/edição de link
+
+## Bug - CalendarioSemanal Mobile
+- [x] Sábado e domingo não aparecem na navegação mobile (pills e swipe)

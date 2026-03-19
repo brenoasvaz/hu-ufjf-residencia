@@ -67,8 +67,8 @@ export default function CalendarioSemanal() {
 
   const { data: stages } = trpc.stages.list.useQuery({ activeOnly: true });
 
-  // Dias úteis para mobile (Seg–Sex)
-  const DIAS_UTEIS = DIAS_SEMANA.slice(0, 5);
+  // Todos os dias para mobile (Seg–Dom)
+  const DIAS_UTEIS = DIAS_SEMANA;
 
   const activitiesGrid = useMemo(() => {
     if (!activities) return {};
