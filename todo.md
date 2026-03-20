@@ -454,3 +454,12 @@
 
 ## Bug - Links Úteis Edição de Pasta
 - [x] Nome da pasta não é editável no modal de edição de categoria
+
+## Notificação por E-mail ao Liberar Simulado
+- [ ] Backend: ao liberar simulado, buscar todos os residentes ativos com e-mail
+- [ ] Backend: enviar e-mail para cada residente com nome do modelo e link para avaliações
+- [ ] Backend: usar Resend API ou SMTP para envio de e-mail
+
+## Filtro por Bloco/Estágio na Escala Semanal
+- [x] AdminEscalaSemanal.tsx: adicionar filtro por bloco/estágio (A, B, C, Enfermaria, CC1, CC2) além do filtro de ano
+- [x] AdminEscalaSemanal.tsx: filtro de bloco deve filtrar atividades exibidas na grade e no modal de criação

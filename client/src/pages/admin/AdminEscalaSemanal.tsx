@@ -376,6 +376,7 @@ function ActivityModal({
 // ─── Página principal ──────────────────────────────────────────────────────────
 export default function AdminEscalaSemanal() {
   const [filtroAno, setFiltroAno] = useState<string>("todos");
+  const [filtroBloco, setFiltroBloco] = useState<string>("todos");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<any>(null);
   const [deleteTarget, setDeleteTarget] = useState<any>(null);
@@ -389,9 +390,18 @@ export default function AdminEscalaSemanal() {
 
   const utils = trpc.useUtils();
 
-  const { data: activities = [], isLoading } = trpc.weeklyActivities.listWithAudiences.useQuery(
+  const { data: activitiesRaw = [], isLoading } = trpc.weeklyActivities.listWithAudiences.useQuery(
     filtroAno !== "todos" ? { anoResidencia: filtroAno as "R1" | "R2" | "R3" } : {}
   );
+
+  // Filtrar por bloco no frontend (audiences)
+  const activities = useMemo(() => {
+    if (filtroBloco === "todos") return activitiesRaw as any[];
+    return (activitiesRaw as any[]).filter((act) => {
+      if (!act.audiences || act.audiences.length === 0) return true; // sem restrição = todos
+      return act.audiences.some((a: any) => a.bloco === filtroBloco);
+    });
+  }, [activitiesRaw, filtroBloco]);
 
   const createMutation = trpc.weeklyActivities.createWithAudiences.useMutation({
     onSuccess: () => { utils.weeklyActivities.listWithAudiences.invalidate(); toast.success("Atividade criada"); setModalOpen(false); },
@@ -526,8 +536,8 @@ export default function AdminEscalaSemanal() {
         </div>
         <div className="flex items-center gap-3">
           {/* Filtro por ano */}
-          <Select value={filtroAno} onValueChange={setFiltroAno}>
-            <SelectTrigger className="w-[160px]">
+          <Select value={filtroAno} onValueChange={(v) => { setFiltroAno(v); setFiltroBloco("todos"); }}>
+            <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Filtrar por ano" />
             </SelectTrigger>
             <SelectContent>
@@ -537,6 +547,20 @@ export default function AdminEscalaSemanal() {
               ))}
             </SelectContent>
           </Select>
+          {/* Filtro por bloco (só aparece quando um ano está selecionado) */}
+          {filtroAno !== "todos" && (
+            <Select value={filtroBloco} onValueChange={setFiltroBloco}>
+              <SelectTrigger className="w-[150px]">
+                <SelectValue placeholder="Filtrar por bloco" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos os blocos</SelectItem>
+                {(filtroAno === "R1" ? BLOCOS_R1 : BLOCOS_R2_R3).map((b) => (
+                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <Button onClick={() => { setEditingActivity(null); setDefaultDia(1); setDefaultHora("08:00"); setModalOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" /> Nova Atividade
           </Button>
