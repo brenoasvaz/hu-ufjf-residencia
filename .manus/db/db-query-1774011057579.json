@@ -1,0 +1,22 @@
+{
+  "query": "SELECT lu.id, lu.titulo, lu.categoria_id, lc.nome as categoria_nome FROM links_uteis lu LEFT JOIN links_categorias lc ON lu.categoria_id = lc.id ORDER BY lu.ordem;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT lu.id, lu.titulo, lu.categoria_id, lc.nome as categoria_nome FROM links_uteis lu LEFT JOIN links_categorias lc ON lu.categoria_id = lc.id ORDER BY lu.ordem;",
+  "rows": [
+    {
+      "id": "1",
+      "titulo": "Avaliações práticas (EPA - HU UFJF)",
+      "categoria_id": "1",
+      "categoria_nome": "Geral"
+    },
+    {
+      "id": "30001",
+      "titulo": "EPA SBOT",
+      "categoria_id": "1",
+      "categoria_nome": "Geral"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitulo\tcategoria_id\tcategoria_nome\n1\tAvaliações práticas (EPA - HU UFJF)\t1\tGeral\n30001\tEPA SBOT\t1\tGeral\n",
+  "stderr": "",
+  "execution_time_ms": 55
+}

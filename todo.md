@@ -463,3 +463,4 @@
 ## Filtro por Bloco/Estágio na Escala Semanal
 - [x] AdminEscalaSemanal.tsx: adicionar filtro por bloco/estágio (A, B, C, Enfermaria, CC1, CC2) além do filtro de ano
 - [x] AdminEscalaSemanal.tsx: filtro de bloco deve filtrar atividades exibidas na grade e no modal de criação
+- [x] Corrigir edição da pasta "Geral" em Links Úteis (group.id === null bloqueia edição inline e botões de editar/excluir)

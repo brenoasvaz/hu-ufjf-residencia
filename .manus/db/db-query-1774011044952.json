@@ -1,0 +1,32 @@
+{
+  "query": "SELECT * FROM links_categorias ORDER BY ordem, created_at; SELECT * FROM links_uteis ORDER BY ordem, created_at;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT * FROM links_categorias ORDER BY ordem, created_at; SELECT * FROM links_uteis ORDER BY ordem, created_at;",
+  "rows": [
+    {
+      "id": "1",
+      "titulo": "Avaliações práticas (EPA - HU UFJF)",
+      "url": "https://forms.office.com/r/HS0N4gcMbw",
+      "descricao": "Formulário para avaliação prática dos residentes de ortopedia do serviço do HU UFJF",
+      "ordem": "1",
+      "ativo": "1",
+      "created_at": "2026-02-26 14:56:47",
+      "updated_at": "2026-03-12 19:47:39",
+      "categoria_id": "NULL"
+    },
+    {
+      "id": "30001",
+      "titulo": "EPA SBOT",
+      "url": "https://docs.google.com/forms/d/e/1FAIpQLSf9CDmAZEsWpGTvTCOr2MIwLpmp1oZ7V6eM5X3AficUQWkzGg/viewform?pli=1",
+      "descricao": "Avaliações por competências oficial SBOT",
+      "ordem": "2",
+      "ativo": "1",
+      "created_at": "2026-03-12 19:47:16",
+      "updated_at": "2026-03-12 19:47:16",
+      "categoria_id": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitulo\turl\tdescricao\tordem\tativo\tcreated_at\tupdated_at\tcategoria_id\n1\tAvaliações práticas (EPA - HU UFJF)\thttps://forms.office.com/r/HS0N4gcMbw\tFormulário para avaliação prática dos residentes de ortopedia do serviço do HU UFJF\t1\t1\t2026-02-26 14:56:47\t2026-03-12 19:47:39\tNULL\n30001\tEPA SBOT\thttps://docs.google.com/forms/d/e/1FAIpQLSf9CDmAZEsWpGTvTCOr2MIwLpmp1oZ7V6eM5X3AficUQWkzGg/viewform?pli=1\tAvaliações por competências oficial SBOT\t2\t1\t2026-03-12 19:47:16\t2026-03-12 19:47:16\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 753
+}

@@ -109,15 +109,16 @@ export default function LinksUteis() {
       if (!catMap.has(catId)) {
         catMap.set(catId, {
           id: catId,
-          nome: catId === null ? "Geral" : (link.categoriaNome ?? "Sem categoria"),
-          icone: catId === null ? null : link.categoriaIcone,
-          ordem: catId === null ? 9999 : (link.categoriaOrdem ?? 0),
+          nome: link.categoriaNome ?? "Geral",
+          icone: link.categoriaIcone ?? null,
+          ordem: link.categoriaOrdem ?? 9999,
           links: [],
         });
       }
       catMap.get(catId)!.links.push(link);
     });
 
+    // Adicionar categorias sem links (para exibição no admin)
     return Array.from(catMap.values()).sort((a, b) => a.ordem - b.ordem);
   }, [links]);
 
@@ -303,7 +304,7 @@ export default function LinksUteis() {
                       : <Folder className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                     }
                     <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
-                      {isAdmin && group.id !== null && inlineEditId === group.id ? (
+                      {isAdmin && group.id !== null && inlineEditId === (group.id as number) ? (
                         <input
                           ref={inlineInputRef}
                           className="font-semibold text-sm border-b border-primary bg-transparent outline-none min-w-[120px] max-w-[220px] px-1"
@@ -318,9 +319,9 @@ export default function LinksUteis() {
                         />
                       ) : (
                         <span
-                          className={`font-semibold text-sm${isAdmin && group.id !== null ? ' cursor-text hover:underline decoration-dotted' : ''}`}
-                          title={isAdmin && group.id !== null ? 'Clique para editar o nome' : undefined}
-                          onClick={e => isAdmin && group.id !== null ? handleInlineEdit(e, group) : undefined}
+                          className={`font-semibold text-sm${isAdmin ? ' cursor-text hover:underline decoration-dotted' : ''}`}
+                          title={isAdmin ? 'Clique para editar o nome' : undefined}
+                          onClick={e => isAdmin ? handleInlineEdit(e, group) : undefined}
                         >
                           {group.nome}
                         </span>
@@ -338,6 +339,7 @@ export default function LinksUteis() {
                           size="icon"
                           className="h-7 w-7"
                           onClick={() => handleEditCat(group)}
+                          title="Editar pasta"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                         </Button>
@@ -346,6 +348,7 @@ export default function LinksUteis() {
                           size="icon"
                           className="h-7 w-7 text-destructive hover:text-destructive"
                           onClick={() => { setCatToDelete(group); setDeleteCatDialogOpen(true); }}
+                          title="Excluir pasta"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
