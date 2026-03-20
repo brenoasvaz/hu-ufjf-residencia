@@ -30,7 +30,8 @@ export default function GerenciarLinks() {
   const [editDescricao, setEditDescricao] = useState("");
   const [editOrdem, setEditOrdem] = useState(0);
 
-  const { data: links, isLoading, refetch } = trpc.links.listAll.useQuery();
+  const { data: linksData, isLoading, refetch } = trpc.links.list.useQuery();
+  const links = linksData?.links ?? [];
   const createMutation = trpc.links.create.useMutation();
   const updateMutation = trpc.links.update.useMutation();
   const deleteMutation = trpc.links.delete.useMutation();
@@ -162,7 +163,7 @@ export default function GerenciarLinks() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {links.map((link) => (
+          {links.map((link: any) => (
             <Card key={link.id}>
               <CardContent className="py-4">
                 <div className="flex items-start justify-between gap-4">

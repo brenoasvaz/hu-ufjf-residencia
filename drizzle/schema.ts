@@ -347,6 +347,7 @@ export const linksCategorias = mysqlTable("links_categorias", {
   nome: varchar("nome", { length: 255 }).notNull(),
   descricao: text("descricao"),
   icone: varchar("icone", { length: 64 }), // nome do ícone lucide-react
+  parentId: int("parent_id"), // FK para linksCategorias (nullable = pasta raiz)
   ordem: int("ordem").default(0).notNull(),
   ativo: int("ativo").default(1).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

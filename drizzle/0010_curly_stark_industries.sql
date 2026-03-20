@@ -1,0 +1,1 @@
+ALTER TABLE `links_categorias` ADD `parent_id` int;
