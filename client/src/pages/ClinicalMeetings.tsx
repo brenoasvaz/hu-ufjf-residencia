@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search } from "lucide-react";
+import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search, ArrowLeftRight, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { EditClinicalMeetingDialog } from "@/components/EditClinicalMeetingDialog";
 import { toast } from "sonner";
@@ -79,6 +79,11 @@ export default function ClinicalMeetings() {
   const [searchQuery, setSearchQuery] = useState("");
   const [editingMeeting, setEditingMeeting] = useState<any>(null);
   const [deletingMeetingId, setDeletingMeetingId] = useState<number | null>(null);
+
+  // ── Troca de datas ─────────────────────────────────────────────────────────
+  const [swapMode, setSwapMode] = useState(false);
+  const [swapSelected, setSwapSelected] = useState<any[]>([]); // até 2 atividades
+  const [swapConfirmOpen, setSwapConfirmOpen] = useState(false);
   
   const isAdmin = user?.role === 'admin';
 
@@ -89,6 +94,41 @@ export default function ClinicalMeetings() {
 
   const { data: guidelines, isLoading: guidelinesLoading } = trpc.presentationGuidelines.list.useQuery();
   
+  const swapMutation = trpc.clinicalMeetings.swapDates.useMutation({
+    onSuccess: () => {
+      toast.success("Datas trocadas com sucesso!");
+      utils.clinicalMeetings.list.invalidate();
+      setSwapMode(false);
+      setSwapSelected([]);
+      setSwapConfirmOpen(false);
+    },
+    onError: (error) => {
+      toast.error(`Erro ao trocar datas: ${error.message}`);
+    },
+  });
+
+  const handleSwapSelect = (meeting: any) => {
+    setSwapSelected(prev => {
+      const alreadyIdx = prev.findIndex(m => m.id === meeting.id);
+      if (alreadyIdx >= 0) {
+        // Desselecionar
+        return prev.filter(m => m.id !== meeting.id);
+      }
+      if (prev.length >= 2) {
+        toast.info("Selecione apenas 2 atividades para trocar.");
+        return prev;
+      }
+      const next = [...prev, meeting];
+      if (next.length === 2) setSwapConfirmOpen(true);
+      return next;
+    });
+  };
+
+  const handleConfirmSwap = () => {
+    if (swapSelected.length !== 2) return;
+    swapMutation.mutate({ idA: swapSelected[0].id, idB: swapSelected[1].id });
+  };
+
   const deleteMutation = trpc.clinicalMeetings.delete.useMutation({
     onSuccess: () => {
       toast.success("Reunião excluída com sucesso!");
@@ -177,10 +217,21 @@ export default function ClinicalMeetings() {
             Programação científica semanal do Serviço de Ortopedia e Traumatologia
           </p>
         </div>
-        <Button onClick={handleExport} disabled={isExporting}>
-          <Download className="mr-2 h-4 w-4" />
-          {isExporting ? 'Exportando...' : 'Exportar para Calendário'}
-        </Button>
+        <div className="flex gap-2">
+          {isAdmin && (
+            <Button
+              variant={swapMode ? "default" : "outline"}
+              onClick={() => { setSwapMode(v => !v); setSwapSelected([]); setSwapConfirmOpen(false); }}
+            >
+              <ArrowLeftRight className="mr-2 h-4 w-4" />
+              {swapMode ? "Cancelar Troca" : "Trocar Datas"}
+            </Button>
+          )}
+          <Button onClick={handleExport} disabled={isExporting}>
+            <Download className="mr-2 h-4 w-4" />
+            {isExporting ? 'Exportando...' : 'Exportar para Calendário'}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="schedule" className="space-y-4">
@@ -256,6 +307,29 @@ export default function ClinicalMeetings() {
             </CardContent>
           </Card>
 
+          {/* Banner de modo troca */}
+          {swapMode && (
+            <div className="rounded-lg border border-primary/40 bg-primary/5 px-4 py-3 flex items-center gap-3">
+              <ArrowLeftRight className="h-4 w-4 text-primary flex-shrink-0" />
+              <div className="flex-1 text-sm">
+                <span className="font-medium text-primary">Modo de troca de datas ativo.</span>
+                {" "}
+                {swapSelected.length === 0 && "Clique em uma atividade para selecioná-la."}
+                {swapSelected.length === 1 && (
+                  <span>Selecionada: <strong>{swapSelected[0].tema}</strong>. Agora clique na segunda atividade.</span>
+                )}
+                {swapSelected.length === 2 && (
+                  <span>Duas atividades selecionadas. Confirme a troca abaixo.</span>
+                )}
+              </div>
+              {swapSelected.length > 0 && (
+                <Button size="sm" variant="ghost" onClick={() => setSwapSelected([])}>
+                  <X className="h-3.5 w-3.5 mr-1" /> Limpar seleção
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* Meetings List */}
           {meetingsLoading ? (
             <div className="space-y-4">
@@ -295,10 +369,19 @@ export default function ClinicalMeetings() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {dateMeetings.map((meeting) => (
+                        {dateMeetings.map((meeting) => {
+                          const isSwapSelected = swapSelected.some(m => m.id === meeting.id);
+                          return (
                           <div
                             key={meeting.id}
-                            className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                            className={`flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg transition-colors ${
+                              swapMode
+                                ? isSwapSelected
+                                  ? "bg-primary/15 border border-primary/50 cursor-pointer ring-2 ring-primary/30"
+                                  : "bg-muted/50 hover:bg-primary/10 cursor-pointer border border-transparent"
+                                : "bg-muted/50 hover:bg-muted"
+                            }`}
+                            onClick={swapMode ? () => handleSwapSelect(meeting) : undefined}
                           >
                             <div className="flex items-center gap-2">
                               <Badge className={MEETING_TYPE_COLORS[meeting.tipo]}>
@@ -347,7 +430,8 @@ export default function ClinicalMeetings() {
                               )}
                             </div>
                           </div>
-                        ))}
+                        );
+                        })}
                       </div>
                     </CardContent>
                   </Card>
@@ -576,6 +660,53 @@ export default function ClinicalMeetings() {
         onOpenChange={(open) => !open && setEditingMeeting(null)}
       />
       
+      {/* Swap Confirmation Dialog */}
+      <AlertDialog open={swapConfirmOpen} onOpenChange={(open) => { if (!open) { setSwapConfirmOpen(false); setSwapSelected([]); } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ArrowLeftRight className="h-5 w-5 text-primary" />
+              Confirmar Troca de Datas
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>As datas das seguintes atividades serão trocadas entre si:</p>
+                {swapSelected[0] && (
+                  <div className="rounded-md border bg-muted/50 p-3 space-y-1">
+                    <p className="font-medium text-foreground">{swapSelected[0].tema}</p>
+                    <p className="text-muted-foreground">
+                      {new Date(swapSelected[0].data).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
+                    </p>
+                  </div>
+                )}
+                <div className="flex justify-center">
+                  <ArrowLeftRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+                {swapSelected[1] && (
+                  <div className="rounded-md border bg-muted/50 p-3 space-y-1">
+                    <p className="font-medium text-foreground">{swapSelected[1].tema}</p>
+                    <p className="text-muted-foreground">
+                      {new Date(swapSelected[1].data).toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}
+                    </p>
+                  </div>
+                )}
+                <p className="text-muted-foreground">Esta ação pode ser desfeita trocando as datas novamente.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setSwapConfirmOpen(false); setSwapSelected([]); }}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmSwap}
+              disabled={swapMutation.isPending}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              {swapMutation.isPending ? "Trocando..." : "Confirmar Troca"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingMeetingId} onOpenChange={(open) => !open && setDeletingMeetingId(null)}>
         <AlertDialogContent>

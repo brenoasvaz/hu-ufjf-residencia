@@ -584,6 +584,15 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return clinicalMeetingsDb.deleteClinicalMeeting(input.id);
       }),
+
+    swapDates: adminProcedure
+      .input(z.object({
+        idA: z.number(),
+        idB: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        return clinicalMeetingsDb.swapClinicalMeetingDates(input.idA, input.idB);
+      }),
     
     exportICS: viewerProcedure
       .input(z.object({

@@ -164,6 +164,22 @@ export async function deleteClinicalMeeting(id: number): Promise<void> {
   await db.delete(clinicalMeetings).where(eq(clinicalMeetings.id, id));
 }
 
+export async function swapClinicalMeetingDates(idA: number, idB: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [meetingA] = await db.select().from(clinicalMeetings).where(eq(clinicalMeetings.id, idA)).limit(1);
+  const [meetingB] = await db.select().from(clinicalMeetings).where(eq(clinicalMeetings.id, idB)).limit(1);
+
+  if (!meetingA || !meetingB) throw new Error("Uma ou ambas as atividades não foram encontradas");
+
+  // Usar data temporária para evitar conflito de unique constraint
+  const tempDate = new Date(0); // epoch como placeholder
+  await db.update(clinicalMeetings).set({ data: tempDate }).where(eq(clinicalMeetings.id, idA));
+  await db.update(clinicalMeetings).set({ data: meetingA.data }).where(eq(clinicalMeetings.id, idB));
+  await db.update(clinicalMeetings).set({ data: meetingB.data }).where(eq(clinicalMeetings.id, idA));
+}
+
 // ============================================
 // Presentation Guidelines Queries
 // ============================================
