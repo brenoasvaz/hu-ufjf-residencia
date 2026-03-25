@@ -209,6 +209,11 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return residentsDb.deleteResident(input.id);
       }),
+
+    progressaoAnual: adminProcedure
+      .mutation(async () => {
+        return residentsDb.progressaoAnualResidentes();
+      }),
   }),
 
   // ===== ROTATIONS =====

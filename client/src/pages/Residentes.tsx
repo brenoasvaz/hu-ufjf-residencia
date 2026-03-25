@@ -5,7 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Search, Plus, Edit, Trash2 } from "lucide-react";
+import { Users, Search, Plus, Edit, Trash2, ArrowRight, Loader2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import {
@@ -25,6 +35,7 @@ export default function Residentes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingResident, setEditingResident] = useState<any>(null);
+  const [showProgressao, setShowProgressao] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -61,6 +72,17 @@ export default function Residentes() {
     onError: (error) => {
       toast.error(`Erro ao atualizar residente: ${error.message}`);
     },
+  });
+
+  const progressaoMutation = trpc.residents.progressaoAnual.useMutation({
+    onSuccess: (result) => {
+      toast.success(
+        `Progressão aplicada: ${result.r1ToR2} R1→R2, ${result.r2ToR3} R2→R3, ${result.r3Inativados} R3 inativados`
+      );
+      utils.residents.list.invalidate();
+      setShowProgressao(false);
+    },
+    onError: (err) => toast.error("Erro na progressão: " + err.message),
   });
 
   const deleteMutation = trpc.residents.delete.useMutation({
@@ -131,6 +153,11 @@ export default function Residentes() {
           </p>
         </div>
         {isAdmin && (
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setShowProgressao(true)}>
+              <ArrowRight className="h-4 w-4 mr-2" />
+              Progressão Anual
+            </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => handleOpenDialog()}>
@@ -216,8 +243,50 @@ export default function Residentes() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          </div>
         )}
       </div>
+
+      {/* Diálogo de progressão anual */}
+      <AlertDialog open={showProgressao} onOpenChange={setShowProgressao}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ArrowRight className="h-4 w-4" />
+              Progressão Anual de Residência
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>
+                  Esta ação aplica a progressão de ano para <strong>todos os residentes ativos</strong>:
+                </p>
+                <ul className="space-y-1 ml-4 list-none">
+                  <li className="flex items-center gap-2"><span className="font-medium">R1</span><ArrowRight className="h-3 w-3" /><span className="font-medium">R2</span></li>
+                  <li className="flex items-center gap-2"><span className="font-medium">R2</span><ArrowRight className="h-3 w-3" /><span className="font-medium">R3</span></li>
+                  <li className="flex items-center gap-2 text-muted-foreground"><span className="font-medium">R3</span><ArrowRight className="h-3 w-3" /><span>Inativados (formados)</span></li>
+                </ul>
+                <p className="text-amber-600 dark:text-amber-400 font-medium">
+                  ⚠ Esta ação é irreversível. Recomenda-se realizar em 28 de fevereiro de cada ano, após o término do ciclo.
+                </p>
+                <p className="text-muted-foreground">
+                  Os rodízios mensais existentes não são alterados. Novos R1 devem ser cadastrados manualmente após a progressão.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => progressaoMutation.mutate()}
+              disabled={progressaoMutation.isPending}
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+            >
+              {progressaoMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <ArrowRight className="h-4 w-4 mr-1" />}
+              Aplicar Progressão
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Search */}
       <Card>
