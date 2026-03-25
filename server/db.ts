@@ -238,3 +238,72 @@ export async function deleteEscalaAvaliacao(id: number): Promise<void> {
   if (!db) throw new Error("Database not available");
   await db.delete(escalaAvaliacoes).where(eq(escalaAvaliacoes.id, id));
 }
+
+/**
+ * Copia a escala de avaliações de um ano para outro, aplicando progressão de residência:
+ * R1 → R2, R2 → R3, R3 → removidos (formados).
+ * Não sobrescreve registros já existentes no ano de destino.
+ * Retorna o número de registros copiados.
+ */
+export async function copyEscalaAvaliacoes(
+  anoOrigem: number,
+  anoDestino: number
+): Promise<{ copiados: number; ignorados: number }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const { and } = await import("drizzle-orm");
+
+  const origem = await db
+    .select()
+    .from(escalaAvaliacoes)
+    .where(eq(escalaAvaliacoes.ano, anoOrigem));
+
+  if (origem.length === 0) return { copiados: 0, ignorados: 0 };
+
+  // Verifica registros já existentes no destino para não duplicar
+  const destino = await db
+    .select({ codigo: escalaAvaliacoes.codigoResidente, quad: escalaAvaliacoes.quadrimestre })
+    .from(escalaAvaliacoes)
+    .where(eq(escalaAvaliacoes.ano, anoDestino));
+
+  const existentes = new Set(destino.map((d) => `${d.codigo}|${d.quad}`));
+
+  const PROGRESSAO: Record<string, "R1" | "R2" | "R3" | null> = {
+    R1: "R2",
+    R2: "R3",
+    R3: null, // formados — não copiar
+  };
+
+  let copiados = 0;
+  let ignorados = 0;
+
+  for (const row of origem) {
+    const novoAno = PROGRESSAO[row.anoResidencia];
+    if (novoAno === null) {
+      // R3 formados — pular
+      ignorados++;
+      continue;
+    }
+
+    const chave = `${row.codigoResidente}|${row.quadrimestre}`;
+    if (existentes.has(chave)) {
+      ignorados++;
+      continue;
+    }
+
+    await db.insert(escalaAvaliacoes).values({
+      ano: anoDestino,
+      anoResidencia: novoAno,
+      codigoResidente: row.codigoResidente,
+      nomeResidente: row.nomeResidente,
+      quadrimestre: row.quadrimestre,
+      preceptorHabilidades: row.preceptorHabilidades,
+      preceptorAtendimento: row.preceptorAtendimento,
+      dataLimite: null, // datas limite devem ser redefinidas para o novo ano
+    });
+    copiados++;
+  }
+
+  return { copiados, ignorados };
+}

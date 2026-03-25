@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { ClipboardList, Pencil, Loader2, Save, X, Plus, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { ClipboardList, Pencil, Loader2, Save, X, Plus, Trash2, ChevronLeft, ChevronRight, Copy, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -414,9 +414,22 @@ export default function AdminEscalaAvaliacoes() {
   const [editRow, setEditRow] = useState<AvaliacaoRow | null>(null);
   const [deleteRow, setDeleteRow] = useState<AvaliacaoRow | null>(null);
   const [showNovo, setShowNovo] = useState(false);
+  const [showCopy, setShowCopy] = useState(false);
 
   const utils = trpc.useUtils();
   const { data: rows = [], isLoading } = trpc.escalaAvaliacoes.list.useQuery({ ano });
+
+  const copyMutation = trpc.escalaAvaliacoes.copyYear.useMutation({
+    onSuccess: (result) => {
+      toast.success(
+        `Escala copiada: ${result.copiados} registro(s) copiado(s)` +
+        (result.ignorados > 0 ? ` (${result.ignorados} já existiam ou eram R3 formados)` : "")
+      );
+      utils.escalaAvaliacoes.list.invalidate();
+      setShowCopy(false);
+    },
+    onError: (err) => toast.error("Erro ao copiar: " + err.message),
+  });
 
   const deleteMutation = trpc.escalaAvaliacoes.delete.useMutation({
     onSuccess: () => {
@@ -460,10 +473,16 @@ export default function AdminEscalaAvaliacoes() {
             Edite preceptores, datas limite e cadastre novos residentes.
           </p>
         </div>
-        <Button onClick={() => setShowNovo(true)} className="shrink-0">
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Residente
-        </Button>
+        <div className="flex gap-2 shrink-0">
+          <Button variant="outline" onClick={() => setShowCopy(true)}>
+            <Copy className="h-4 w-4 mr-2" />
+            Copiar de outro ano
+          </Button>
+          <Button onClick={() => setShowNovo(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Residente
+          </Button>
+        </div>
       </div>
 
       {/* Seletor de ano */}
@@ -541,6 +560,63 @@ export default function AdminEscalaAvaliacoes() {
       {showNovo && (
         <NovoResidenteModal ano={ano} onClose={() => setShowNovo(false)} onSaved={handleSaved} />
       )}
+
+      {/* Diálogo de cópia de escala */}
+      <AlertDialog open={showCopy} onOpenChange={setShowCopy}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Copy className="h-4 w-4" />
+              Copiar escala para {ano}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3 text-sm">
+                <p>
+                  Esta ação copia todos os residentes do ano de origem para <strong>{ano}</strong>,
+                  aplicando a progressão automática:
+                </p>
+                <ul className="space-y-1 ml-4">
+                  <li className="flex items-center gap-2"><span className="font-medium">R1</span><ArrowRight className="h-3 w-3" /><span className="font-medium">R2</span></li>
+                  <li className="flex items-center gap-2"><span className="font-medium">R2</span><ArrowRight className="h-3 w-3" /><span className="font-medium">R3</span></li>
+                  <li className="flex items-center gap-2 text-muted-foreground"><span className="font-medium">R3</span><ArrowRight className="h-3 w-3" /><span>Formados — não copiados</span></li>
+                </ul>
+                <p className="text-muted-foreground">
+                  As datas limite não são copiadas e devem ser redefinidas. Registros já existentes em {ano} não serão sobrescritos.
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  <Label className="text-xs shrink-0">Copiar de:</Label>
+                  <Select
+                    value={String(copyMutation.variables?.anoOrigem ?? (ano - 1))}
+                    onValueChange={() => {}}
+                  >
+                    <SelectTrigger className="h-8 w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {anos.filter((a) => a !== ano).map((a) => (
+                        <SelectItem key={a} value={String(a)}>{a}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const anoOrigem = ano - 1;
+                copyMutation.mutate({ anoOrigem, anoDestino: ano });
+              }}
+              disabled={copyMutation.isPending}
+            >
+              {copyMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+              Copiar de {ano - 1} para {ano}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!deleteRow} onOpenChange={() => setDeleteRow(null)}>
         <AlertDialogContent>

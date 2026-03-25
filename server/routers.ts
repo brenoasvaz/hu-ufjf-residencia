@@ -753,6 +753,18 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return escalaDb.deleteEscalaAvaliacao(input.id);
       }),
+
+    copyYear: adminProcedure
+      .input(z.object({
+        anoOrigem: z.number(),
+        anoDestino: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        if (input.anoOrigem === input.anoDestino) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Ano de origem e destino devem ser diferentes" });
+        }
+        return escalaDb.copyEscalaAvaliacoes(input.anoOrigem, input.anoDestino);
+      }),
   }),
 });
 

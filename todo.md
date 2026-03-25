@@ -473,3 +473,4 @@
 - [x] Criar painel admin para edição da escala de avaliações
 - [x] Destaque visual de data limite próxima (< 30 dias) na escala
 - [x] Seletor de ano e cadastro de novos residentes no painel admin da Escala de Avaliações
+- [x] Copiar escala entre anos com progressão automática R1→R2, R2→R3, R3 removidos
