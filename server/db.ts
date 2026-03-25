@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, clinicalMeetings, presentationGuidelines, ClinicalMeeting, InsertClinicalMeeting, PresentationGuideline, InsertPresentationGuideline } from "../drizzle/schema";
+import { InsertUser, users, clinicalMeetings, presentationGuidelines, ClinicalMeeting, InsertClinicalMeeting, PresentationGuideline, InsertPresentationGuideline, escalaAvaliacoes, EscalaAvaliacao, InsertEscalaAvaliacao } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -207,4 +207,34 @@ export async function upsertPresentationGuideline(guideline: InsertPresentationG
       orientacoes: guideline.orientacoes,
     },
   });
+}
+
+// ─── Escala de Avaliações Práticas ───────────────────────────────────────────
+
+export async function getEscalaAvaliacoes(ano: number): Promise<EscalaAvaliacao[]> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const { and } = await import("drizzle-orm");
+  return db.select().from(escalaAvaliacoes).where(eq(escalaAvaliacoes.ano, ano));
+}
+
+export async function updateEscalaAvaliacao(
+  id: number,
+  data: Partial<Pick<InsertEscalaAvaliacao, "nomeResidente" | "preceptorHabilidades" | "preceptorAtendimento" | "dataLimite">>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(escalaAvaliacoes).set(data).where(eq(escalaAvaliacoes.id, id));
+}
+
+export async function createEscalaAvaliacao(data: InsertEscalaAvaliacao): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(escalaAvaliacoes).values(data);
+}
+
+export async function deleteEscalaAvaliacao(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(escalaAvaliacoes).where(eq(escalaAvaliacoes.id, id));
 }

@@ -469,3 +469,6 @@
 - [x] Implementar troca de datas entre atividades das reuniões clínicas (swap de scheduledDate entre dois registros)
 - [x] Criar página de Escala de Avaliações Práticas (dados do PDF) e link em Links Úteis
 - [x] Adicionar aviso de datas limite na página Escala de Avaliações Práticas
+- [x] Migrar escala de avaliações práticas para banco de dados
+- [x] Criar painel admin para edição da escala de avaliações
+- [x] Destaque visual de data limite próxima (< 30 dias) na escala

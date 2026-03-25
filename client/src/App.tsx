@@ -26,6 +26,7 @@ import GerenciarLinks from "./pages/admin/GerenciarLinks";
 import GerenciarImagensQuestoes from "./pages/admin/GerenciarImagensQuestoes";
 import SimuladoRevisao from "./pages/admin/SimuladoRevisao";
 import AdminEscalaSemanal from "./pages/admin/AdminEscalaSemanal";
+import AdminEscalaAvaliacoes from "./pages/admin/AdminEscalaAvaliacoes";
 import MainLayout from "./components/MainLayout";
 
 function Router() {
@@ -59,6 +60,7 @@ function Router() {
             <Route path="/admin/questoes/imagens" component={GerenciarImagensQuestoes} />
             <Route path="/admin/avaliacoes/:modeloId/revisao" component={SimuladoRevisao} />
             <Route path="/admin/escala-semanal" component={AdminEscalaSemanal} />
+            <Route path="/admin/escala-avaliacoes" component={AdminEscalaAvaliacoes} />
             <Route path="/404" component={NotFound} />
             <Route component={NotFound} />
           </Switch>

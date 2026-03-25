@@ -9,6 +9,7 @@ import * as rotationsDb from "./db-helpers/rotations";
 import * as weeklyActivitiesDb from "./db-helpers/weeklyActivities";
 import * as importsDb from "./db-helpers/imports";
 import * as clinicalMeetingsDb from "./db";
+import * as escalaDb from "./db";
 import { pdfRouter } from "./pdf-upload-router";
 import { registerUser, authenticateUser, getUserByEmail, getAllUsers, approveUser, rejectUser } from "./auth";
 import { avaliacoesRouter } from "./routers/avaliacoes";
@@ -711,6 +712,49 @@ export const appRouter = router({
         return importsDb.deleteStage(input.id);
       }),
   }),
+
+  escalaAvaliacoes: router({
+    list: protectedProcedure
+      .input(z.object({ ano: z.number().default(2026) }))
+      .query(async ({ input }) => {
+        return escalaDb.getEscalaAvaliacoes(input.ano);
+      }),
+
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        nomeResidente: z.string().optional(),
+        preceptorHabilidades: z.string().optional(),
+        preceptorAtendimento: z.string().optional(),
+        dataLimite: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return escalaDb.updateEscalaAvaliacao(id, data);
+      }),
+
+    create: adminProcedure
+      .input(z.object({
+        ano: z.number(),
+        anoResidencia: z.enum(["R1", "R2", "R3"]),
+        codigoResidente: z.string(),
+        nomeResidente: z.string(),
+        quadrimestre: z.enum(["1", "2", "3"]),
+        preceptorHabilidades: z.string(),
+        preceptorAtendimento: z.string(),
+        dataLimite: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return escalaDb.createEscalaAvaliacao(input);
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return escalaDb.deleteEscalaAvaliacao(input.id);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
+

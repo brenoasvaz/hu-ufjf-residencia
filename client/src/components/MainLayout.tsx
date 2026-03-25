@@ -14,6 +14,7 @@ import {
   Presentation,
   UserCog,
   ClipboardCheck,
+  ClipboardList,
   BarChart3,
   Link as LinkIcon,
   Sun,
@@ -102,6 +103,11 @@ export default function MainLayout({ children }: MainLayoutProps) {
             href: "/admin/avaliacoes",
             label: "Gestão de Avaliações",
             icon: BarChart3,
+          },
+          {
+            href: "/admin/escala-avaliacoes",
+            label: "Escala de Avaliações",
+            icon: ClipboardList,
           },
         ]
       : []),

@@ -2,145 +2,78 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardList, User, GraduationCap, Calendar, AlertTriangle } from "lucide-react";
+import { ClipboardList, User, Calendar, AlertTriangle, Loader2 } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
-interface Avaliacao {
-  trimestre: string;
-  meses: string;
-  habilidades: string;
-  atendimento: string;
+interface AvaliacaoRow {
+  id: number;
+  ano: number;
+  anoResidencia: "R1" | "R2" | "R3";
+  codigoResidente: string;
+  nomeResidente: string;
+  quadrimestre: "1" | "2" | "3";
+  preceptorHabilidades: string;
+  preceptorAtendimento: string;
+  dataLimite: string | null;
 }
-
-interface Residente {
-  nome: string;
-  codigo: string; // R1a, R2b, etc.
-  avaliacoes: Avaliacao[];
-}
-
-// ─── Dados extraídos do PDF ───────────────────────────────────────────────────
-
-const QUADRIMESTRES: Avaliacao["trimestre"][] = [
-  "1º Quadrimestre",
-  "2º Quadrimestre",
-  "3º Quadrimestre",
-];
-
-const MESES: Record<string, string> = {
-  "1º Quadrimestre": "Março, Abril, Maio, Junho",
-  "2º Quadrimestre": "Julho, Agosto, Setembro, Outubro",
-  "3º Quadrimestre": "Novembro, Dezembro, Janeiro, Fevereiro",
-};
-
-const R1: Residente[] = [
-  {
-    nome: "Bernardo Arantes",
-    codigo: "R1a",
-    avaliacoes: [
-      { trimestre: "1º Quadrimestre", meses: MESES["1º Quadrimestre"], habilidades: "Breno Vaz", atendimento: "Jair Moreira" },
-      { trimestre: "2º Quadrimestre", meses: MESES["2º Quadrimestre"], habilidades: "José da Mota", atendimento: "Igor Gerdi" },
-      { trimestre: "3º Quadrimestre", meses: MESES["3º Quadrimestre"], habilidades: "Adriano Mendes", atendimento: "Marcus Vinicius" },
-    ],
-  },
-  {
-    nome: "Samuel Tenório",
-    codigo: "R1b",
-    avaliacoes: [
-      { trimestre: "1º Quadrimestre", meses: MESES["1º Quadrimestre"], habilidades: "Daniel Loures", atendimento: "Arnaldo Gonçalves" },
-      { trimestre: "2º Quadrimestre", meses: MESES["2º Quadrimestre"], habilidades: "Sávio Mourão", atendimento: "Bruno Fajardo" },
-      { trimestre: "3º Quadrimestre", meses: MESES["3º Quadrimestre"], habilidades: "Vitor Groppo", atendimento: "Tônio Reis" },
-    ],
-  },
-  {
-    nome: "Matheus Silva",
-    codigo: "R1c",
-    avaliacoes: [
-      { trimestre: "1º Quadrimestre", meses: MESES["1º Quadrimestre"], habilidades: "João Paulo", atendimento: "José da Mota" },
-      { trimestre: "2º Quadrimestre", meses: MESES["2º Quadrimestre"], habilidades: "Igor Gerdi", atendimento: "Adriano Mendes" },
-      { trimestre: "3º Quadrimestre", meses: MESES["3º Quadrimestre"], habilidades: "Marcus Vinicius", atendimento: "Daniel Loures" },
-    ],
-  },
-];
-
-const R2: Residente[] = [
-  {
-    nome: "Guilherme Lamas",
-    codigo: "R2a",
-    avaliacoes: [
-      { trimestre: "1º Quadrimestre", meses: MESES["1º Quadrimestre"], habilidades: "Arnaldo Gonçalves", atendimento: "Sávio Mourão" },
-      { trimestre: "2º Quadrimestre", meses: MESES["2º Quadrimestre"], habilidades: "Bruno Fajardo", atendimento: "Vitor Groppo" },
-      { trimestre: "3º Quadrimestre", meses: MESES["3º Quadrimestre"], habilidades: "Tônio Reis", atendimento: "João Paulo" },
-    ],
-  },
-  {
-    nome: "Guilherme Coelho",
-    codigo: "R2b",
-    avaliacoes: [
-      { trimestre: "1º Quadrimestre", meses: MESES["1º Quadrimestre"], habilidades: "Adriano Mendes", atendimento: "Marcus Vinicius" },
-      { trimestre: "2º Quadrimestre", meses: MESES["2º Quadrimestre"], habilidades: "Daniel Loures", atendimento: "Arnaldo Gonçalves" },
-      { trimestre: "3º Quadrimestre", meses: MESES["3º Quadrimestre"], habilidades: "Sávio Mourão", atendimento: "Bruno Fajardo" },
-    ],
-  },
-  {
-    nome: "João Pedro",
-    codigo: "R2c",
-    avaliacoes: [
-      { trimestre: "1º Quadrimestre", meses: MESES["1º Quadrimestre"], habilidades: "Vitor Groppo", atendimento: "Tônio Reis" },
-      { trimestre: "2º Quadrimestre", meses: MESES["2º Quadrimestre"], habilidades: "João Paulo", atendimento: "Breno Vaz" },
-      { trimestre: "3º Quadrimestre", meses: MESES["3º Quadrimestre"], habilidades: "Jair Moreira", atendimento: "José da Mota" },
-    ],
-  },
-];
-
-const R3: Residente[] = [
-  {
-    nome: "Mariana",
-    codigo: "R3a",
-    avaliacoes: [
-      { trimestre: "1º Quadrimestre", meses: MESES["1º Quadrimestre"], habilidades: "Igor Gerdi", atendimento: "Adriano Mendes" },
-      { trimestre: "2º Quadrimestre", meses: MESES["2º Quadrimestre"], habilidades: "Marcus Vinicius", atendimento: "Daniel Loures" },
-      { trimestre: "3º Quadrimestre", meses: MESES["3º Quadrimestre"], habilidades: "Arnaldo Gonçalves", atendimento: "Sávio Mourão" },
-    ],
-  },
-  {
-    nome: "Henrique",
-    codigo: "R3b",
-    avaliacoes: [
-      { trimestre: "1º Quadrimestre", meses: MESES["1º Quadrimestre"], habilidades: "Bruno Fajardo", atendimento: "Vitor Groppo" },
-      { trimestre: "2º Quadrimestre", meses: MESES["2º Quadrimestre"], habilidades: "Tônio Reis", atendimento: "João Paulo" },
-      { trimestre: "3º Quadrimestre", meses: MESES["3º Quadrimestre"], habilidades: "Breno Vaz", atendimento: "Jair Moreira" },
-    ],
-  },
-  {
-    nome: "Jéssica",
-    codigo: "R3c",
-    avaliacoes: [
-      { trimestre: "1º Quadrimestre", meses: MESES["1º Quadrimestre"], habilidades: "José da Mota", atendimento: "Igor Gerdi" },
-      { trimestre: "2º Quadrimestre", meses: MESES["2º Quadrimestre"], habilidades: "Adriano Mendes", atendimento: "Marcus Vinicius" },
-      { trimestre: "3º Quadrimestre", meses: MESES["3º Quadrimestre"], habilidades: "Daniel Loures", atendimento: "Arnaldo Gonçalves" },
-    ],
-  },
-];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function getCurrentQuadrimestre(): string {
-  const month = new Date().getMonth() + 1; // 1-12
-  if (month >= 3 && month <= 6) return "1º Quadrimestre";
-  if (month >= 7 && month <= 10) return "2º Quadrimestre";
-  return "3º Quadrimestre";
+const QUAD_LABEL: Record<string, string> = {
+  "1": "1º Quadrimestre",
+  "2": "2º Quadrimestre",
+  "3": "3º Quadrimestre",
+};
+
+const QUAD_MESES: Record<string, string> = {
+  "1": "Março – Junho",
+  "2": "Julho – Outubro",
+  "3": "Novembro – Fevereiro",
+};
+
+const QUAD_COLORS: Record<string, string> = {
+  "1": "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200",
+  "2": "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
+  "3": "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
+};
+
+/** Retorna o quadrimestre atual ("1" | "2" | "3") */
+function getCurrentQuad(): string {
+  const m = new Date().getMonth() + 1;
+  if (m >= 3 && m <= 6) return "1";
+  if (m >= 7 && m <= 10) return "2";
+  return "3";
 }
 
-const QUADRIMESTRE_COLORS: Record<string, string> = {
-  "1º Quadrimestre": "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200",
-  "2º Quadrimestre": "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200",
-  "3º Quadrimestre": "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200",
-};
+/** Converte "DD/MM/YYYY" → Date */
+function parseDataLimite(s: string): Date {
+  const [d, mo, y] = s.split("/").map(Number);
+  return new Date(y, mo - 1, d);
+}
+
+/** Dias restantes até a data limite (negativo = vencida) */
+function diasRestantes(dataLimite: string): number {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const limite = parseDataLimite(dataLimite);
+  return Math.round((limite.getTime() - hoje.getTime()) / 86400000);
+}
 
 // ─── Subcomponente: Cartão de Residente ───────────────────────────────────────
 
-function ResidenteCard({ residente, quadrimestreAtivo }: { residente: Residente; quadrimestreAtivo: string }) {
+function ResidenteCard({
+  nomeResidente,
+  codigo,
+  avaliacoes,
+  quadAtivo,
+}: {
+  nomeResidente: string;
+  codigo: string;
+  avaliacoes: AvaliacaoRow[];
+  quadAtivo: string;
+}) {
   return (
     <Card className="overflow-hidden">
       <CardHeader className="pb-3 bg-muted/30">
@@ -149,8 +82,8 @@ function ResidenteCard({ residente, quadrimestreAtivo }: { residente: Residente;
             <User className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <span className="font-semibold">{residente.nome}</span>
-            <span className="ml-2 text-xs font-normal text-muted-foreground">({residente.codigo.toUpperCase()})</span>
+            <span className="font-semibold">{nomeResidente}</span>
+            <span className="ml-2 text-xs text-muted-foreground font-normal">({codigo})</span>
           </div>
         </CardTitle>
       </CardHeader>
@@ -159,48 +92,64 @@ function ResidenteCard({ residente, quadrimestreAtivo }: { residente: Residente;
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/20">
-                <th className="text-left px-4 py-2 font-medium text-muted-foreground w-[38%]">Período</th>
-                <th className="text-left px-4 py-2 font-medium text-muted-foreground">Habilidades</th>
-                <th className="text-left px-4 py-2 font-medium text-muted-foreground">Atendimento</th>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground text-xs">Quadrimestre</th>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground text-xs">Habilidades Cirúrgicas</th>
+                <th className="text-left px-4 py-2 font-medium text-muted-foreground text-xs">Atendimento Clínico</th>
               </tr>
             </thead>
             <tbody>
-              {residente.avaliacoes.map((av) => {
-                const isAtivo = av.trimestre === quadrimestreAtivo;
-                return (
-                  <tr
-                    key={av.trimestre}
-                    className={`border-b last:border-0 transition-colors ${
-                      isAtivo ? "bg-primary/5 font-medium" : "hover:bg-muted/30"
-                    }`}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col gap-1">
-                        <Badge
-                          variant="secondary"
-                          className={`w-fit text-xs ${QUADRIMESTRE_COLORS[av.trimestre]}`}
-                        >
-                          {isAtivo && <span className="mr-1">●</span>}
-                          {av.trimestre}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground leading-tight">{av.meses}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="flex items-center gap-1.5">
-                        <GraduationCap className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                        {av.habilidades}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="flex items-center gap-1.5">
-                        <GraduationCap className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                        {av.atendimento}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
+              {avaliacoes
+                .sort((a, b) => Number(a.quadrimestre) - Number(b.quadrimestre))
+                .map((av) => {
+                  const isAtivo = av.quadrimestre === quadAtivo;
+                  const dias = av.dataLimite ? diasRestantes(av.dataLimite) : null;
+                  const urgente = dias !== null && dias >= 0 && dias <= 30;
+                  const vencida = dias !== null && dias < 0;
+
+                  return (
+                    <tr
+                      key={av.quadrimestre}
+                      className={`border-b last:border-0 transition-colors ${
+                        isAtivo ? "bg-primary/5" : "hover:bg-muted/30"
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col gap-1">
+                          <Badge
+                            variant="secondary"
+                            className={`w-fit text-xs ${QUAD_COLORS[av.quadrimestre]} ${
+                              isAtivo ? "ring-2 ring-offset-1 ring-primary/40" : ""
+                            }`}
+                          >
+                            {isAtivo && <span className="mr-1">●</span>}
+                            {QUAD_LABEL[av.quadrimestre]}
+                            {isAtivo && <span className="ml-1 font-semibold">(atual)</span>}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">{QUAD_MESES[av.quadrimestre]}</span>
+                          {av.dataLimite && (
+                            <span
+                              className={`text-xs font-medium ${
+                                vencida
+                                  ? "text-red-600 dark:text-red-400"
+                                  : urgente
+                                  ? "text-orange-600 dark:text-orange-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {vencida
+                                ? `⚠ Vencida (${Math.abs(dias!)}d atrás)`
+                                : urgente
+                                ? `⏰ ${dias}d restantes`
+                                : `Limite: ${av.dataLimite}`}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 font-medium">{av.preceptorHabilidades}</td>
+                      <td className="px-4 py-3 font-medium">{av.preceptorAtendimento}</td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </div>
@@ -209,26 +158,63 @@ function ResidenteCard({ residente, quadrimestreAtivo }: { residente: Residente;
   );
 }
 
-// ─── Subcomponente: Grade de Residentes ───────────────────────────────────────
+// ─── Componente por grupo de ano ───────────────────────────────────────────────
 
-function GradeResidentes({ residentes, quadrimestreAtivo }: { residentes: Residente[]; quadrimestreAtivo: string }) {
+function GrupoAno({
+  anoResidencia,
+  rows,
+  quadAtivo,
+}: {
+  anoResidencia: "R1" | "R2" | "R3";
+  rows: AvaliacaoRow[];
+  quadAtivo: string;
+}) {
+  // Agrupar por residente
+  const residentes = Array.from(new Set(rows.map((r) => r.codigoResidente))).sort();
+
   return (
     <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-      {residentes.map((r) => (
-        <ResidenteCard key={r.codigo} residente={r} quadrimestreAtivo={quadrimestreAtivo} />
-      ))}
+      {residentes.map((codigo) => {
+        const avaliacoes = rows.filter((r) => r.codigoResidente === codigo);
+        const nome = avaliacoes[0]?.nomeResidente ?? codigo;
+        return (
+          <ResidenteCard
+            key={codigo}
+            nomeResidente={nome}
+            codigo={codigo}
+            avaliacoes={avaliacoes}
+            quadAtivo={quadAtivo}
+          />
+        );
+      })}
     </div>
   );
 }
 
-// ─── Componente Principal ─────────────────────────────────────────────────────
+// ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function EscalaAvaliacoesPraticas() {
-  const quadrimestreAtual = getCurrentQuadrimestre();
-  const [filtroQuadrimestre, setFiltroQuadrimestre] = useState<string>("todos");
+  const quadAtivo = getCurrentQuad();
+  const ANO = 2026;
 
-  // Visão consolidada: todos os residentes filtrados por quadrimestre
-  const todosResidentes = [...R1, ...R2, ...R3];
+  const { data: rows = [], isLoading } = trpc.escalaAvaliacoes.list.useQuery({ ano: ANO });
+
+  // Datas limite únicas por quadrimestre (para o banner)
+  const datasLimite: Record<string, string> = {};
+  rows.forEach((r) => {
+    if (r.dataLimite && !datasLimite[r.quadrimestre]) {
+      datasLimite[r.quadrimestre] = r.dataLimite;
+    }
+  });
+
+  // Fallback se não houver datas no banco
+  const limites = [
+    { quad: "1", label: "1º Quadrimestre", data: datasLimite["1"] ?? "28/05/2026" },
+    { quad: "2", label: "2º Quadrimestre", data: datasLimite["2"] ?? "20/08/2026" },
+    { quad: "3", label: "3º Quadrimestre", data: datasLimite["3"] ?? "03/12/2026" },
+  ];
+
+  const rowsByAno = (ano: "R1" | "R2" | "R3") => rows.filter((r) => r.anoResidencia === ano);
 
   return (
     <div className="space-y-6">
@@ -236,7 +222,7 @@ export default function EscalaAvaliacoesPraticas() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
           <ClipboardList className="h-6 w-6 text-primary" />
-          Escala de Avaliações Práticas — 2026
+          Escala de Avaliações Práticas — {ANO}
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           Preceptores responsáveis pelas avaliações de Habilidades e Atendimento de cada residente por quadrimestre.
@@ -247,27 +233,72 @@ export default function EscalaAvaliacoesPraticas() {
       <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-4">
         <div className="flex items-start gap-3">
           <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-          <div className="space-y-2">
+          <div className="space-y-2 w-full">
             <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
               Datas limite para realização das avaliações práticas
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {[
-                { quad: "1º Quadrimestre", data: "28/05/2026" },
-                { quad: "2º Quadrimestre", data: "20/08/2026" },
-                { quad: "3º Quadrimestre", data: "03/12/2026" },
-              ].map(({ quad, data }) => (
-                <div
-                  key={quad}
-                  className="flex items-center gap-2 rounded-md bg-amber-100 dark:bg-amber-900/40 px-3 py-2"
-                >
-                  <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">{quad}</p>
-                    <p className="text-sm font-bold text-amber-900 dark:text-amber-100">{data}</p>
+              {limites.map(({ quad, label, data }) => {
+                const dias = diasRestantes(data);
+                const urgente = dias >= 0 && dias <= 30;
+                const vencida = dias < 0;
+                return (
+                  <div
+                    key={quad}
+                    className={`flex items-center gap-2 rounded-md px-3 py-2 transition-colors ${
+                      vencida
+                        ? "bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-700"
+                        : urgente
+                        ? "bg-orange-100 dark:bg-orange-900/40 border border-orange-300 dark:border-orange-700"
+                        : "bg-amber-100 dark:bg-amber-900/40"
+                    }`}
+                  >
+                    <Calendar
+                      className={`h-4 w-4 shrink-0 ${
+                        vencida
+                          ? "text-red-600 dark:text-red-400"
+                          : urgente
+                          ? "text-orange-600 dark:text-orange-400"
+                          : "text-amber-600 dark:text-amber-400"
+                      }`}
+                    />
+                    <div>
+                      <p
+                        className={`text-xs font-medium ${
+                          vencida
+                            ? "text-red-700 dark:text-red-300"
+                            : urgente
+                            ? "text-orange-700 dark:text-orange-300"
+                            : "text-amber-700 dark:text-amber-300"
+                        }`}
+                      >
+                        {label}
+                      </p>
+                      <p
+                        className={`text-sm font-bold ${
+                          vencida
+                            ? "text-red-900 dark:text-red-100"
+                            : urgente
+                            ? "text-orange-900 dark:text-orange-100"
+                            : "text-amber-900 dark:text-amber-100"
+                        }`}
+                      >
+                        {data}
+                      </p>
+                      {urgente && !vencida && (
+                        <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                          ⏰ {dias} dias restantes
+                        </p>
+                      )}
+                      {vencida && (
+                        <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                          ⚠ Prazo encerrado
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -280,15 +311,15 @@ export default function EscalaAvaliacoesPraticas() {
             <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
               <Calendar className="h-4 w-4" /> Quadrimestres:
             </span>
-            {QUADRIMESTRES.map((q) => (
+            {["1", "2", "3"].map((q) => (
               <Badge
                 key={q}
                 variant="secondary"
-                className={`${QUADRIMESTRE_COLORS[q]} ${q === quadrimestreAtual ? "ring-2 ring-offset-1 ring-primary/40" : ""}`}
+                className={`${QUAD_COLORS[q]} ${q === quadAtivo ? "ring-2 ring-offset-1 ring-primary/40" : ""}`}
               >
-                {q === quadrimestreAtual && <span className="mr-1">●</span>}
-                {q} — {MESES[q]}
-                {q === quadrimestreAtual && <span className="ml-1 font-semibold">(atual)</span>}
+                {q === quadAtivo && <span className="mr-1">●</span>}
+                {QUAD_LABEL[q]} — {QUAD_MESES[q]}
+                {q === quadAtivo && <span className="ml-1 font-semibold">(atual)</span>}
               </Badge>
             ))}
           </div>
@@ -296,39 +327,28 @@ export default function EscalaAvaliacoesPraticas() {
       </Card>
 
       {/* Abas por ano de residência */}
-      <Tabs defaultValue="R1" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 max-w-xs">
-          <TabsTrigger value="R1">R1</TabsTrigger>
-          <TabsTrigger value="R2">R2</TabsTrigger>
-          <TabsTrigger value="R3">R3</TabsTrigger>
-        </TabsList>
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <Tabs defaultValue="R1" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3 max-w-xs">
+            <TabsTrigger value="R1">R1</TabsTrigger>
+            <TabsTrigger value="R2">R2</TabsTrigger>
+            <TabsTrigger value="R3">R3</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="R1" className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Residentes do <strong>1º ano</strong> — 3 residentes
-          </p>
-          <GradeResidentes residentes={R1} quadrimestreAtivo={quadrimestreAtual} />
-        </TabsContent>
-
-        <TabsContent value="R2" className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Residentes do <strong>2º ano</strong> — 3 residentes
-          </p>
-          <GradeResidentes residentes={R2} quadrimestreAtivo={quadrimestreAtual} />
-        </TabsContent>
-
-        <TabsContent value="R3" className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Residentes do <strong>3º ano</strong> — 3 residentes
-          </p>
-          <GradeResidentes residentes={R3} quadrimestreAtivo={quadrimestreAtual} />
-        </TabsContent>
-      </Tabs>
-
-      {/* Nota de rodapé */}
-      <p className="text-xs text-muted-foreground italic border-l-4 border-primary/30 pl-4">
-        A escala poderá sofrer alterações de acordo com as necessidades do serviço. O quadrimestre em destaque (●) corresponde ao período atual.
-      </p>
+          {(["R1", "R2", "R3"] as const).map((ano) => (
+            <TabsContent key={ano} value={ano} className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Residentes do <strong>{ano === "R1" ? "1º" : ano === "R2" ? "2º" : "3º"} ano</strong> — {rowsByAno(ano).length / 3 || 0} residentes
+              </p>
+              <GrupoAno anoResidencia={ano} rows={rowsByAno(ano)} quadAtivo={quadAtivo} />
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
     </div>
   );
 }

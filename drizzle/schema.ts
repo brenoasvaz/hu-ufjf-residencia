@@ -374,3 +374,22 @@ export const linksUteis = mysqlTable("links_uteis", {
 
 export type LinkUtil = typeof linksUteis.$inferSelect;
 export type InsertLinkUtil = typeof linksUteis.$inferInsert;
+
+/**
+ * Escala de Avaliações Práticas - Configuração por ano
+ */
+export const escalaAvaliacoes = mysqlTable("escala_avaliacoes", {
+  id: int("id").autoincrement().primaryKey(),
+  ano: int("ano").notNull(), // Ex: 2026
+  anoResidencia: mysqlEnum("ano_residencia", ["R1", "R2", "R3"]).notNull(),
+  codigoResidente: varchar("codigo_residente", { length: 10 }).notNull(), // Ex: R1a, R2b
+  nomeResidente: varchar("nome_residente", { length: 255 }).notNull(),
+  quadrimestre: mysqlEnum("quadrimestre", ["1", "2", "3"]).notNull(),
+  preceptorHabilidades: varchar("preceptor_habilidades", { length: 255 }).notNull(),
+  preceptorAtendimento: varchar("preceptor_atendimento", { length: 255 }).notNull(),
+  dataLimite: varchar("data_limite", { length: 10 }), // Ex: "28/05/2026"
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type EscalaAvaliacao = typeof escalaAvaliacoes.$inferSelect;
+export type InsertEscalaAvaliacao = typeof escalaAvaliacoes.$inferInsert;
