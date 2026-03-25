@@ -467,3 +467,4 @@
 - [x] Corrigir bug: nova pasta criada não aparece na listagem (pasta sem links não é exibida)
 - [x] Implementar subpastas em Links Úteis (campo parentId, acordeão aninhado, CRUD)
 - [x] Implementar troca de datas entre atividades das reuniões clínicas (swap de scheduledDate entre dois registros)
+- [x] Criar página de Escala de Avaliações Práticas (dados do PDF) e link em Links Úteis

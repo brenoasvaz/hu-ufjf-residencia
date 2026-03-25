@@ -1,0 +1,35 @@
+{
+  "query": "SELECT id, nome, parent_id FROM links_categorias ORDER BY ordem, id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT id, nome, parent_id FROM links_categorias ORDER BY ordem, id;",
+  "rows": [
+    {
+      "id": "1",
+      "nome": "Links EPAs",
+      "parent_id": "NULL"
+    },
+    {
+      "id": "3",
+      "nome": "1° Quadrimestre",
+      "parent_id": "2"
+    },
+    {
+      "id": "2",
+      "nome": "Avaliações práticas",
+      "parent_id": "NULL"
+    },
+    {
+      "id": "30001",
+      "nome": "2º Quadrimestre",
+      "parent_id": "2"
+    },
+    {
+      "id": "30002",
+      "nome": "3º Quadrimestre",
+      "parent_id": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tnome\tparent_id\n1\tLinks EPAs\tNULL\n3\t1° Quadrimestre\t2\n2\tAvaliações práticas\tNULL\n30001\t2º Quadrimestre\t2\n30002\t3º Quadrimestre\t2\n",
+  "stderr": "",
+  "execution_time_ms": 699
+}

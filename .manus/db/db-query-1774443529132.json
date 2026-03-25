@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO links_uteis (titulo, url, descricao, categoria_id, ordem, created_at, updated_at)\nVALUES (\n  'Escala de Avaliações Práticas 2026',\n  '/escala-avaliacoes-praticas',\n  'Preceptores responsáveis pelas avaliações de Habilidades e Atendimento por residente e quadrimestre',\n  2,\n  0,\n  NOW(),\n  NOW()\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute INSERT INTO links_uteis (titulo, url, descricao, categoria_id, ordem, created_at, updated_at)\nVALUES (\n  'Escala de Avaliações Práticas 2026',\n  '/escala-avaliacoes-praticas',\n  'Preceptores responsáveis pelas avaliações de Habilidades e Atendimento por residente e quadrimestre',\n  2,\n  0,\n  NOW(),\n  NOW()\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 63
+}

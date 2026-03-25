@@ -21,6 +21,7 @@ import AdminAvaliacoes from "./pages/admin/AdminAvaliacoes";
 import ModelosProva from "./pages/ModelosProva";
 import GerenciarUsuarios from "./pages/admin/GerenciarUsuarios";
 import LinksUteis from "./pages/LinksUteis";
+import EscalaAvaliacoesPraticas from "./pages/EscalaAvaliacoesPraticas";
 import GerenciarLinks from "./pages/admin/GerenciarLinks";
 import GerenciarImagensQuestoes from "./pages/admin/GerenciarImagensQuestoes";
 import SimuladoRevisao from "./pages/admin/SimuladoRevisao";
@@ -53,6 +54,7 @@ function Router() {
             <Route path="/admin/usuarios-legado" component={UserManagement} />
             <Route path="/admin/usuarios" component={GerenciarUsuarios} />
             <Route path="/links-uteis" component={LinksUteis} />
+            <Route path="/escala-avaliacoes-praticas" component={EscalaAvaliacoesPraticas} />
             <Route path="/admin/links" component={GerenciarLinks} />
             <Route path="/admin/questoes/imagens" component={GerenciarImagensQuestoes} />
             <Route path="/admin/avaliacoes/:modeloId/revisao" component={SimuladoRevisao} />

@@ -1,0 +1,64 @@
+{
+  "query": "SELECT id, titulo, url, categoria_id FROM links_uteis WHERE categoria_id IN (2, 3, 30001, 30002) ORDER BY categoria_id, id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user EgejHXbrcjh3Be8.6752ad3ffc44 --database KrCJog4rXRpMzt9GiEysge --execute SELECT id, titulo, url, categoria_id FROM links_uteis WHERE categoria_id IN (2, 3, 30001, 30002) ORDER BY categoria_id, id;",
+  "rows": [
+    {
+      "id": "60001",
+      "titulo": "Atendimento Clínico - 1º Quadrimestre",
+      "url": "https://docs.google.com/forms/d/e/1FAIpQLSf2j3SM33XJom6XNlYCn1Nfoob-OvQvrdAMOMR-fBcYQ0Y-pQ/viewform?usp=sharing&ouid=110010155909330003730",
+      "categoria_id": "3"
+    },
+    {
+      "id": "60002",
+      "titulo": "Atitudes - 1º Quadrimestre",
+      "url": "https://docs.google.com/forms/d/e/1FAIpQLSeIRqZ8ChB6NMVnhQbbJER-09XJQyrrmMjBBEwuGwDIDItCvw/viewform?usp=sharing&ouid=110010155909330003730",
+      "categoria_id": "3"
+    },
+    {
+      "id": "60003",
+      "titulo": "Habilidades Cirúrgicas/Procedimentos - 1º Quadrimestre",
+      "url": "https://docs.google.com/forms/d/e/1FAIpQLScFPtx4leuoqZKvTS9bIu0Kd6RFb9R28kgD4Xj_yUKMbsigig/viewform?usp=header",
+      "categoria_id": "3"
+    },
+    {
+      "id": "60004",
+      "titulo": "Atitudes - 2º Quadrimestre",
+      "url": "https://docs.google.com/forms/d/e/1FAIpQLSfzUpEAWsK8qQIgCYPvkvt1SA-3KzIvEt0fi2dVx8V0N3PurQ/viewform?usp=header",
+      "categoria_id": "30001"
+    },
+    {
+      "id": "60005",
+      "titulo": "Atendimento Clínico - 2º Quadrimestre",
+      "url": "https://docs.google.com/forms/d/e/1FAIpQLScLbFtM97vDW4XL7_5ad3AN1n0NRVK_yEOjLYjlJjKb8KEPmg/viewform?usp=header",
+      "categoria_id": "30001"
+    },
+    {
+      "id": "60006",
+      "titulo": "Habilidades Cirúrgicas/Procedimentos - 2º Quadrimestre",
+      "url": "https://docs.google.com/forms/d/e/1FAIpQLScEWNvK7OSJEspsURsQhnqL5SqgmnMm6IRjznrEJkEz0fPvBg/viewform?usp=header",
+      "categoria_id": "30001"
+    },
+    {
+      "id": "60007",
+      "titulo": "Atitudes - 3º Quadrimestre",
+      "url": "https://docs.google.com/forms/d/e/1FAIpQLSfcPWwBSborG_FYf_kjmfh7jywa5Yibr-q44eaf1-RYyf9wrw/viewform?usp=header",
+      "categoria_id": "30002"
+    },
+    {
+      "id": "60008",
+      "titulo": "Atendimento Clínico - 3º Quadrimestre",
+      "url": "https://docs.google.com/forms/d/e/1FAIpQLSfiapGKlOuNV4vnhem11ISCSmEccg0p-kSRy5J-eTndt31vOQ/viewform?usp=header",
+      "categoria_id": "30002"
+    },
+    {
+      "id": "60009",
+      "titulo": "Habilidades Cirúrgicas/Procedimentos - 3º Quadrimestre",
+      "url": "https://docs.google.com/forms/d/e/1FAIpQLSf5KJ3Oah4S3VUdzhwLg062EmVqYFykGWXc9nQsGsSrBSL0vQ/viewform?usp=header",
+      "categoria_id": "30002"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitulo\turl\tcategoria_id\n60001\tAtendimento Clínico - 1º Quadrimestre\thttps://docs.google.com/forms/d/e/1FAIpQLSf2j3SM33XJom6XNlYCn1Nfoob-OvQvrdAMOMR-fBcYQ0Y-pQ/viewform?usp=sharing&ouid=110010155909330003730\t3\n60002\tAtitudes - 1º Quadrimestre\thttps://docs.google.com/forms/d/e/1FAIpQLSeIRqZ8ChB6NMVnhQbbJER-09XJQyrrmMjBBEwuGwDIDItCvw/viewform?usp=sharing&ouid=110010155909330003730\t3\n60003\tHabilidades Cirúrgicas/Procedimentos - 1º Quadrimestre\thttps://docs.google.com/forms/d/e/1FAIpQLScFPtx4leuoqZKvTS9bIu0Kd6RFb9R28kgD4Xj_yUKMbsigig/viewform?usp=header\t3\n60004\tAtitudes - 2º Quadrimestre\thttps://docs.google.com/forms/d/e/1FAIpQLSfzUpEAWsK8qQIgCYPvkvt1SA-3KzIvEt0fi2dVx8V0N3PurQ/viewform?usp=header\t30001\n60005\tAtendimento Clínico - 2º Quadrimestre\thttps://docs.google.com/forms/d/e/1FAIpQLScLbFtM97vDW4XL7_5ad3AN1n0NRVK_yEOjLYjlJjKb8KEPmg/viewform?usp=header\t30001\n60006\tHabilidades Cirúrgicas/Procedimentos - 2º Quadrimestre\thttps://docs.google.com/forms/d/e/1FAIpQLScEWNvK7OSJEspsURsQhnqL5SqgmnMm6IRjznrEJkEz0fPvBg/viewform?usp=header\t30001\n60007\tAtitudes - 3º Quadrimestre\thttps://docs.google.com/forms/d/e/1FAIpQLSfcPWwBSborG_FYf_kjmfh7jywa5Yibr-q44eaf1-RYyf9wrw/viewform?usp=header\t30002\n60008\tAtendimento Clínico - 3º Quadrimestre\thttps://docs.google.com/forms/d/e/1FAIpQLSfiapGKlOuNV4vnhem11ISCSmEccg0p-kSRy5J-eTndt31vOQ/viewform?usp=header\t30002\n60009\tHabilidades Cirúrgicas/Procedimentos - 3º Quadrimestre\thttps://docs.google.com/forms/d/e/1FAIpQLSf5KJ3Oah4S3VUdzhwLg062EmVqYFykGWXc9nQsGsSrBSL0vQ/viewform?usp=header\t30002\n",
+  "stderr": "",
+  "execution_time_ms": 60
+}
