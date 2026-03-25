@@ -468,3 +468,4 @@
 - [x] Implementar subpastas em Links Úteis (campo parentId, acordeão aninhado, CRUD)
 - [x] Implementar troca de datas entre atividades das reuniões clínicas (swap de scheduledDate entre dois registros)
 - [x] Criar página de Escala de Avaliações Práticas (dados do PDF) e link em Links Úteis
+- [x] Adicionar aviso de datas limite na página Escala de Avaliações Práticas

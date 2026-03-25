@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardList, User, GraduationCap, Calendar } from "lucide-react";
+import { ClipboardList, User, GraduationCap, Calendar, AlertTriangle } from "lucide-react";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -241,6 +241,36 @@ export default function EscalaAvaliacoesPraticas() {
         <p className="text-sm text-muted-foreground mt-1">
           Preceptores responsáveis pelas avaliações de Habilidades e Atendimento de cada residente por quadrimestre.
         </p>
+      </div>
+
+      {/* Aviso de datas limite */}
+      <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700 p-4">
+        <div className="flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+              Datas limite para realização das avaliações práticas
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                { quad: "1º Quadrimestre", data: "28/05/2026" },
+                { quad: "2º Quadrimestre", data: "20/08/2026" },
+                { quad: "3º Quadrimestre", data: "03/12/2026" },
+              ].map(({ quad, data }) => (
+                <div
+                  key={quad}
+                  className="flex items-center gap-2 rounded-md bg-amber-100 dark:bg-amber-900/40 px-3 py-2"
+                >
+                  <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-amber-700 dark:text-amber-300">{quad}</p>
+                    <p className="text-sm font-bold text-amber-900 dark:text-amber-100">{data}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Legenda de quadrimestres */}
