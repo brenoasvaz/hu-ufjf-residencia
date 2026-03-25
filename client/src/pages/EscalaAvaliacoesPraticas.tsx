@@ -1,8 +1,16 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ClipboardList, User, Calendar, AlertTriangle, Loader2 } from "lucide-react";
+import { ClipboardList, User, Calendar, AlertTriangle, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
@@ -195,9 +203,14 @@ function GrupoAno({
 
 export default function EscalaAvaliacoesPraticas() {
   const quadAtivo = getCurrentQuad();
-  const ANO = 2026;
+  const currentYear = new Date().getFullYear();
+  const [ano, setAno] = useState(currentYear);
 
-  const { data: rows = [], isLoading } = trpc.escalaAvaliacoes.list.useQuery({ ano: ANO });
+  const anos = useMemo(() => {
+    return Array.from({ length: 6 }, (_, i) => currentYear - 2 + i);
+  }, [currentYear]);
+
+  const { data: rows = [], isLoading } = trpc.escalaAvaliacoes.list.useQuery({ ano });
 
   // Datas limite únicas por quadrimestre (para o banner)
   const datasLimite: Record<string, string> = {};
@@ -207,26 +220,60 @@ export default function EscalaAvaliacoesPraticas() {
     }
   });
 
-  // Fallback se não houver datas no banco
+  // Fallback se não houver datas no banco (apenas para o ano atual)
+  const isCurrent = ano === currentYear;
   const limites = [
-    { quad: "1", label: "1º Quadrimestre", data: datasLimite["1"] ?? "28/05/2026" },
-    { quad: "2", label: "2º Quadrimestre", data: datasLimite["2"] ?? "20/08/2026" },
-    { quad: "3", label: "3º Quadrimestre", data: datasLimite["3"] ?? "03/12/2026" },
-  ];
+    { quad: "1", label: "1º Quadrimestre", data: datasLimite["1"] ?? (isCurrent ? "28/05/2026" : null) },
+    { quad: "2", label: "2º Quadrimestre", data: datasLimite["2"] ?? (isCurrent ? "20/08/2026" : null) },
+    { quad: "3", label: "3º Quadrimestre", data: datasLimite["3"] ?? (isCurrent ? "03/12/2026" : null) },
+  ].filter((l) => l.data !== null) as { quad: string; label: string; data: string }[];
 
   const rowsByAno = (ano: "R1" | "R2" | "R3") => rows.filter((r) => r.anoResidencia === ano);
 
   return (
     <div className="space-y-6">
       {/* Cabeçalho */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-          <ClipboardList className="h-6 w-6 text-primary" />
-          Escala de Avaliações Práticas — {ANO}
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Preceptores responsáveis pelas avaliações de Habilidades e Atendimento de cada residente por quadrimestre.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <ClipboardList className="h-6 w-6 text-primary" />
+            Escala de Avaliações Práticas — {ano}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Preceptores responsáveis pelas avaliações de Habilidades e Atendimento de cada residente por quadrimestre.
+          </p>
+        </div>
+        {/* Seletor de ano */}
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setAno((a) => a - 1)}
+            disabled={ano <= anos[0]}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Select value={String(ano)} onValueChange={(v) => setAno(Number(v))}>
+            <SelectTrigger className="w-24 h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {anos.map((a) => (
+                <SelectItem key={a} value={String(a)}>{a}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => setAno((a) => a + 1)}
+            disabled={ano >= anos[anos.length - 1]}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Aviso de datas limite */}

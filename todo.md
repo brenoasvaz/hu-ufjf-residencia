@@ -472,3 +472,4 @@
 - [x] Migrar escala de avaliações práticas para banco de dados
 - [x] Criar painel admin para edição da escala de avaliações
 - [x] Destaque visual de data limite próxima (< 30 dias) na escala
+- [x] Seletor de ano e cadastro de novos residentes no painel admin da Escala de Avaliações
