@@ -475,3 +475,4 @@
 - [x] Seletor de ano e cadastro de novos residentes no painel admin da Escala de Avaliações
 - [x] Copiar escala entre anos com progressão automática R1→R2, R2→R3, R3 removidos
 - [x] Cópia com progressão de ano para escala mensal de rodízios
+- [x] Botão para remover marcação 'pendente de imagem' em questões sem necessidade de imagem

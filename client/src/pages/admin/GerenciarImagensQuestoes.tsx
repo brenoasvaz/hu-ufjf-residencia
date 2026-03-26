@@ -36,6 +36,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Filter,
+  ImageOff,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -132,6 +133,14 @@ export default function GerenciarImagensQuestoes() {
       refetch();
     },
     onError: (error) => toast.error(error.message || "Erro ao remover imagem"),
+  });
+
+  const setTemImagemMutation = trpc.avaliacoes.questoes.setTemImagem.useMutation({
+    onSuccess: () => {
+      toast.success("Marcação atualizada com sucesso!");
+      refetch();
+    },
+    onError: (error) => toast.error(error.message || "Erro ao atualizar marcação"),
   });
 
   const editarMutation = trpc.avaliacoes.questoes.editar.useMutation({
@@ -430,6 +439,32 @@ export default function GerenciarImagensQuestoes() {
                       <Upload className="mr-1 h-4 w-4" />
                       {questao.imageUrl ? "Alterar" : "Imagem"}
                     </Button>
+                    {/* Botão para desmarcar "precisa de imagem" quando a questão não requer imagem */}
+                    {questao.temImagem === 1 && !questao.imageUrl && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        title="Marcar como: não precisa de imagem"
+                        onClick={() => setTemImagemMutation.mutate({ questaoId: questao.id, temImagem: 0 })}
+                        disabled={setTemImagemMutation.isPending}
+                        className="text-amber-600 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                      >
+                        <ImageOff className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {/* Botão para marcar que a questão precisa de imagem (quando temImagem=0) */}
+                    {questao.temImagem === 0 && !questao.imageUrl && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        title="Marcar como: precisa de imagem"
+                        onClick={() => setTemImagemMutation.mutate({ questaoId: questao.id, temImagem: 1 })}
+                        disabled={setTemImagemMutation.isPending}
+                        className="text-blue-600 border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                      >
+                        <Image className="h-4 w-4" />
+                      </Button>
+                    )}
                     {questao.imageUrl && (
                       <Button
                         variant="destructive"

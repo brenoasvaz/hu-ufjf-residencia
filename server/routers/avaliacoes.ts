@@ -322,6 +322,25 @@ export const avaliacoesRouter = router({
           .where(eq(questoes.id, input.questaoId));
         return { success: true };
       }),
+
+    /**
+     * Altera o flag temImagem (0 = não precisa de imagem, 1 = precisa).
+     * Permite ao admin desmarcar questões incorretamente marcadas como pendentes.
+     */
+    setTemImagem: adminProcedure
+      .input(z.object({
+        questaoId: z.number(),
+        temImagem: z.number().min(0).max(1),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+        await db
+          .update(questoes)
+          .set({ temImagem: input.temImagem })
+          .where(eq(questoes.id, input.questaoId));
+        return { success: true };
+      }),
   }),
 
   // ========================================
