@@ -965,6 +965,104 @@ export const avaliacoesRouter = router({
         return { novaQuestaoId: nova.id, enunciado: nova.enunciado };
       }),
 
+    /**
+     * Troca uma questão do template por outra escolhida pelo admin.
+     * Aceita qualquer questão ativa, de qualquer especialidade.
+     * Atualiza também a especialidadeId na linha do template para refletir a nova questão.
+     */
+    trocarQuestaoEspecifica: adminProcedure
+      .input(z.object({
+        templateQuestaoId: z.number(), // id da linha em simulado_template_questoes
+        novaQuestaoId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+        // Buscar dados da nova questão
+        const [nova] = await db
+          .select({ id: questoes.id, enunciado: questoes.enunciado, especialidadeId: questoes.especialidadeId })
+          .from(questoes)
+          .where(eq(questoes.id, input.novaQuestaoId))
+          .limit(1);
+
+        if (!nova) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Questão não encontrada' });
+        }
+
+        // Atualizar a linha do template (apenas questaoId, ordem é preservada)
+        await db
+          .update(simuladoTemplateQuestoes)
+          .set({ questaoId: nova.id })
+          .where(eq(simuladoTemplateQuestoes.id, input.templateQuestaoId));
+
+        return { novaQuestaoId: nova.id, enunciado: nova.enunciado };
+      }),
+
+    /**
+     * Busca questões disponíveis para substituição no template.
+     * Exclui questões já presentes no template.
+     */
+    buscarQuestoesParaTroca: adminProcedure
+      .input(z.object({
+        templateId: z.number(),
+        busca: z.string().optional(),
+        especialidadeId: z.number().optional(),
+        page: z.number().min(1).default(1),
+        pageSize: z.number().min(1).max(50).default(20),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+        const { and: andOp, not: notOp, like: likeOp, count: countFn } = await import('drizzle-orm');
+        const { especialidades: espTable } = await import('../../drizzle/schema');
+
+        // Questões já no template
+        const jaNoTemplate = await db
+          .select({ questaoId: simuladoTemplateQuestoes.questaoId })
+          .from(simuladoTemplateQuestoes)
+          .where(eq(simuladoTemplateQuestoes.templateId, input.templateId));
+        const excluirIds = jaNoTemplate.map((q: any) => q.questaoId);
+
+        const conditions: any[] = [eq(questoes.ativo, 1)];
+        if (excluirIds.length > 0) conditions.push(notOp(inArray(questoes.id, excluirIds)));
+        if (input.especialidadeId) conditions.push(eq(questoes.especialidadeId, input.especialidadeId));
+        if (input.busca?.trim()) conditions.push(likeOp(questoes.enunciado, `%${input.busca.trim()}%`));
+
+        const where = conditions.length > 1 ? andOp(...conditions) : conditions[0];
+
+        const [{ total }] = await db
+          .select({ total: countFn(questoes.id) })
+          .from(questoes)
+          .where(where);
+
+        const offset = (input.page - 1) * input.pageSize;
+        const rows = await db
+          .select({
+            id: questoes.id,
+            enunciado: questoes.enunciado,
+            fonte: questoes.fonte,
+            ano: questoes.ano,
+            especialidadeId: questoes.especialidadeId,
+            especialidadeNome: espTable.nome,
+            temImagem: questoes.temImagem,
+            imageUrl: questoes.imageUrl,
+          })
+          .from(questoes)
+          .leftJoin(espTable, eq(questoes.especialidadeId, espTable.id))
+          .where(where)
+          .orderBy(questoes.especialidadeId, questoes.id)
+          .limit(input.pageSize)
+          .offset(offset);
+
+        return {
+          questoes: rows,
+          total,
+          page: input.page,
+          totalPages: Math.ceil(total / input.pageSize),
+        };
+      }),
+
     // Liberar modelo para os residentes (admin)
     liberar: adminProcedure
       .input(z.object({ modeloId: z.number() }))

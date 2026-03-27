@@ -476,3 +476,4 @@
 - [x] Copiar escala entre anos com progressão automática R1→R2, R2→R3, R3 removidos
 - [x] Cópia com progressão de ano para escala mensal de rodízios
 - [x] Botão para remover marcação 'pendente de imagem' em questões sem necessidade de imagem
+- [x] Revisão de simulado: edição de conteúdo, upload de imagem e troca de questão antes da liberação

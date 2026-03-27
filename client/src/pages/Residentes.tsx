@@ -245,7 +245,7 @@ export default function Residentes() {
           </Dialog>
           </div>
         )}
-      </div>
+      </div>  {/* fim flex flex-col md:flex-row */}
 
       {/* Diálogo de progressão anual */}
       <AlertDialog open={showProgressao} onOpenChange={setShowProgressao}>
