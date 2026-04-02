@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search, ArrowLeftRight, X, Plus, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
+import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search, ArrowLeftRight, X, Plus, ArrowUp, ArrowDown, GripVertical, FileDown } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { EditClinicalMeetingDialog } from "@/components/EditClinicalMeetingDialog";
 import { toast } from "sonner";
@@ -226,7 +226,36 @@ export default function ClinicalMeetings() {
     { year: selectedYear, month: selectedMonth },
     { enabled: false }
   );
-  
+
+  const { refetch: exportPDF, isFetching: isExportingPDF } = trpc.clinicalMeetings.exportPDF.useQuery(
+    { year: selectedYear, month: selectedMonth },
+    { enabled: false }
+  );
+
+  const handleExportPDF = async () => {
+    try {
+      const result = await exportPDF();
+      if (result.data?.pdf) {
+        const byteCharacters = atob(result.data.pdf);
+        const byteNumbers = new Array(byteCharacters.length).fill(0).map((_, i) => byteCharacters.charCodeAt(i));
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        const monthName = MONTHS.find(m => m.value === selectedMonth)?.label ?? String(selectedMonth);
+        link.download = `reunioes-clinicas-${monthName}-${selectedYear}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        toast.success('PDF exportado com sucesso!');
+      }
+    } catch (error) {
+      toast.error('Erro ao exportar PDF');
+    }
+  };
+
   const handleExport = async () => {
     try {
       const result = await exportICS();
@@ -276,6 +305,10 @@ export default function ClinicalMeetings() {
               </Button>
             </>
           )}
+          <Button onClick={handleExportPDF} disabled={isExportingPDF} variant="outline">
+            <FileDown className="mr-2 h-4 w-4" />
+            {isExportingPDF ? 'Gerando PDF...' : 'Exportar PDF'}
+          </Button>
           <Button onClick={handleExport} disabled={isExporting}>
             <Download className="mr-2 h-4 w-4" />
             {isExporting ? 'Exportando...' : 'Exportar para Calendário'}

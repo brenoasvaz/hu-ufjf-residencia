@@ -612,6 +612,29 @@ export const appRouter = router({
         return clinicalMeetingsDb.reorderClinicalMeetings(input.items);
       }),
     
+    exportPDF: viewerProcedure
+      .input(z.object({
+        year: z.number(),
+        month: z.number().min(1).max(12),
+      }))
+      .query(async ({ input }) => {
+        const { generateClinicalMeetingsPDF } = await import('./pdf-export');
+        const meetings = await clinicalMeetingsDb.getClinicalMeetingsByMonth(input.year, input.month);
+        // Ordenar por data e ordemNaData
+        meetings.sort((a, b) => {
+          const dateA = new Date(a.data).getTime();
+          const dateB = new Date(b.data).getTime();
+          if (dateA !== dateB) return dateA - dateB;
+          return (a.ordemNaData ?? 0) - (b.ordemNaData ?? 0);
+        });
+        const pdfBuffer = await generateClinicalMeetingsPDF({
+          year: input.year,
+          month: input.month,
+          meetings,
+        });
+        return { pdf: pdfBuffer.toString('base64') };
+      }),
+
     exportICS: viewerProcedure
       .input(z.object({
         year: z.number().optional(),
