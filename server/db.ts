@@ -173,11 +173,9 @@ export async function swapClinicalMeetingDates(idA: number, idB: number): Promis
 
   if (!meetingA || !meetingB) throw new Error("Uma ou ambas as atividades não foram encontradas");
 
-  // Usar data temporária para evitar conflito de unique constraint
-  const tempDate = new Date(0); // epoch como placeholder
-  await db.update(clinicalMeetings).set({ data: tempDate }).where(eq(clinicalMeetings.id, idA));
-  await db.update(clinicalMeetings).set({ data: meetingA.data }).where(eq(clinicalMeetings.id, idB));
+  // Trocar datas diretamente (sem data temporária) — não há UNIQUE constraint em 'data'
   await db.update(clinicalMeetings).set({ data: meetingB.data }).where(eq(clinicalMeetings.id, idA));
+  await db.update(clinicalMeetings).set({ data: meetingA.data }).where(eq(clinicalMeetings.id, idB));
 }
 
 // ============================================
