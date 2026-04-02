@@ -23,7 +23,18 @@ interface EditClinicalMeetingDialogProps {
   meeting: ClinicalMeeting | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Se fornecida, pré-preenche a data no modo criação */
+  defaultDate?: string;
 }
+
+const EMPTY_FORM = {
+  data: "",
+  tema: "",
+  tipo: "AULA" as ClinicalMeeting["tipo"],
+  preceptor: "",
+  residenteApresentador: "",
+  observacao: "",
+};
 
 const MEETING_TYPES = [
   { value: "AULA", label: "Aula" },
@@ -36,23 +47,17 @@ const MEETING_TYPES = [
   { value: "RECESSO", label: "Recesso" },
 ];
 
-export function EditClinicalMeetingDialog({ meeting, open, onOpenChange }: EditClinicalMeetingDialogProps) {
+export function EditClinicalMeetingDialog({ meeting, open, onOpenChange, defaultDate }: EditClinicalMeetingDialogProps) {
   const utils = trpc.useUtils();
-  const [formData, setFormData] = useState({
-    data: "",
-    tema: "",
-    tipo: "AULA" as ClinicalMeeting["tipo"],
-    preceptor: "",
-    residenteApresentador: "",
-    observacao: "",
-  });
+  const isEditing = !!meeting;
+  const [formData, setFormData] = useState(EMPTY_FORM);
 
   useEffect(() => {
+    if (!open) return;
     if (meeting) {
-      const dateStr = meeting.data instanceof Date 
-        ? meeting.data.toISOString().split('T')[0]
-        : new Date(meeting.data).toISOString().split('T')[0];
-      
+      const dateStr = meeting.data instanceof Date
+        ? meeting.data.toISOString().split("T")[0]
+        : new Date(meeting.data).toISOString().split("T")[0];
       setFormData({
         data: dateStr,
         tema: meeting.tema,
@@ -61,8 +66,21 @@ export function EditClinicalMeetingDialog({ meeting, open, onOpenChange }: EditC
         residenteApresentador: meeting.residenteApresentador || "",
         observacao: meeting.observacao || "",
       });
+    } else {
+      setFormData({ ...EMPTY_FORM, data: defaultDate || "" });
     }
-  }, [meeting]);
+  }, [meeting, open, defaultDate]);
+
+  const createMutation = trpc.clinicalMeetings.create.useMutation({
+    onSuccess: () => {
+      toast.success("Atividade criada com sucesso!");
+      utils.clinicalMeetings.list.invalidate();
+      onOpenChange(false);
+    },
+    onError: (error) => {
+      toast.error(`Erro ao criar atividade: ${error.message}`);
+    },
+  });
 
   const updateMutation = trpc.clinicalMeetings.update.useMutation({
     onSuccess: () => {
@@ -75,36 +93,53 @@ export function EditClinicalMeetingDialog({ meeting, open, onOpenChange }: EditC
     },
   });
 
+  const isPending = updateMutation.isPending || createMutation.isPending;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!meeting) return;
+    if (!formData.data || !formData.tema) return;
 
-    updateMutation.mutate({
-      id: meeting.id,
-      data: new Date(formData.data),
-      tema: formData.tema,
-      tipo: formData.tipo,
-      preceptor: formData.preceptor || undefined,
-      residenteApresentador: formData.residenteApresentador || undefined,
-      observacao: formData.observacao || undefined,
-    });
+    // Parse date as local noon to avoid UTC offset shifting the day
+    const [y, m, d] = formData.data.split("-").map(Number);
+    const dateObj = new Date(y, m - 1, d, 12, 0, 0);
+
+    if (isEditing) {
+      updateMutation.mutate({
+        id: meeting.id,
+        data: dateObj,
+        tema: formData.tema,
+        tipo: formData.tipo,
+        preceptor: formData.preceptor || undefined,
+        residenteApresentador: formData.residenteApresentador || undefined,
+        observacao: formData.observacao || undefined,
+      });
+    } else {
+      createMutation.mutate({
+        data: dateObj,
+        tema: formData.tema,
+        tipo: formData.tipo,
+        preceptor: formData.preceptor || undefined,
+        residenteApresentador: formData.residenteApresentador || undefined,
+        observacao: formData.observacao || undefined,
+      });
+    }
   };
-
-  if (!meeting) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Editar Reunião Clínica</DialogTitle>
+          <DialogTitle>{isEditing ? "Editar Reunião Clínica" : "Nova Atividade"}</DialogTitle>
           <DialogDescription>
-            Atualize as informações da reunião clínica
+            {isEditing
+              ? "Atualize as informações da reunião clínica"
+              : "Preencha os dados para adicionar uma nova atividade à programação"}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="data">Data</Label>
+            <Label htmlFor="data">Data *</Label>
             <Input
               id="data"
               type="date"
@@ -115,7 +150,7 @@ export function EditClinicalMeetingDialog({ meeting, open, onOpenChange }: EditC
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tipo">Tipo</Label>
+            <Label htmlFor="tipo">Tipo *</Label>
             <Select
               value={formData.tipo}
               onValueChange={(value) => setFormData({ ...formData, tipo: value as ClinicalMeeting["tipo"] })}
@@ -134,11 +169,12 @@ export function EditClinicalMeetingDialog({ meeting, open, onOpenChange }: EditC
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tema">Tema</Label>
+            <Label htmlFor="tema">Tema *</Label>
             <Input
               id="tema"
               value={formData.tema}
               onChange={(e) => setFormData({ ...formData, tema: e.target.value })}
+              placeholder="Ex: Fraturas do Fêmur Proximal"
               required
             />
           </div>
@@ -149,6 +185,7 @@ export function EditClinicalMeetingDialog({ meeting, open, onOpenChange }: EditC
               id="preceptor"
               value={formData.preceptor}
               onChange={(e) => setFormData({ ...formData, preceptor: e.target.value })}
+              placeholder="Nome do preceptor responsável"
             />
           </div>
 
@@ -173,17 +210,12 @@ export function EditClinicalMeetingDialog({ meeting, open, onOpenChange }: EditC
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={updateMutation.isPending}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={updateMutation.isPending}>
-              {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Salvar Alterações
+            <Button type="submit" disabled={isPending || !formData.data || !formData.tema}>
+              {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isEditing ? "Salvar Alterações" : "Criar Atividade"}
             </Button>
           </DialogFooter>
         </form>

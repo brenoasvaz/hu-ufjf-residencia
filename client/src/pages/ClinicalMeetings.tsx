@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search, ArrowLeftRight, X } from "lucide-react";
+import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search, ArrowLeftRight, X, Plus } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { EditClinicalMeetingDialog } from "@/components/EditClinicalMeetingDialog";
 import { toast } from "sonner";
@@ -84,6 +84,7 @@ export default function ClinicalMeetings() {
   const [swapMode, setSwapMode] = useState(false);
   const [swapSelected, setSwapSelected] = useState<any[]>([]); // até 2 atividades
   const [swapConfirmOpen, setSwapConfirmOpen] = useState(false);
+  const [showCreateMeeting, setShowCreateMeeting] = useState(false);
   
   const isAdmin = user?.role === 'admin';
 
@@ -219,13 +220,22 @@ export default function ClinicalMeetings() {
         </div>
         <div className="flex gap-2">
           {isAdmin && (
-            <Button
-              variant={swapMode ? "default" : "outline"}
-              onClick={() => { setSwapMode(v => !v); setSwapSelected([]); setSwapConfirmOpen(false); }}
-            >
-              <ArrowLeftRight className="mr-2 h-4 w-4" />
-              {swapMode ? "Cancelar Troca" : "Trocar Datas"}
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => setShowCreateMeeting(true)}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Atividade
+              </Button>
+              <Button
+                variant={swapMode ? "default" : "outline"}
+                onClick={() => { setSwapMode(v => !v); setSwapSelected([]); setSwapConfirmOpen(false); }}
+              >
+                <ArrowLeftRight className="mr-2 h-4 w-4" />
+                {swapMode ? "Cancelar Troca" : "Trocar Datas"}
+              </Button>
+            </>
           )}
           <Button onClick={handleExport} disabled={isExporting}>
             <Download className="mr-2 h-4 w-4" />
@@ -658,6 +668,13 @@ export default function ClinicalMeetings() {
         meeting={editingMeeting}
         open={!!editingMeeting}
         onOpenChange={(open) => !open && setEditingMeeting(null)}
+      />
+
+      {/* Create Dialog */}
+      <EditClinicalMeetingDialog
+        meeting={null}
+        open={showCreateMeeting}
+        onOpenChange={setShowCreateMeeting}
       />
       
       {/* Swap Confirmation Dialog */}
