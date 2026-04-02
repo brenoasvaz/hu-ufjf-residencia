@@ -279,39 +279,45 @@ export default function ClinicalMeetings() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Reuniões Clínicas</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Programação científica semanal do Serviço de Ortopedia e Traumatologia
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           {isAdmin && (
             <>
               <Button
                 variant="outline"
+                size="sm"
                 onClick={() => setShowCreateMeeting(true)}
               >
-                <Plus className="mr-2 h-4 w-4" />
-                Nova Atividade
+                <Plus className="h-4 w-4" />
+                <span className="ml-1.5 hidden sm:inline">Nova Atividade</span>
+                <span className="ml-1.5 sm:hidden">Nova</span>
               </Button>
               <Button
                 variant={swapMode ? "default" : "outline"}
+                size="sm"
                 onClick={() => { setSwapMode(v => !v); setSwapSelected([]); setSwapConfirmOpen(false); }}
               >
-                <ArrowLeftRight className="mr-2 h-4 w-4" />
-                {swapMode ? "Cancelar Troca" : "Trocar Datas"}
+                <ArrowLeftRight className="h-4 w-4" />
+                <span className="ml-1.5 hidden sm:inline">{swapMode ? "Cancelar Troca" : "Trocar Datas"}</span>
+                <span className="ml-1.5 sm:hidden">{swapMode ? "Cancelar" : "Trocar"}</span>
               </Button>
             </>
           )}
-          <Button onClick={handleExportPDF} disabled={isExportingPDF} variant="outline">
-            <FileDown className="mr-2 h-4 w-4" />
-            {isExportingPDF ? 'Gerando PDF...' : 'Exportar PDF'}
+          <Button onClick={handleExportPDF} disabled={isExportingPDF} variant="outline" size="sm">
+            <FileDown className="h-4 w-4" />
+            <span className="ml-1.5 hidden sm:inline">{isExportingPDF ? 'Gerando PDF...' : 'Exportar PDF'}</span>
+            <span className="ml-1.5 sm:hidden">PDF</span>
           </Button>
-          <Button onClick={handleExport} disabled={isExporting}>
-            <Download className="mr-2 h-4 w-4" />
-            {isExporting ? 'Exportando...' : 'Exportar para Calendário'}
+          <Button onClick={handleExport} disabled={isExporting} size="sm">
+            <Download className="h-4 w-4" />
+            <span className="ml-1.5 hidden sm:inline">{isExporting ? 'Exportando...' : 'Exportar para Calendário'}</span>
+            <span className="ml-1.5 sm:hidden">Calendário</span>
           </Button>
         </div>
       </div>
