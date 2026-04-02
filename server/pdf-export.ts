@@ -1,5 +1,7 @@
 import PDFDocument from "pdfkit";
 import { ClinicalMeeting } from "../drizzle/schema";
+import https from "https";
+import http from "http";
 
 interface ExportOptions {
   year: number;
@@ -23,8 +25,30 @@ const TYPE_LABELS: Record<string, string> = {
   RECESSO: "Recesso",
 };
 
+const LOGO_URL = "https://d2xsxph8kpxj0f.cloudfront.net/310519663108449732/KrCJog4rXRpMzt9GiEysge/logo-hu-ufjf-ebserh_3b01375d.jpg";
+
+async function downloadImage(url: string): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const protocol = url.startsWith("https") ? https : http;
+    protocol.get(url, (res) => {
+      const chunks: Buffer[] = [];
+      res.on("data", (chunk) => chunks.push(chunk));
+      res.on("end", () => resolve(Buffer.concat(chunks)));
+      res.on("error", reject);
+    }).on("error", reject);
+  });
+}
+
 export async function generateClinicalMeetingsPDF(options: ExportOptions): Promise<Buffer> {
   const { year, month, meetings } = options;
+
+  // Download logo
+  let logoBuffer: Buffer | null = null;
+  try {
+    logoBuffer = await downloadImage(LOGO_URL);
+  } catch (error) {
+    console.warn("Failed to download logo for PDF:", error);
+  }
 
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({
@@ -37,13 +61,25 @@ export async function generateClinicalMeetingsPDF(options: ExportOptions): Promi
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
+    // Logo no cabeçalho (se disponível)
+    if (logoBuffer) {
+      try {
+        doc.image(logoBuffer, 50, 40, { width: 180 });
+      } catch (error) {
+        console.warn("Failed to embed logo in PDF:", error);
+      }
+    }
+
     // Cabeçalho
-    doc.fontSize(18).font("Helvetica-Bold").text("HU UFJF - Ortopedia e Traumatologia", { align: "center" });
+    doc.fontSize(18).font("Helvetica-Bold").text("Ortopedia e Traumatologia", 250, 50, { align: "left" });
     doc.moveDown(0.3);
-    doc.fontSize(14).font("Helvetica").text("Programação de Reuniões Clínicas", { align: "center" });
+    doc.fontSize(14).font("Helvetica").text("Programação de Reuniões Clínicas", 250, 70, { align: "left" });
     doc.moveDown(0.3);
-    doc.fontSize(12).text(`${MONTH_NAMES[month - 1]} de ${year}`, { align: "center" });
-    doc.moveDown(1.5);
+    doc.fontSize(12).text(`${MONTH_NAMES[month - 1]} de ${year}`, 250, 88, { align: "left" });
+    
+    // Linha separadora após cabeçalho
+    doc.moveTo(50, 115).lineTo(545, 115).strokeColor("#d1d5db").lineWidth(1).stroke();
+    doc.moveDown(2);
 
     // Agrupar por data
     const groupedByDate = new Map<string, ClinicalMeeting[]>();

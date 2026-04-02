@@ -482,3 +482,4 @@
 - [x] Reordenação de atividades dentro de cada data nas reuniões clínicas
 - [x] Reorganizar menu superior com dropdowns para eliminar sobreposição e poluição visual
 - [x] Exportar programação mensal de reuniões clínicas em PDF
+- [x] Logo HU UFJF/EBSERH no cabeçalho do PDF de Reuniões Clínicas
