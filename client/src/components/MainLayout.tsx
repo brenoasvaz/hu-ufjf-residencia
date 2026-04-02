@@ -1,7 +1,13 @@
-import { ReactNode, useState, useRef, useEffect } from "react";
+import { ReactNode, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Calendar,
   CalendarDays,
@@ -30,7 +36,7 @@ interface MainLayoutProps {
   children: ReactNode;
 }
 
-interface DropdownItem {
+interface NavItem {
   href: string;
   label: string;
   icon: React.ElementType;
@@ -39,102 +45,12 @@ interface DropdownItem {
 interface NavGroup {
   label: string;
   icon: React.ElementType;
-  href?: string; // link direto (sem dropdown)
-  items?: DropdownItem[]; // dropdown
-}
-
-function DropdownMenu({
-  group,
-  location,
-  onNavigate,
-}: {
-  group: NavGroup;
-  location: string;
-  onNavigate?: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  if (group.href) {
-    const isActive = location === group.href;
-    const Icon = group.icon;
-    return (
-      <Link
-        href={group.href}
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-          isActive
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        }`}
-        onClick={onNavigate}
-      >
-        <Icon className="h-4 w-4 shrink-0" />
-        <span>{group.label}</span>
-      </Link>
-    );
-  }
-
-  const isGroupActive = group.items?.some((item) => location === item.href);
-  const Icon = group.icon;
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-          isGroupActive
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-        }`}
-      >
-        <Icon className="h-4 w-4 shrink-0" />
-        <span>{group.label}</span>
-        <ChevronDown
-          className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`}
-        />
-      </button>
-      {open && (
-        <div className="absolute top-full left-0 mt-1 w-52 rounded-md border bg-popover shadow-lg z-50 py-1">
-          {group.items!.map((item) => {
-            const ItemIcon = item.icon;
-            const isActive = location === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2.5 px-3 py-2 text-sm transition-colors ${
-                  isActive
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "text-popover-foreground hover:bg-accent"
-                }`}
-                onClick={() => {
-                  setOpen(false);
-                  onNavigate?.();
-                }}
-              >
-                <ItemIcon className="h-4 w-4 shrink-0" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+  href?: string;
+  items?: NavItem[];
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { user, isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
@@ -152,13 +68,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
 
   const isAdmin = user?.role === "admin";
 
-  // Grupos de navegação — itens com href direto, grupos com dropdown
   const navGroups: NavGroup[] = [
-    {
-      label: "Início",
-      icon: Home,
-      href: "/",
-    },
+    { label: "Início", icon: Home, href: "/" },
     {
       label: "Calendários",
       icon: Calendar,
@@ -167,16 +78,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
         { href: "/calendario-semanal", label: "Calendário Semanal", icon: CalendarDays },
       ],
     },
-    {
-      label: "Residentes",
-      icon: Users,
-      href: "/residentes",
-    },
-    {
-      label: "Reuniões Clínicas",
-      icon: Presentation,
-      href: "/reunioes-clinicas",
-    },
+    { label: "Residentes", icon: Users, href: "/residentes" },
+    { label: "Reuniões Clínicas", icon: Presentation, href: "/reunioes-clinicas" },
     {
       label: "Avaliações",
       icon: ClipboardCheck,
@@ -185,11 +88,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         { href: "/escala-avaliacoes-praticas", label: "Escala Prática", icon: BookOpen },
       ],
     },
-    {
-      label: "Links Úteis",
-      icon: LinkIcon,
-      href: "/links-uteis",
-    },
+    { label: "Links Úteis", icon: LinkIcon, href: "/links-uteis" },
     ...(isAdmin
       ? [
           {
@@ -206,18 +105,23 @@ export default function MainLayout({ children }: MainLayoutProps) {
       : []),
   ];
 
-  // Lista plana para o menu mobile
-  const allNavItems: DropdownItem[] = navGroups.flatMap((g) =>
-    g.href
-      ? [{ href: g.href, label: g.label, icon: g.icon }]
-      : (g.items ?? [])
+  // Lista plana para menu mobile
+  const allNavItems: NavItem[] = navGroups.flatMap((g) =>
+    g.href ? [{ href: g.href, label: g.label, icon: g.icon }] : (g.items ?? [])
   );
+
+  const linkClass = (active: boolean) =>
+    `flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
+      active
+        ? "bg-primary text-primary-foreground"
+        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+    }`;
 
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center gap-4">
+        <div className="container flex h-16 items-center gap-3">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 shrink-0">
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
@@ -227,13 +131,57 @@ export default function MainLayout({ children }: MainLayoutProps) {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-0.5 flex-1 overflow-x-auto">
-            {navGroups.map((group) => (
-              <DropdownMenu key={group.label} group={group} location={location} />
-            ))}
+          <nav className="hidden md:flex items-center gap-0.5 flex-1">
+            {navGroups.map((group) => {
+              const Icon = group.icon;
+
+              // Link direto
+              if (group.href) {
+                return (
+                  <Link
+                    key={group.href}
+                    href={group.href}
+                    className={linkClass(location === group.href)}
+                  >
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span>{group.label}</span>
+                  </Link>
+                );
+              }
+
+              // Dropdown
+              const isGroupActive = group.items?.some((item) => location === item.href);
+              return (
+                <DropdownMenu key={group.label}>
+                  <DropdownMenuTrigger asChild>
+                    <button className={linkClass(!!isGroupActive)}>
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span>{group.label}</span>
+                      <ChevronDown className="h-3.5 w-3.5 ml-0.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-52">
+                    {group.items!.map((item) => {
+                      const ItemIcon = item.icon;
+                      const isActive = location === item.href;
+                      return (
+                        <DropdownMenuItem
+                          key={item.href}
+                          className={`gap-2.5 cursor-pointer ${isActive ? "bg-primary/10 text-primary font-medium" : ""}`}
+                          onClick={() => navigate(item.href)}
+                        >
+                          <ItemIcon className="h-4 w-4 shrink-0" />
+                          <span>{item.label}</span>
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              );
+            })}
           </nav>
 
-          {/* Right side: theme + user */}
+          {/* Right side */}
           <div className="flex items-center gap-1 ml-auto shrink-0">
             <Button
               variant="ghost"
