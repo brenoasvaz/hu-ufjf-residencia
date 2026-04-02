@@ -47,6 +47,8 @@ interface NavGroup {
   icon: React.ElementType;
   href?: string;
   items?: NavItem[];
+  /** Se true, exibe o badge de pendentes neste grupo */
+  showPendingBadge?: boolean;
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
@@ -55,6 +57,14 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const logoutMutation = trpc.auth.logout.useMutation();
+
+  // Busca contagem de avaliações pendentes (só para usuários autenticados não-admin)
+  const { data: pendingData } = trpc.avaliacoes.pendingCount.useQuery(undefined, {
+    enabled: !!isAuthenticated,
+    refetchInterval: 60_000, // atualiza a cada 1 minuto
+    staleTime: 30_000,
+  });
+  const pendingCount = pendingData?.count ?? 0;
 
   const handleLogout = async () => {
     try {
@@ -83,6 +93,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     {
       label: "Avaliações",
       icon: ClipboardCheck,
+      showPendingBadge: true,
       items: [
         { href: "/avaliacoes", label: "Simulados", icon: ClipboardCheck },
         { href: "/escala-avaliacoes-praticas", label: "Escala Avaliações Práticas", icon: BookOpen },
@@ -117,6 +128,16 @@ export default function MainLayout({ children }: MainLayoutProps) {
         : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
     }`;
 
+  /** Badge vermelho com número */
+  const PendingBadge = ({ count }: { count: number }) => {
+    if (count <= 0) return null;
+    return (
+      <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+        {count > 99 ? "99+" : count}
+      </span>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -134,6 +155,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
           <nav className="hidden md:flex items-center gap-0.5 flex-1">
             {navGroups.map((group) => {
               const Icon = group.icon;
+              const showBadge = group.showPendingBadge && pendingCount > 0;
 
               // Link direto
               if (group.href) {
@@ -157,6 +179,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     <button className={linkClass(!!isGroupActive)}>
                       <Icon className="h-4 w-4 shrink-0" />
                       <span>{group.label}</span>
+                      {showBadge && <PendingBadge count={pendingCount} />}
                       <ChevronDown className="h-3.5 w-3.5 ml-0.5" />
                     </button>
                   </DropdownMenuTrigger>
@@ -164,6 +187,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     {group.items!.map((item) => {
                       const ItemIcon = item.icon;
                       const isActive = location === item.href;
+                      // Mostra badge apenas no item "Simulados"
+                      const itemShowBadge = group.showPendingBadge && item.href === "/avaliacoes" && pendingCount > 0;
                       return (
                         <DropdownMenuItem
                           key={item.href}
@@ -171,7 +196,8 @@ export default function MainLayout({ children }: MainLayoutProps) {
                           onClick={() => navigate(item.href)}
                         >
                           <ItemIcon className="h-4 w-4 shrink-0" />
-                          <span>{item.label}</span>
+                          <span className="flex-1">{item.label}</span>
+                          {itemShowBadge && <PendingBadge count={pendingCount} />}
                         </DropdownMenuItem>
                       );
                     })}
@@ -206,15 +232,21 @@ export default function MainLayout({ children }: MainLayoutProps) {
               </div>
             )}
 
-            {/* Mobile hamburger */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden"
-              onClick={() => setMobileMenuOpen((v) => !v)}
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </Button>
+            {/* Mobile hamburger — com badge se houver pendentes */}
+            <div className="relative md:hidden">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen((v) => !v)}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+              {!mobileMenuOpen && pendingCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 inline-flex items-center justify-center min-w-[16px] h-[16px] px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold leading-none pointer-events-none">
+                  {pendingCount > 99 ? "99+" : pendingCount}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -225,6 +257,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
               {allNavItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location === item.href;
+                const itemShowBadge = item.href === "/avaliacoes" && pendingCount > 0;
                 return (
                   <Link
                     key={item.href}
@@ -237,7 +270,12 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Icon className="h-5 w-5" />
-                    <span>{item.label}</span>
+                    <span className="flex-1">{item.label}</span>
+                    {itemShowBadge && (
+                      <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+                        {pendingCount > 99 ? "99+" : pendingCount}
+                      </span>
+                    )}
                   </Link>
                 );
               })}

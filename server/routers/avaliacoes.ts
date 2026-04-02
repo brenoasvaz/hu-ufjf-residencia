@@ -1134,6 +1134,51 @@ export const avaliacoesRouter = router({
   }),
 
   // ========================================
+  // BADGE - Contagem de avaliações pendentes
+  // ========================================
+  
+  /**
+   * Retorna o número de modelos liberados que o usuário ainda não realizou.
+   * Para admins, sempre retorna 0 (não precisam de badge).
+   */
+  pendingCount: protectedProcedure.query(async ({ ctx }) => {
+    // Admins não têm badge de pendentes
+    if (ctx.user.role === 'admin') return { count: 0 };
+    
+    const db = await getDb();
+    if (!db) return { count: 0 };
+    
+    const { eq: eqOp, and: andOp, inArray: inArrayOp } = await import('drizzle-orm');
+    
+    // 1. Buscar todos os modelos liberados e ativos
+    const modelosLiberados = await db
+      .select({ id: modelosProva.id })
+      .from(modelosProva)
+      .where(andOp(eqOp(modelosProva.ativo, 1), eqOp(modelosProva.status, 'liberado')));
+    
+    if (modelosLiberados.length === 0) return { count: 0 };
+    
+    const modeloIds = modelosLiberados.map(m => m.id);
+    
+    // 2. Buscar quais modelos o usuário já realizou (tem simulado concluído)
+    const simuladosRealizados = await db
+      .select({ modeloId: simulados.modeloId })
+      .from(simulados)
+      .where(andOp(
+        eqOp(simulados.userId, ctx.user.id),
+        eqOp(simulados.concluido, 1),
+        inArrayOp(simulados.modeloId, modeloIds)
+      ));
+    
+    const modelosRealizadosIds = new Set(simuladosRealizados.map(s => s.modeloId));
+    
+    // 3. Contar modelos liberados não realizados
+    const pendentes = modeloIds.filter(id => !modelosRealizadosIds.has(id));
+    
+    return { count: pendentes.length };
+  }),
+
+  // ========================================
   // DASHBOARD (Estatísticas do residente)
   // ========================================
   
