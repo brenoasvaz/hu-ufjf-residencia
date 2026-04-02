@@ -85,7 +85,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
       icon: ClipboardCheck,
       items: [
         { href: "/avaliacoes", label: "Simulados", icon: ClipboardCheck },
-        { href: "/escala-avaliacoes-praticas", label: "Escala Prática", icon: BookOpen },
+        { href: "/escala-avaliacoes-praticas", label: "Escala Avaliações Práticas", icon: BookOpen },
       ],
     },
     { label: "Links Úteis", icon: LinkIcon, href: "/links-uteis" },
