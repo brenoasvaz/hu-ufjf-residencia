@@ -54,6 +54,7 @@ export async function generateClinicalMeetingsPDF(options: ExportOptions): Promi
     const doc = new PDFDocument({
       size: "A4",
       margins: { top: 50, bottom: 50, left: 50, right: 50 },
+      bufferPages: true, // Necessário para usar switchToPage no rodapé
     });
 
     const chunks: Buffer[] = [];
@@ -158,7 +159,7 @@ export async function generateClinicalMeetingsPDF(options: ExportOptions): Promi
     // Rodapé
     const pageCount = doc.bufferedPageRange().count;
     for (let i = 0; i < pageCount; i++) {
-      doc.switchToPage(i);
+      doc.switchToPage(i); // PDFKit usa índice 0-based para switchToPage
       doc.fontSize(8).fillColor("#6b7280").font("Helvetica");
       doc.text(
         `Página ${i + 1} de ${pageCount} - Gerado em ${new Date().toLocaleDateString("pt-BR")}`,

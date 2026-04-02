@@ -484,3 +484,4 @@
 - [x] Exportar programação mensal de reuniões clínicas em PDF
 - [x] Logo HU UFJF/EBSERH no cabeçalho do PDF de Reuniões Clínicas
 - [x] Badge de simulados pendentes no menu "Avaliações"
+- [x] Corrigir botão de gerar PDF das reuniões clínicas
