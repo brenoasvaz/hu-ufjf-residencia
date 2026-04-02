@@ -480,3 +480,4 @@
 - [x] Corrigir erro de troca de datas em reuniões clínicas (data 1970-01-01)
 - [x] Botão para admin adicionar atividades em datas da reunião clínica
 - [x] Reordenação de atividades dentro de cada data nas reuniões clínicas
+- [x] Reorganizar menu superior com dropdowns para eliminar sobreposição e poluição visual
