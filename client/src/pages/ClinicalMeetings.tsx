@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search, ArrowLeftRight, X, Plus } from "lucide-react";
+import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search, ArrowLeftRight, X, Plus, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { EditClinicalMeetingDialog } from "@/components/EditClinicalMeetingDialog";
 import { toast } from "sonner";
@@ -85,6 +85,8 @@ export default function ClinicalMeetings() {
   const [swapSelected, setSwapSelected] = useState<any[]>([]); // até 2 atividades
   const [swapConfirmOpen, setSwapConfirmOpen] = useState(false);
   const [showCreateMeeting, setShowCreateMeeting] = useState(false);
+  const [reorderDateKey, setReorderDateKey] = useState<string | null>(null); // data sendo reordenada
+  const [reorderItems, setReorderItems] = useState<any[]>([]); // cópia local para reordenar
   
   const isAdmin = user?.role === 'admin';
 
@@ -130,6 +132,39 @@ export default function ClinicalMeetings() {
     swapMutation.mutate({ idA: swapSelected[0].id, idB: swapSelected[1].id });
   };
 
+  const reorderMutation = trpc.clinicalMeetings.reorderMeetings.useMutation({
+    onSuccess: () => {
+      toast.success("Ordem atualizada com sucesso!");
+      utils.clinicalMeetings.list.invalidate();
+      setReorderDateKey(null);
+      setReorderItems([]);
+    },
+    onError: (error) => {
+      toast.error(`Erro ao reordenar: ${error.message}`);
+    },
+  });
+
+  const handleStartReorder = (dateKey: string, dateMeetings: any[]) => {
+    const sorted = [...dateMeetings].sort((a, b) => (a.ordemNaData ?? 0) - (b.ordemNaData ?? 0));
+    setReorderDateKey(dateKey);
+    setReorderItems(sorted);
+  };
+
+  const handleMoveItem = (index: number, direction: 'up' | 'down') => {
+    setReorderItems(prev => {
+      const next = [...prev];
+      const targetIndex = direction === 'up' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= next.length) return prev;
+      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
+      return next;
+    });
+  };
+
+  const handleSaveReorder = () => {
+    const items = reorderItems.map((m, idx) => ({ id: m.id, ordemNaData: idx }));
+    reorderMutation.mutate({ items });
+  };
+
   const deleteMutation = trpc.clinicalMeetings.delete.useMutation({
     onSuccess: () => {
       toast.success("Reunião excluída com sucesso!");
@@ -164,6 +199,10 @@ export default function ClinicalMeetings() {
         grouped[dateKey] = [];
       }
       grouped[dateKey].push(meeting);
+    });
+    // Ordenar atividades dentro de cada data pelo campo ordemNaData
+    Object.keys(grouped).forEach(key => {
+      grouped[key].sort((a, b) => (a.ordemNaData ?? 0) - (b.ordemNaData ?? 0));
     });
     return grouped;
   }, [meetings, searchQuery]);
@@ -372,14 +411,33 @@ export default function ClinicalMeetings() {
                 .map(([dateKey, dateMeetings]) => (
                   <Card key={dateKey}>
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Calendar className="h-5 w-5 text-primary" />
-                        {formatDate(dateKey)}
+                      <CardTitle className="text-lg flex items-center justify-between gap-2">
+                        <span className="flex items-center gap-2">
+                          <Calendar className="h-5 w-5 text-primary" />
+                          {formatDate(dateKey)}
+                        </span>
+                        {isAdmin && !swapMode && dateMeetings.length > 1 && (
+                          reorderDateKey === dateKey ? (
+                            <div className="flex gap-1">
+                              <Button size="sm" variant="default" onClick={handleSaveReorder} disabled={reorderMutation.isPending}>
+                                Salvar ordem
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => { setReorderDateKey(null); setReorderItems([]); }}>
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button size="sm" variant="outline" onClick={() => handleStartReorder(dateKey, dateMeetings)}>
+                              <GripVertical className="h-4 w-4 mr-1" />
+                              Reordenar
+                            </Button>
+                          )
+                        )}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {dateMeetings.map((meeting) => {
+                        {(reorderDateKey === dateKey ? reorderItems : dateMeetings).map((meeting, meetingIndex) => {
                           const isSwapSelected = swapSelected.some(m => m.id === meeting.id);
                           return (
                           <div
@@ -422,20 +480,45 @@ export default function ClinicalMeetings() {
                               )}
                               {isAdmin && (
                                 <div className="flex gap-1 ml-auto">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => setEditingMeeting(meeting)}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={() => setDeletingMeetingId(meeting.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
+                                  {reorderDateKey === dateKey ? (
+                                    // Modo reordenação: setas cima/baixo
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled={meetingIndex === 0}
+                                        onClick={() => handleMoveItem(meetingIndex, 'up')}
+                                      >
+                                        <ArrowUp className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        disabled={meetingIndex === reorderItems.length - 1}
+                                        onClick={() => handleMoveItem(meetingIndex, 'down')}
+                                      >
+                                        <ArrowDown className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    // Modo normal: editar e excluir
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => setEditingMeeting(meeting)}
+                                      >
+                                        <Pencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="ghost"
+                                        onClick={() => setDeletingMeetingId(meeting.id)}
+                                      >
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                      </Button>
+                                    </>
+                                  )}
                                 </div>
                               )}
                             </div>

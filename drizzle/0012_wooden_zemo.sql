@@ -1,0 +1,1 @@
+ALTER TABLE `clinical_meetings` ADD `ordem_na_data` int DEFAULT 0 NOT NULL;

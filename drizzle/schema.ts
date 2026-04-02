@@ -159,11 +159,11 @@ export const clinicalMeetings = mysqlTable("clinical_meetings", {
   tipo: mysqlEnum("tipo", ["AULA", "ARTIGO", "CASOS_CLINICOS", "PROVA", "AVALIACAO", "EVENTO", "FERIADO", "RECESSO"]).notNull(),
   preceptor: varchar("preceptor", { length: 255 }),
   residenteApresentador: varchar("residente_apresentador", { length: 50 }), // R1, R2, R3 ou combinações
-  observacao: text("observacao"),
+   observacao: text("observacao"),
+  ordemNaData: int("ordem_na_data").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
-
 export type ClinicalMeeting = typeof clinicalMeetings.$inferSelect;
 export type InsertClinicalMeeting = typeof clinicalMeetings.$inferInsert;
 

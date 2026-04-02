@@ -178,6 +178,20 @@ export async function swapClinicalMeetingDates(idA: number, idB: number): Promis
   await db.update(clinicalMeetings).set({ data: meetingA.data }).where(eq(clinicalMeetings.id, idB));
 }
 
+export async function reorderClinicalMeetings(
+  items: { id: number; ordemNaData: number }[]
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  // Atualiza cada item em sequência (poucos registros por data, sem necessidade de bulk)
+  for (const item of items) {
+    await db
+      .update(clinicalMeetings)
+      .set({ ordemNaData: item.ordemNaData })
+      .where(eq(clinicalMeetings.id, item.id));
+  }
+}
+
 // ============================================
 // Presentation Guidelines Queries
 // ============================================

@@ -599,6 +599,18 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return clinicalMeetingsDb.swapClinicalMeetingDates(input.idA, input.idB);
       }),
+
+    reorderMeetings: adminProcedure
+      .input(z.object({
+        // Array de { id, ordemNaData } para atualizar a ordem das atividades de uma data
+        items: z.array(z.object({
+          id: z.number(),
+          ordemNaData: z.number(),
+        })),
+      }))
+      .mutation(async ({ input }) => {
+        return clinicalMeetingsDb.reorderClinicalMeetings(input.items);
+      }),
     
     exportICS: viewerProcedure
       .input(z.object({
