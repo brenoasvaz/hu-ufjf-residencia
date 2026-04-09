@@ -493,3 +493,4 @@
 - [x] Clube de Revista: melhorar visibilidade do botão de download de PDF
 - [x] Home: substituir card "Importações" pelo Clube de Revista
 - [x] Home: substituir card "Residentes" pelas Reuniões Clínicas
+- [x] Clube de Revista: importar cronograma 2026 do PDF (34 artigos)
