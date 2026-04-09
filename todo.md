@@ -496,3 +496,4 @@
 - [x] Clube de Revista: importar cronograma 2026 do PDF (34 artigos)
 - [x] Clube de Revista: troca de datas entre artigos (admin)
 - [x] Reuniões Clínicas: popup do Artigo da Semana com detalhes e download do PDF do Clube de Revista
+- [x] Reuniões Clínicas: ao trocar datas, trocar também artigos do Clube de Revista vinculados

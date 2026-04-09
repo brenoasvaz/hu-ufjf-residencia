@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { eq, and, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, clinicalMeetings, presentationGuidelines, ClinicalMeeting, InsertClinicalMeeting, PresentationGuideline, InsertPresentationGuideline, escalaAvaliacoes, EscalaAvaliacao, InsertEscalaAvaliacao } from "../drizzle/schema";
+import { InsertUser, users, clinicalMeetings, presentationGuidelines, ClinicalMeeting, InsertClinicalMeeting, PresentationGuideline, InsertPresentationGuideline, escalaAvaliacoes, EscalaAvaliacao, InsertEscalaAvaliacao, clubeRevista } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -176,6 +176,35 @@ export async function swapClinicalMeetingDates(idA: number, idB: number): Promis
   // Trocar datas diretamente (sem data temporária) — não há UNIQUE constraint em 'data'
   await db.update(clinicalMeetings).set({ data: meetingB.data }).where(eq(clinicalMeetings.id, idA));
   await db.update(clinicalMeetings).set({ data: meetingA.data }).where(eq(clinicalMeetings.id, idB));
+
+  // Trocar também os artigos do Clube de Revista vinculados a essas datas
+  // Buscar artigos que coincidem com cada data (mesmo dia)
+  const dateA = new Date(meetingA.data);
+  const dateB = new Date(meetingB.data);
+
+  const startOfDayA = new Date(dateA.getFullYear(), dateA.getMonth(), dateA.getDate(), 0, 0, 0);
+  const endOfDayA   = new Date(dateA.getFullYear(), dateA.getMonth(), dateA.getDate(), 23, 59, 59);
+  const startOfDayB = new Date(dateB.getFullYear(), dateB.getMonth(), dateB.getDate(), 0, 0, 0);
+  const endOfDayB   = new Date(dateB.getFullYear(), dateB.getMonth(), dateB.getDate(), 23, 59, 59);
+
+  const artigosA = await db
+    .select()
+    .from(clubeRevista)
+    .where(and(eq(clubeRevista.ativo, 1), gte(clubeRevista.data, startOfDayA), lte(clubeRevista.data, endOfDayA)));
+
+  const artigosB = await db
+    .select()
+    .from(clubeRevista)
+    .where(and(eq(clubeRevista.ativo, 1), gte(clubeRevista.data, startOfDayB), lte(clubeRevista.data, endOfDayB)));
+
+  // Mover artigos da data A para a data B
+  for (const artigo of artigosA) {
+    await db.update(clubeRevista).set({ data: dateB }).where(eq(clubeRevista.id, artigo.id));
+  }
+  // Mover artigos da data B para a data A
+  for (const artigo of artigosB) {
+    await db.update(clubeRevista).set({ data: dateA }).where(eq(clubeRevista.id, artigo.id));
+  }
 }
 
 export async function reorderClinicalMeetings(
