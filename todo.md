@@ -491,3 +491,5 @@
 - [x] Clube de Revista: entrada no menu de navegação
 - [x] Clube de Revista: busca por título, autor ou palavra-chave
 - [x] Clube de Revista: melhorar visibilidade do botão de download de PDF
+- [x] Home: substituir card "Importações" pelo Clube de Revista
+- [x] Home: substituir card "Residentes" pelas Reuniões Clínicas

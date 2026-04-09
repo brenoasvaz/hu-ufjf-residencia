@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getLoginUrl } from "@/const";
-import { Calendar, CalendarDays, Users, FileText, ArrowRight } from "lucide-react";
+import { Calendar, CalendarDays, Presentation, BookMarked, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 
 export default function Home() {
@@ -24,19 +24,18 @@ export default function Home() {
       color: "text-purple-600",
     },
     {
-      icon: Users,
-      title: "Residentes",
-      description: "Gerencie informações dos residentes e acompanhe seus rodízios",
-      href: "/residentes",
-      color: "text-green-600",
+      icon: Presentation,
+      title: "Reuniões Clínicas",
+      description: "Cronograma de reuniões, apresentações e atividades clínicas do serviço",
+      href: "/reunioes-clinicas",
+      color: "text-rose-600",
     },
     {
-      icon: FileText,
-      title: "Importações",
-      description: "Importe cronogramas e escalas a partir de arquivos PDF",
-      href: "/admin/imports",
-      color: "text-orange-600",
-      adminOnly: true,
+      icon: BookMarked,
+      title: "Clube de Revista",
+      description: "Cronograma de apresentações de artigos científicos com download dos PDFs",
+      href: "/clube-de-revista",
+      color: "text-emerald-600",
     },
   ];
 
@@ -79,30 +78,28 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
-            {features
-              .filter((feature) => !feature.adminOnly || user?.role === "admin")
-              .map((feature) => {
-                const Icon = feature.icon;
-                return (
-                  <Card
-                    key={feature.title}
-                    className="group hover:shadow-lg transition-all duration-300 cursor-pointer"
-                  >
-                    <Link href={feature.href}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className={`p-3 rounded-lg bg-background ${feature.color}`}>
-                            <Icon className="h-6 w-6" />
-                          </div>
-                          <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+            {features.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <Card
+                  key={feature.title}
+                  className="group hover:shadow-lg transition-all duration-300 cursor-pointer"
+                >
+                  <Link href={feature.href}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className={`p-3 rounded-lg bg-background ${feature.color}`}>
+                          <Icon className="h-6 w-6" />
                         </div>
-                        <CardTitle className="mt-4">{feature.title}</CardTitle>
-                        <CardDescription>{feature.description}</CardDescription>
-                      </CardHeader>
-                    </Link>
-                  </Card>
-                );
-              })}
+                        <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                      </div>
+                      <CardTitle className="mt-4">{feature.title}</CardTitle>
+                      <CardDescription>{feature.description}</CardDescription>
+                    </CardHeader>
+                  </Link>
+                </Card>
+              );
+            })}
           </div>
         </section>
       )}
@@ -127,17 +124,17 @@ export default function Home() {
             </p>
           </div>
           <div>
-            <h3 className="font-medium text-foreground mb-1">Gerenciamento de Residentes</h3>
+            <h3 className="font-medium text-foreground mb-1">Reuniões Clínicas</h3>
             <p>
-              Cadastre e gerencie informações dos residentes, incluindo nome, apelido, ano de
-              residência e status. Visualize o histórico de rodízios de cada residente.
+              Cronograma de reuniões, apresentações de casos e atividades clínicas do serviço.
+              Exporte o calendário em PDF ou adicione ao Google Calendar.
             </p>
           </div>
           <div>
-            <h3 className="font-medium text-foreground mb-1">Importação de Dados</h3>
+            <h3 className="font-medium text-foreground mb-1">Clube de Revista</h3>
             <p>
-              Importe cronogramas e escalas diretamente de arquivos PDF com extração automática de
-              dados. Confira e valide as informações antes de salvar no sistema.
+              Cronograma de apresentações de artigos científicos com título, autores, revista e
+              residente apresentador. Faça download dos PDFs diretamente pela plataforma.
             </p>
           </div>
         </div>
