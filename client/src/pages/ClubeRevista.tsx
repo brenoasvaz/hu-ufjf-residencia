@@ -525,17 +525,21 @@ export default function ClubeRevista() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 download={artigo.pdfNome ?? "artigo.pdf"}
+                                title={artigo.pdfNome ? `Baixar: ${artigo.pdfNome}` : "Baixar PDF"}
                               >
-                                <Button variant="outline" size="sm" className="gap-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50">
+                                <Button
+                                  size="sm"
+                                  className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                >
                                   <Download className="h-3.5 w-3.5" />
-                                  <span className="hidden sm:inline">PDF</span>
+                                  Baixar PDF
                                 </Button>
                               </a>
                             ) : (
-                              <Button variant="ghost" size="sm" disabled className="gap-1 text-muted-foreground text-xs">
-                                <FileText className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">Sem PDF</span>
-                              </Button>
+                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground px-2 py-1 rounded border border-dashed border-muted-foreground/30">
+                                <FileText className="h-3 w-3" />
+                                Sem PDF
+                              </span>
                             )}
 
                             {/* Admin actions */}

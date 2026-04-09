@@ -490,3 +490,4 @@
 - [x] Clube de Revista: página com cronograma e upload/download de PDFs
 - [x] Clube de Revista: entrada no menu de navegação
 - [x] Clube de Revista: busca por título, autor ou palavra-chave
+- [x] Clube de Revista: melhorar visibilidade do botão de download de PDF
