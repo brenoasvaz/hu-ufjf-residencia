@@ -243,6 +243,40 @@ export const clubeRevistaRouter = router({
     }),
 
   /**
+   * Busca global em todos os artigos do banco (sem filtro de mês/ano)
+   * Usada quando o usuário digita no campo de pesquisa
+   */
+  search: protectedProcedure
+    .input(
+      z.object({
+        query: z.string().min(1).max(200),
+      })
+    )
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const rows = await db
+        .select()
+        .from(clubeRevista)
+        .where(eq(clubeRevista.ativo, 1))
+        .orderBy(asc(clubeRevista.data), asc(clubeRevista.id));
+
+      // Filtrar no servidor (MySQL LIKE não suporta acentuação bem; fazemos no JS)
+      const q = input.query.toLowerCase();
+      return rows.filter((r) => {
+        return (
+          r.tituloArtigo?.toLowerCase().includes(q) ||
+          r.autores?.toLowerCase().includes(q) ||
+          r.revista?.toLowerCase().includes(q) ||
+          r.residenteApresentador?.toLowerCase().includes(q) ||
+          r.preceptor?.toLowerCase().includes(q) ||
+          r.observacao?.toLowerCase().includes(q)
+        );
+      });
+    }),
+
+  /**
    * Buscar artigo do Clube de Revista pela data (para vincular com reuniões clínicas)
    * Retorna o artigo cujo campo 'data' coincide com a data informada (mesmo dia)
    */

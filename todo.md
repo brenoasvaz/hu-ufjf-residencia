@@ -497,3 +497,4 @@
 - [x] Clube de Revista: troca de datas entre artigos (admin)
 - [x] Reuniões Clínicas: popup do Artigo da Semana com detalhes e download do PDF do Clube de Revista
 - [x] Reuniões Clínicas: ao trocar datas, trocar também artigos do Clube de Revista vinculados
+- [x] Clube de Revista: busca global em todos os artigos do banco

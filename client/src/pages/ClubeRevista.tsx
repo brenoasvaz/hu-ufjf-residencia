@@ -156,11 +156,18 @@ export default function ClubeRevista() {
   const [swapIdB, setSwapIdB] = useState<number | null>(null);
   const [showSwapConfirm, setShowSwapConfirm] = useState(false);
 
-  // Queries
+  // Query por mês/ano (usada quando não há busca ativa)
   const { data: artigos, isLoading } = trpc.clubeRevista.list.useQuery({
     year: selectedYear,
     month: selectedMonth,
   });
+
+  // Query de busca global (usada quando há termo de pesquisa)
+  const debouncedQuery = searchQuery.trim();
+  const { data: searchResults, isLoading: searchLoading } = trpc.clubeRevista.search.useQuery(
+    { query: debouncedQuery },
+    { enabled: debouncedQuery.length >= 2 }
+  );
 
   // Mutations
   const createMutation = trpc.clubeRevista.create.useMutation({
@@ -340,24 +347,16 @@ export default function ClubeRevista() {
     setTimeout(() => fileInputRef.current?.click(), 50);
   };
 
-  // Filtro de busca client-side
-  const filteredArtigos = useMemo(() => {
-    if (!artigos) return [];
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return artigos;
-    return artigos.filter((a) => {
-      return (
-        a.tituloArtigo.toLowerCase().includes(q) ||
-        (a.autores?.toLowerCase().includes(q) ?? false) ||
-        (a.revista?.toLowerCase().includes(q) ?? false) ||
-        (a.residenteApresentador?.toLowerCase().includes(q) ?? false) ||
-        (a.preceptor?.toLowerCase().includes(q) ?? false) ||
-        (a.observacao?.toLowerCase().includes(q) ?? false)
-      );
-    });
-  }, [artigos, searchQuery]);
+  // Quando há busca ativa (>= 2 chars), usar resultados globais; caso contrário, usar lista do mês
+  const isSearchActive = debouncedQuery.length >= 2;
+  const displayArtigos = useMemo(() => {
+    if (isSearchActive) return searchResults ?? [];
+    return artigos ?? [];
+  }, [isSearchActive, searchResults, artigos]);
 
-  const grouped = groupByDate(filteredArtigos);
+  const isLoadingDisplay = isSearchActive ? searchLoading : isLoading;
+
+  const grouped = groupByDate(displayArtigos);
   const sortedDates = Array.from(grouped.keys()).sort();
 
   return (
@@ -501,8 +500,22 @@ export default function ClubeRevista() {
         </div>
       )}
 
+      {/* Indicador de busca global ativa */}
+      {isSearchActive && (
+        <div className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
+          <Search className="h-4 w-4" />
+          <span>Buscando em <strong>todos os artigos</strong> do banco de dados</span>
+          <button
+            onClick={() => setSearchQuery("")}
+            className="ml-auto flex items-center gap-1 text-xs text-primary hover:underline"
+          >
+            <X className="h-3 w-3" /> Limpar busca
+          </button>
+        </div>
+      )}
+
       {/* Conteúdo */}
-      {isLoading ? (
+      {isLoadingDisplay ? (
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
@@ -518,14 +531,14 @@ export default function ClubeRevista() {
       ) : sortedDates.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            {searchQuery ? (
+            {isSearchActive ? (
               <>
                 <Search className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-40" />
                 <p className="text-muted-foreground font-medium">
-                  Nenhum artigo encontrado para &ldquo;<span className="font-semibold text-foreground">{searchQuery}</span>&rdquo;.
+                  Nenhum artigo encontrado para &ldquo;<span className="font-semibold text-foreground">{searchQuery}</span>&rdquo;
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Tente buscar por outro termo ou limpe a busca para ver todos os artigos.
+                  A busca foi realizada em todos os artigos do banco de dados.
                 </p>
                 <Button onClick={() => setSearchQuery("")} variant="outline" className="mt-4" size="sm">
                   <X className="h-4 w-4 mr-1" />
