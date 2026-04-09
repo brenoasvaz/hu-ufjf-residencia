@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search, ArrowLeftRight, X, Plus, ArrowUp, ArrowDown, GripVertical, FileDown } from "lucide-react";
+import { Calendar, Clock, User, BookOpen, FileText, GraduationCap, AlertCircle, Pencil, Trash2, Download, Search, ArrowLeftRight, X, Plus, ArrowUp, ArrowDown, GripVertical, FileDown, BookMarked, ExternalLink } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { EditClinicalMeetingDialog } from "@/components/EditClinicalMeetingDialog";
 import { toast } from "sonner";
@@ -21,6 +21,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const MONTHS = [
   { value: 1, label: "Janeiro" },
@@ -70,6 +77,118 @@ const MEETING_TYPE_ICONS: Record<string, React.ReactNode> = {
   RECESSO: <Calendar className="h-4 w-4" />,
 };
 
+// Subcomponente: conteúdo do popup do Artigo da Semana
+function ArtigoPopupContent({ date, onClose }: { date: string; onClose: () => void }) {
+  const { data: artigo, isLoading } = trpc.clubeRevista.getByDate.useQuery({ date });
+
+  if (isLoading) {
+    return (
+      <div className="py-8 flex flex-col items-center gap-3">
+        <div className="h-8 w-8 rounded-full border-4 border-green-600 border-t-transparent animate-spin" />
+        <p className="text-sm text-muted-foreground">Buscando artigo...</p>
+      </div>
+    );
+  }
+
+  if (!artigo) {
+    return (
+      <div className="py-8 flex flex-col items-center gap-3 text-center">
+        <BookMarked className="h-12 w-12 text-muted-foreground/40" />
+        <p className="text-sm font-medium text-muted-foreground">Nenhum artigo cadastrado para esta data</p>
+        <p className="text-xs text-muted-foreground/70">
+          Acesse o Clube de Revista para adicionar um artigo a esta data.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 py-2">
+      {/* Título */}
+      <div>
+        <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1">Título</p>
+        <p className="text-sm font-medium leading-snug">{artigo.tituloArtigo}</p>
+      </div>
+
+      {/* Autores */}
+      {artigo.autores && (
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Autores</p>
+          <p className="text-sm text-muted-foreground">{artigo.autores}</p>
+        </div>
+      )}
+
+      {/* Revista e Ano */}
+      {(artigo.revista || artigo.anoPublicacao) && (
+        <div className="flex gap-4">
+          {artigo.revista && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Revista</p>
+              <p className="text-sm text-muted-foreground">{artigo.revista}</p>
+            </div>
+          )}
+          {artigo.anoPublicacao && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Ano</p>
+              <p className="text-sm text-muted-foreground">{artigo.anoPublicacao}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Residente e Preceptor */}
+      {(artigo.residenteApresentador || artigo.preceptor) && (
+        <div className="flex gap-4">
+          {artigo.residenteApresentador && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Residente</p>
+              <p className="text-sm text-muted-foreground">{artigo.residenteApresentador}</p>
+            </div>
+          )}
+          {artigo.preceptor && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Preceptor</p>
+              <p className="text-sm text-muted-foreground">{artigo.preceptor}</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Observação */}
+      {artigo.observacao && (
+        <div className="rounded-md bg-muted/50 p-3">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Observação</p>
+          <p className="text-sm text-muted-foreground">{artigo.observacao}</p>
+        </div>
+      )}
+
+      {/* Botão de Download */}
+      <div className="pt-2 border-t">
+        {artigo.pdfUrl ? (
+          <a
+            href={artigo.pdfUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={artigo.pdfNome ?? "artigo.pdf"}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-medium transition-colors w-full justify-center"
+          >
+            <Download className="h-4 w-4" />
+            Baixar PDF
+            {artigo.pdfNome && (
+              <span className="text-xs opacity-80 truncate max-w-[160px]">({artigo.pdfNome})</span>
+            )}
+          </a>
+        ) : (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground justify-center py-2">
+            <FileText className="h-4 w-4" />
+            PDF não disponível para este artigo
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ClinicalMeetings() {
   const currentDate = new Date();
   const { user } = useAuth();
@@ -87,6 +206,10 @@ export default function ClinicalMeetings() {
   const [showCreateMeeting, setShowCreateMeeting] = useState(false);
   const [reorderDateKey, setReorderDateKey] = useState<string | null>(null); // data sendo reordenada
   const [reorderItems, setReorderItems] = useState<any[]>([]); // cópia local para reordenar
+
+  // Estado para popup do Artigo da Semana
+  const [artigoPopupDate, setArtigoPopupDate] = useState<string | null>(null); // dateKey YYYY-MM-DD
+
   
   const isAdmin = user?.role === 'admin';
 
@@ -478,6 +601,13 @@ export default function ClinicalMeetings() {
                       <div className="space-y-3">
                         {(reorderDateKey === dateKey ? reorderItems : dateMeetings).map((meeting, meetingIndex) => {
                           const isSwapSelected = swapSelected.some(m => m.id === meeting.id);
+                          const isArtigo = meeting.tipo === "ARTIGO";
+                          const handleRowClick = () => {
+                            if (swapMode) { handleSwapSelect(meeting); return; }
+                            if (isArtigo && !reorderDateKey) {
+                              setArtigoPopupDate(new Date(meeting.data).toISOString().split("T")[0]);
+                            }
+                          };
                           return (
                           <div
                             key={meeting.id}
@@ -486,15 +616,21 @@ export default function ClinicalMeetings() {
                                 ? isSwapSelected
                                   ? "bg-primary/15 border border-primary/50 cursor-pointer ring-2 ring-primary/30"
                                   : "bg-muted/50 hover:bg-primary/10 cursor-pointer border border-transparent"
-                                : "bg-muted/50 hover:bg-muted"
+                                : isArtigo && !reorderDateKey
+                                  ? "bg-muted/50 hover:bg-green-50 dark:hover:bg-green-950/30 cursor-pointer border border-transparent hover:border-green-200"
+                                  : "bg-muted/50 hover:bg-muted"
                             }`}
-                            onClick={swapMode ? () => handleSwapSelect(meeting) : undefined}
+                            onClick={handleRowClick}
+                            title={isArtigo && !swapMode ? "Clique para ver o artigo do Clube de Revista" : undefined}
                           >
                             <div className="flex items-center gap-2">
                               <Badge className={MEETING_TYPE_COLORS[meeting.tipo]}>
                                 <span className="flex items-center gap-1">
                                   {MEETING_TYPE_ICONS[meeting.tipo]}
                                   {MEETING_TYPE_LABELS[meeting.tipo]}
+                                  {isArtigo && !swapMode && !reorderDateKey && (
+                                    <ExternalLink className="h-3 w-3 ml-0.5 opacity-70" />
+                                  )}
                                 </span>
                               </Badge>
                             </div>
@@ -845,6 +981,24 @@ export default function ClinicalMeetings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Artigo da Semana Popup */}
+      <Dialog open={!!artigoPopupDate} onOpenChange={(open) => !open && setArtigoPopupDate(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <BookMarked className="h-5 w-5 text-green-600" />
+              Artigo da Semana — Clube de Revista
+            </DialogTitle>
+            <DialogDescription>
+              {artigoPopupDate && new Date(artigoPopupDate + "T12:00:00").toLocaleDateString("pt-BR", {
+                weekday: "long", day: "2-digit", month: "long", year: "numeric"
+              })}
+            </DialogDescription>
+          </DialogHeader>
+          {artigoPopupDate && <ArtigoPopupContent date={artigoPopupDate} onClose={() => setArtigoPopupDate(null)} />}
+        </DialogContent>
+      </Dialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingMeetingId} onOpenChange={(open) => !open && setDeletingMeetingId(null)}>

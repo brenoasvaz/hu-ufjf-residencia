@@ -243,6 +243,40 @@ export const clubeRevistaRouter = router({
     }),
 
   /**
+   * Buscar artigo do Clube de Revista pela data (para vincular com reuniões clínicas)
+   * Retorna o artigo cujo campo 'data' coincide com a data informada (mesmo dia)
+   */
+  getByDate: protectedProcedure
+    .input(
+      z.object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve ser YYYY-MM-DD"),
+      })
+    )
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+
+      const [y, m, d] = input.date.split("-").map(Number);
+      const startOfDay = new Date(y, m - 1, d, 0, 0, 0);
+      const endOfDay = new Date(y, m - 1, d, 23, 59, 59);
+
+      const rows = await db
+        .select()
+        .from(clubeRevista)
+        .where(
+          and(
+            eq(clubeRevista.ativo, 1),
+            gte(clubeRevista.data, startOfDay),
+            lte(clubeRevista.data, endOfDay)
+          )
+        )
+        .orderBy(asc(clubeRevista.id))
+        .limit(1);
+
+      return rows[0] ?? null;
+    }),
+
+  /**
    * Trocar datas entre dois artigos (admin)
    * Recebe os IDs dos dois artigos e troca suas datas
    */
