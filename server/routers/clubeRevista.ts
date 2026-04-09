@@ -243,6 +243,48 @@ export const clubeRevistaRouter = router({
     }),
 
   /**
+   * Trocar datas entre dois artigos (admin)
+   * Recebe os IDs dos dois artigos e troca suas datas
+   */
+  swapDates: adminProcedure
+    .input(
+      z.object({
+        idA: z.number().int(),
+        idB: z.number().int(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Banco indisponível" });
+
+      const { idA, idB } = input;
+
+      if (idA === idB) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Selecione dois artigos diferentes para trocar as datas." });
+      }
+
+      // Buscar os dois artigos
+      const [artigoA] = await db
+        .select({ id: clubeRevista.id, data: clubeRevista.data })
+        .from(clubeRevista)
+        .where(and(eq(clubeRevista.id, idA), eq(clubeRevista.ativo, 1)));
+
+      const [artigoB] = await db
+        .select({ id: clubeRevista.id, data: clubeRevista.data })
+        .from(clubeRevista)
+        .where(and(eq(clubeRevista.id, idB), eq(clubeRevista.ativo, 1)));
+
+      if (!artigoA) throw new TRPCError({ code: "NOT_FOUND", message: "Primeiro artigo não encontrado." });
+      if (!artigoB) throw new TRPCError({ code: "NOT_FOUND", message: "Segundo artigo não encontrado." });
+
+      // Trocar as datas
+      await db.update(clubeRevista).set({ data: artigoB.data }).where(eq(clubeRevista.id, idA));
+      await db.update(clubeRevista).set({ data: artigoA.data }).where(eq(clubeRevista.id, idB));
+
+      return { success: true, dataA: artigoB.data, dataB: artigoA.data };
+    }),
+
+  /**
    * Anos disponíveis no cronograma
    */
   availableYears: protectedProcedure.query(async () => {

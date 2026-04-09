@@ -41,6 +41,7 @@ import {
   BookMarked,
   Loader2,
   Search,
+  ArrowLeftRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -149,6 +150,12 @@ export default function ClubeRevista() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingUploadId, setPendingUploadId] = useState<number | null>(null);
 
+  // Estados para troca de datas
+  const [swapMode, setSwapMode] = useState(false);
+  const [swapIdA, setSwapIdA] = useState<number | null>(null);
+  const [swapIdB, setSwapIdB] = useState<number | null>(null);
+  const [showSwapConfirm, setShowSwapConfirm] = useState(false);
+
   // Queries
   const { data: artigos, isLoading } = trpc.clubeRevista.list.useQuery({
     year: selectedYear,
@@ -206,6 +213,46 @@ export default function ClubeRevista() {
     },
     onError: (e) => toast.error(`Erro: ${e.message}`),
   });
+
+  const swapDatesMutation = trpc.clubeRevista.swapDates.useMutation({
+    onSuccess: () => {
+      utils.clubeRevista.list.invalidate();
+      toast.success("Datas trocadas com sucesso!");
+      setSwapMode(false);
+      setSwapIdA(null);
+      setShowSwapConfirm(false);
+    },
+    onError: (e) => {
+      toast.error(`Erro ao trocar datas: ${e.message}`);
+      setShowSwapConfirm(false);
+    },
+  });
+
+  // Handler para seleção de artigo no modo troca
+  const handleSwapSelect = (id: number) => {
+    if (!swapMode) return;
+    if (swapIdA === null) {
+      setSwapIdA(id);
+    } else if (swapIdA === id) {
+      // Deselecionar o primeiro
+      setSwapIdA(null);
+    } else {
+      // Segundo artigo selecionado — abrir confirmação
+      setSwapIdB(id);
+      setShowSwapConfirm(true);
+    }
+  };
+
+  // Artigos selecionados para troca
+  const swapArtigoA = artigos?.find((a) => a.id === swapIdA) ?? null;
+  const swapArtigoB = artigos?.find((a) => a.id === swapIdB) ?? null;
+
+  const handleCancelSwap = () => {
+    setSwapMode(false);
+    setSwapIdA(null);
+    setSwapIdB(null);
+    setShowSwapConfirm(false);
+  };
 
   // Handlers
   const handleOpenCreate = () => {
@@ -337,10 +384,33 @@ export default function ClubeRevista() {
             </p>
           </div>
           {isAdmin && (
-            <Button onClick={handleOpenCreate} size="sm" className="w-full sm:w-auto">
-              <Plus className="h-4 w-4 mr-1" />
-              Novo Artigo
-            </Button>
+            <div className="flex gap-2 w-full sm:w-auto">
+              {swapMode ? (
+                <Button
+                  onClick={handleCancelSwap}
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 sm:flex-none border-amber-400 text-amber-700 hover:bg-amber-50"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Cancelar Troca
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setSwapMode(true)}
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 sm:flex-none"
+                >
+                  <ArrowLeftRight className="h-4 w-4 mr-1" />
+                  Trocar Datas
+                </Button>
+              )}
+              <Button onClick={handleOpenCreate} size="sm" className="flex-1 sm:flex-none">
+                <Plus className="h-4 w-4 mr-1" />
+                Novo Artigo
+              </Button>
+            </div>
           )}
         </div>
 
@@ -404,6 +474,32 @@ export default function ClubeRevista() {
           </div>
         </div>
       </div>
+
+      {/* Banner modo troca de datas */}
+      {swapMode && (
+        <div className="mb-4 p-3 rounded-lg border border-amber-300 bg-amber-50 flex items-start gap-3">
+          <ArrowLeftRight className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-amber-800">
+              Modo Troca de Datas ativo
+            </p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              {swapIdA === null
+                ? "Clique no primeiro artigo cuja data deseja trocar."
+                : `"${swapArtigoA?.tituloArtigo}" selecionado. Agora clique no segundo artigo.`}
+            </p>
+          </div>
+          {swapIdA !== null && (
+            <button
+              onClick={() => setSwapIdA(null)}
+              className="text-amber-600 hover:text-amber-800 transition-colors shrink-0"
+              title="Deselecionar primeiro artigo"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Conteúdo */}
       {isLoading ? (
@@ -470,8 +566,21 @@ export default function ClubeRevista() {
                 </div>
 
                 <div className="space-y-3">
-                  {dayArtigos.map((artigo) => (
-                    <Card key={artigo.id} className="border border-border hover:border-emerald-200 transition-colors">
+                  {dayArtigos.map((artigo) => {
+                    const isSwapSelected = artigo.id === swapIdA;
+                    return (
+                    <Card
+                      key={artigo.id}
+                      className={[
+                        "border transition-all",
+                        swapMode
+                          ? isSwapSelected
+                            ? "border-amber-400 bg-amber-50 ring-2 ring-amber-300 cursor-pointer"
+                            : "border-amber-200 hover:border-amber-400 hover:bg-amber-50/50 cursor-pointer"
+                          : "border-border hover:border-emerald-200",
+                      ].join(" ")}
+                      onClick={() => swapMode && handleSwapSelect(artigo.id)}
+                    >
                       <CardContent className="pt-4 pb-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           {/* Info principal */}
@@ -600,7 +709,8 @@ export default function ClubeRevista() {
                         </div>
                       </CardContent>
                     </Card>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -764,6 +874,81 @@ export default function ClubeRevista() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog: Confirmar troca de datas */}
+      <Dialog
+        open={showSwapConfirm}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowSwapConfirm(false);
+            setSwapIdB(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowLeftRight className="h-5 w-5 text-amber-600" />
+              Confirmar Troca de Datas
+            </DialogTitle>
+            <DialogDescription>
+              As datas dos dois artigos abaixo serão trocadas entre si.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-2">
+            {/* Artigo A */}
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3">
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Artigo 1</p>
+              <p className="text-sm font-medium leading-snug">{swapArtigoA?.tituloArtigo}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Data atual: <span className="font-medium">{swapArtigoA ? formatDate(swapArtigoA.data) : ""}</span>
+              </p>
+            </div>
+
+            <div className="flex justify-center">
+              <ArrowLeftRight className="h-5 w-5 text-muted-foreground" />
+            </div>
+
+            {/* Artigo B */}
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3">
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-1">Artigo 2</p>
+              <p className="text-sm font-medium leading-snug">{swapArtigoB?.tituloArtigo}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Data atual: <span className="font-medium">{swapArtigoB ? formatDate(swapArtigoB.data) : ""}</span>
+              </p>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center pt-1">
+              Após a troca: o Artigo 1 passará para a data do Artigo 2 e vice-versa.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowSwapConfirm(false);
+                setSwapIdB(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="bg-amber-600 hover:bg-amber-700 text-white"
+              disabled={swapDatesMutation.isPending}
+              onClick={() => {
+                if (swapIdA !== null && swapIdB !== null) {
+                  swapDatesMutation.mutate({ idA: swapIdA, idB: swapIdB });
+                }
+              }}
+            >
+              {swapDatesMutation.isPending && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+              Confirmar Troca
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* AlertDialog: Confirmar remoção de PDF */}
       <AlertDialog open={removingPdfId !== null} onOpenChange={(open) => !open && setRemovingPdfId(null)}>
