@@ -489,3 +489,4 @@
 - [x] Clube de Revista: procedures tRPC (CRUD + upload PDF + download)
 - [x] Clube de Revista: página com cronograma e upload/download de PDFs
 - [x] Clube de Revista: entrada no menu de navegação
+- [x] Clube de Revista: busca por título, autor ou palavra-chave

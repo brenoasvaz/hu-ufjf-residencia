@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +40,7 @@ import {
   Calendar,
   BookMarked,
   Loader2,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -135,6 +136,7 @@ export default function ClubeRevista() {
 
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Dialog states
   const [showForm, setShowForm] = useState(false);
@@ -291,7 +293,24 @@ export default function ClubeRevista() {
     setTimeout(() => fileInputRef.current?.click(), 50);
   };
 
-  const grouped = artigos ? groupByDate(artigos) : new Map<string, Artigo[]>();
+  // Filtro de busca client-side
+  const filteredArtigos = useMemo(() => {
+    if (!artigos) return [];
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return artigos;
+    return artigos.filter((a) => {
+      return (
+        a.tituloArtigo.toLowerCase().includes(q) ||
+        (a.autores?.toLowerCase().includes(q) ?? false) ||
+        (a.revista?.toLowerCase().includes(q) ?? false) ||
+        (a.residenteApresentador?.toLowerCase().includes(q) ?? false) ||
+        (a.preceptor?.toLowerCase().includes(q) ?? false) ||
+        (a.observacao?.toLowerCase().includes(q) ?? false)
+      );
+    });
+  }, [artigos, searchQuery]);
+
+  const grouped = groupByDate(filteredArtigos);
   const sortedDates = Array.from(grouped.keys()).sort();
 
   return (
@@ -325,8 +344,28 @@ export default function ClubeRevista() {
           )}
         </div>
 
+        {/* Busca */}
+        <div className="relative mt-4">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Buscar por título, autor, revista..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 pr-9"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Limpar busca"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
         {/* Filtros */}
-        <div className="flex flex-wrap gap-3 mt-4">
+        <div className="flex flex-wrap gap-3 mt-3">
           <div className="flex items-center gap-2">
             <Label className="text-sm font-medium whitespace-nowrap">Ano</Label>
             <Select
@@ -383,16 +422,34 @@ export default function ClubeRevista() {
       ) : sortedDates.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-40" />
-            <p className="text-muted-foreground font-medium">
-              Nenhum artigo agendado para{" "}
-              {MONTHS.find((m) => m.value === selectedMonth)?.label} de {selectedYear}.
-            </p>
-            {isAdmin && (
-              <Button onClick={handleOpenCreate} variant="outline" className="mt-4" size="sm">
-                <Plus className="h-4 w-4 mr-1" />
-                Adicionar primeiro artigo
-              </Button>
+            {searchQuery ? (
+              <>
+                <Search className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-40" />
+                <p className="text-muted-foreground font-medium">
+                  Nenhum artigo encontrado para &ldquo;<span className="font-semibold text-foreground">{searchQuery}</span>&rdquo;.
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Tente buscar por outro termo ou limpe a busca para ver todos os artigos.
+                </p>
+                <Button onClick={() => setSearchQuery("")} variant="outline" className="mt-4" size="sm">
+                  <X className="h-4 w-4 mr-1" />
+                  Limpar busca
+                </Button>
+              </>
+            ) : (
+              <>
+                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-3 opacity-40" />
+                <p className="text-muted-foreground font-medium">
+                  Nenhum artigo agendado para{" "}
+                  {MONTHS.find((m) => m.value === selectedMonth)?.label} de {selectedYear}.
+                </p>
+                {isAdmin && (
+                  <Button onClick={handleOpenCreate} variant="outline" className="mt-4" size="sm">
+                    <Plus className="h-4 w-4 mr-1" />
+                    Adicionar primeiro artigo
+                  </Button>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
