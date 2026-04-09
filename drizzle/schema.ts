@@ -393,3 +393,27 @@ export const escalaAvaliacoes = mysqlTable("escala_avaliacoes", {
 });
 export type EscalaAvaliacao = typeof escalaAvaliacoes.$inferSelect;
 export type InsertEscalaAvaliacao = typeof escalaAvaliacoes.$inferInsert;
+
+/**
+ * Clube de Revista - Cronograma de apresentações de artigos científicos
+ */
+export const clubeRevista = mysqlTable("clube_revista", {
+  id: int("id").autoincrement().primaryKey(),
+  data: timestamp("data").notNull(), // Data da apresentação
+  tituloArtigo: varchar("titulo_artigo", { length: 500 }).notNull(),
+  autores: varchar("autores", { length: 500 }), // Autores do artigo
+  revista: varchar("revista", { length: 255 }), // Nome da revista/journal
+  anoPublicacao: int("ano_publicacao"), // Ano de publicação do artigo
+  residenteApresentador: varchar("residente_apresentador", { length: 255 }), // Residente que apresenta
+  preceptor: varchar("preceptor", { length: 255 }), // Preceptor responsável
+  observacao: text("observacao"),
+  // Arquivo PDF do artigo
+  pdfUrl: text("pdf_url"), // URL pública no S3
+  pdfKey: varchar("pdf_key", { length: 500 }), // Chave no S3
+  pdfNome: varchar("pdf_nome", { length: 255 }), // Nome original do arquivo
+  ativo: int("ativo").default(1).notNull(), // 1 = ativo, 0 = inativo
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type ClubeRevista = typeof clubeRevista.$inferSelect;
+export type InsertClubeRevista = typeof clubeRevista.$inferInsert;

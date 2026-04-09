@@ -485,3 +485,7 @@
 - [x] Logo HU UFJF/EBSERH no cabeçalho do PDF de Reuniões Clínicas
 - [x] Badge de simulados pendentes no menu "Avaliações"
 - [x] Corrigir botão de gerar PDF das reuniões clínicas
+- [x] Clube de Revista: tabela no banco de dados
+- [x] Clube de Revista: procedures tRPC (CRUD + upload PDF + download)
+- [x] Clube de Revista: página com cronograma e upload/download de PDFs
+- [x] Clube de Revista: entrada no menu de navegação

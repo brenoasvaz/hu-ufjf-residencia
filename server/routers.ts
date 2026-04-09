@@ -15,6 +15,7 @@ import { registerUser, authenticateUser, getUserByEmail, getAllUsers, approveUse
 import { avaliacoesRouter } from "./routers/avaliacoes";
 import { usersRouter } from "./routers/users";
 import { linksRouter } from "./routers/links";
+import { clubeRevistaRouter } from "./routers/clubeRevista";
 import { sdk } from "./_core/sdk";
 
 // Helper para procedures que requerem papel ADMIN
@@ -707,6 +708,9 @@ export const appRouter = router({
 
   // ===== AVALIAÇÕES/SIMULADOS =====
   avaliacoes: avaliacoesRouter,
+
+  // ===== CLUBE DE REVISTA =====
+  clubeRevista: clubeRevistaRouter,
 
   // ===== STAGES =====
   stages: router({

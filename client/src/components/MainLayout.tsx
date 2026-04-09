@@ -26,6 +26,7 @@ import {
   Moon,
   ChevronDown,
   BookOpen,
+  BookMarked,
   Home,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -99,6 +100,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
         { href: "/escala-avaliacoes-praticas", label: "Escala Avaliações Práticas", icon: BookOpen },
       ],
     },
+    { label: "Clube de Revista", icon: BookMarked, href: "/clube-de-revista" },
     { label: "Links Úteis", icon: LinkIcon, href: "/links-uteis" },
     ...(isAdmin
       ? [

@@ -1,0 +1,1 @@
+ALTER TABLE `clube_revista` MODIFY COLUMN `data` timestamp NOT NULL;
