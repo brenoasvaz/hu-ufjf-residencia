@@ -499,3 +499,6 @@
 - [x] Reuniões Clínicas: ao trocar datas, trocar também artigos do Clube de Revista vinculados
 - [x] Clube de Revista: busca global em todos os artigos do banco
 - [x] Avaliações: corrigir para que todos os residentes recebam as mesmas questões do modelo
+- [ ] Avaliações: gabarito único pós-submissão (visualizado apenas uma vez)
+- [ ] Avaliações: relatório PDF das provas de todos os residentes
+- [ ] Avaliações: troca de questões individuais no template de revisão

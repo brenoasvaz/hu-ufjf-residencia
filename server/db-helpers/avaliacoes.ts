@@ -374,6 +374,7 @@ export async function getQuestoesComRespostas(simuladoId: number) {
       enunciado: questoes.enunciado,
       especialidadeId: questoes.especialidadeId,
       especialidadeNome: especialidades.nome,
+      imageUrl: questoes.imageUrl,
     })
     .from(questoes)
     .innerJoin(especialidades, eq(questoes.especialidadeId, especialidades.id))
@@ -432,10 +433,12 @@ export async function getQuestoesComRespostas(simuladoId: number) {
       questaoId: qs.questaoId,
       enunciado: questaoDetalhe.enunciado,
       especialidade: questaoDetalhe.especialidadeNome,
+      imageUrl: questaoDetalhe.imageUrl,
       alternativas: alts.map((alt: any) => ({
+        id: alt.id,
         letra: alt.letra,
         texto: alt.texto,
-        correta: alt.correta,
+        correta: alt.isCorreta, // campo correto do schema
       })),
       respostaUsuario: respostaLetra,
       acertou: resposta ? resposta.isCorreta : 0,

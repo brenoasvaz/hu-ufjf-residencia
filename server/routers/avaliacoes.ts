@@ -9,7 +9,7 @@ import * as avaliacoesDb from "../db-helpers/avaliacoes";
 import { getDb } from "../db";
 import { simulados, simuladoQuestoes, respostasUsuario, users, questoes, modelosProva, simuladoTemplates, simuladoTemplateQuestoes, especialidades, alternativas } from "../../drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
-import { gerarPDFAvaliacao } from "../pdf-generator";
+import { gerarPDFAvaliacao, gerarRelatorioConsolidado } from "../pdf-generator";
 import { storagePut } from "../storage";
 
 // Helper para procedures que requerem papel ADMIN
@@ -641,6 +641,70 @@ export const avaliacoesRouter = router({
         return resultado;
       }),
 
+    // Residente: Visualizar gabarito uma única vez após submissão
+    getGabarito: protectedProcedure
+      .input(z.object({ simuladoId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+        // Buscar simulado
+        const [simulado] = await db
+          .select()
+          .from(simulados)
+          .where(eq(simulados.id, input.simuladoId))
+          .limit(1);
+
+        if (!simulado) throw new TRPCError({ code: 'NOT_FOUND', message: 'Avaliação não encontrada' });
+
+        // Verificar propriedade (admin pode ver qualquer um)
+        if (simulado.userId !== ctx.user.id && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Acesso negado' });
+        }
+
+        // Verificar se está concluído
+        if (simulado.concluido === 0) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'A avaliação ainda não foi concluída' });
+        }
+
+        // Verificar se já foi visualizado (apenas para residentes, admin sempre pode ver)
+        if (ctx.user.role !== 'admin' && simulado.gabaritoVisualizado === 1) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'O gabarito já foi visualizado. O acesso ao gabarito é permitido apenas uma vez após a submissão.'
+          });
+        }
+
+        // Buscar questões com respostas e gabarito
+        const questoesComRespostas = await avaliacoesDb.getQuestoesComRespostas(input.simuladoId);
+
+        // Marcar gabarito como visualizado (apenas para residentes)
+        if (ctx.user.role !== 'admin') {
+          await db
+            .update(simulados)
+            .set({ gabaritoVisualizado: 1 })
+            .where(eq(simulados.id, input.simuladoId));
+        }
+
+        return {
+          gabaritoVisualizado: simulado.gabaritoVisualizado === 1, // true = já havia sido visualizado antes
+          questoes: questoesComRespostas.map((q: any, index: number) => ({
+            numero: index + 1,
+            enunciado: q.enunciado,
+            especialidade: q.especialidade,
+            imageUrl: q.imageUrl || null,
+            alternativas: q.alternativas.map((alt: any) => ({
+              id: alt.id,
+              letra: alt.letra,
+              texto: alt.texto,
+              correta: alt.correta === 1,
+            })),
+            respostaUsuario: q.respostaUsuario, // letra da alternativa escolhida
+            acertou: q.acertou === 1,
+          })),
+        };
+      }),
+
     // Admin: Deletar simulado
     delete: adminProcedure
       .input(z.object({ simuladoId: z.number() }))
@@ -734,6 +798,83 @@ export const avaliacoesRouter = router({
         };
       }),
   }),
+
+  // ========================================
+  // RELATÓRIO CONSOLIDADO (Admin)
+  // ========================================
+
+  gerarRelatorio: adminProcedure
+    .input(z.object({ modeloId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+      // Buscar modelo
+      const [modelo] = await db
+        .select({ id: modelosProva.id, nome: modelosProva.nome, descricao: modelosProva.descricao })
+        .from(modelosProva)
+        .where(eq(modelosProva.id, input.modeloId))
+        .limit(1);
+
+      if (!modelo) throw new TRPCError({ code: 'NOT_FOUND', message: 'Modelo não encontrado' });
+
+      // Buscar todos os simulados concluídos deste modelo com dados do usuário
+      const simuladosData = await db
+        .select({
+          simuladoId: simulados.id,
+          userId: simulados.userId,
+          dataInicio: simulados.dataInicio,
+          dataFim: simulados.dataFim,
+          duracaoMinutos: simulados.duracaoMinutos,
+          totalQuestoes: simulados.totalQuestoes,
+          totalAcertos: simulados.totalAcertos,
+          concluido: simulados.concluido,
+          userName: users.name,
+          userEmail: users.email,
+        })
+        .from(simulados)
+        .innerJoin(users, eq(simulados.userId, users.id))
+        .where(eq(simulados.modeloId, input.modeloId));
+
+      if (simuladosData.length === 0) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Nenhum residente realizou esta avaliação ainda' });
+      }
+
+      const residentes = simuladosData.map((s) => {
+        const acertos = s.totalAcertos ?? 0;
+        const percentual = s.totalQuestoes > 0
+          ? Math.round((acertos / s.totalQuestoes) * 100)
+          : 0;
+        return {
+          simuladoId: s.simuladoId,
+          residenteNome: s.userName || 'Não informado',
+          residenteEmail: s.userEmail || 'Não informado',
+          dataInicio: new Date(s.dataInicio),
+          dataFim: s.dataFim ? new Date(s.dataFim) : null,
+          totalQuestoes: s.totalQuestoes,
+          totalAcertos: acertos,
+          percentual,
+        };
+      });
+
+      const pdfBuffer = await gerarRelatorioConsolidado({
+        modeloNome: modelo.nome,
+        modeloDescricao: modelo.descricao ?? undefined,
+        geradoEm: new Date(),
+        residentes,
+      });
+
+      const nomeArquivo = `relatorio_${modelo.nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+      return {
+        pdf: pdfBuffer.toString('base64'),
+        filename: nomeArquivo,
+        totalResidentes: residentes.length,
+        mediaPercentual: residentes.length > 0
+          ? Math.round(residentes.reduce((s, r) => s + r.percentual, 0) / residentes.length)
+          : 0,
+      };
+    }),
 
   // ========================================
   // REVISÃO DE TEMPLATE (Admin)

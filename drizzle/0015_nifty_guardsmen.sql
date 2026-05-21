@@ -1,0 +1,1 @@
+ALTER TABLE `simulados` ADD `gabarito_visualizado` int DEFAULT 0 NOT NULL;

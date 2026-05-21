@@ -305,6 +305,7 @@ export const simulados = mysqlTable("simulados", {
   totalQuestoes: int("total_questoes").notNull(),
   totalAcertos: int("total_acertos").default(0).notNull(),
   concluido: int("concluido").default(0).notNull(), // 1 = concluído, 0 = em andamento
+  gabaritoVisualizado: int("gabarito_visualizado").default(0).notNull(), // 1 = residente já visualizou o gabarito (acesso único)
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -50,6 +50,33 @@ export default function AdminAvaliacoes() {
   const utils = trpc.useUtils();
   const deleteMutation = trpc.avaliacoes.simulados.delete.useMutation();
   const gerarPDFMutation = trpc.avaliacoes.simulados.gerarPDF.useMutation();
+  const gerarRelatorioMutation = trpc.avaliacoes.gerarRelatorio.useMutation();
+
+  const handleGerarRelatorio = async (modeloId: number) => {
+    try {
+      toast.info("Gerando relatório consolidado...");
+      const result = await gerarRelatorioMutation.mutateAsync({ modeloId });
+      const byteCharacters = atob(result.pdf);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success(`Relatório gerado: ${result.totalResidentes} residentes, média ${result.mediaPercentual}%`);
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao gerar relatório");
+    }
+  };
+
   const gerarTemplateMutation = trpc.avaliacoes.template.gerar.useMutation({
     onSuccess: (data: any, variables: any) => {
       utils.avaliacoes.modelos.list.invalidate();
@@ -247,7 +274,19 @@ export default function AdminAvaliacoes() {
                       )}
                     </div>
                     {/* Ações de revisão */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
+                      {modelo.status === 'liberado' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 border-blue-300 text-blue-700 hover:bg-blue-50"
+                          disabled={gerarRelatorioMutation.isPending}
+                          onClick={() => handleGerarRelatorio(modelo.id)}
+                        >
+                          <Download className="mr-2 h-3 w-3" />
+                          {gerarRelatorioMutation.isPending ? 'Gerando...' : 'Relatório PDF'}
+                        </Button>
+                      )}
                       {modelo.status === 'rascunho' ? (
                         <Button
                           variant="outline"
