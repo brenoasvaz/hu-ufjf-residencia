@@ -421,91 +421,63 @@ export const avaliacoesRouter = router({
     gerar: protectedProcedure
       .input(z.object({ modeloId: z.number() }))
       .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
         // 1. Buscar modelo
         const modelo = await avaliacoesDb.getModeloPorId(input.modeloId);
         if (!modelo) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Modelo não encontrado' });
         }
-        
-        // 2. Parsear configuração
-        const config = JSON.parse(modelo.configuracao) as Record<string, number>;
-        
-        // 3. Buscar especialidades
-        const especialidades = await avaliacoesDb.getAllEspecialidades();
-        const especialidadeMap = new Map(especialidades.map(e => [e.nome, e.id]));
-        
-        // 4. Selecionar questões inteligentemente para cada especialidade
-        const questoesSelecionadas: number[] = [];
-        const questoesSelecionadasSet = new Set<number>(); // evitar duplicatas
-        let totalSolicitado = 0;
 
-        for (const [nomeEsp, quantidade] of Object.entries(config)) {
-          totalSolicitado += quantidade;
-          const espId = especialidadeMap.get(nomeEsp);
-          if (!espId) {
-            console.warn(`Especialidade não encontrada: ${nomeEsp}`);
-            continue;
-          }
-          
-          const questoesEsp = await avaliacoesDb.selecionarQuestoesInteligentes(
-            ctx.user.id,
-            espId,
-            quantidade
-          );
-          questoesEsp.forEach((id: number) => {
-            if (!questoesSelecionadasSet.has(id)) {
-              questoesSelecionadasSet.add(id);
-              questoesSelecionadas.push(id);
-            }
-          });
+        // 2. Verificar que o modelo está liberado (residentes só podem fazer provas liberadas)
+        if (ctx.user.role !== 'admin' && modelo.status !== 'liberado') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Este modelo ainda não foi liberado' });
         }
-        
-        if (questoesSelecionadas.length === 0) {
-          throw new TRPCError({ 
-            code: 'BAD_REQUEST', 
-            message: 'Não há questões disponíveis para este modelo' 
+
+        // 3. Buscar o template de revisão associado ao modelo
+        //    O template contém as questões FIXAS que o admin revisou e aprovou
+        const [template] = await db
+          .select()
+          .from(simuladoTemplates)
+          .where(eq(simuladoTemplates.modeloId, input.modeloId))
+          .limit(1);
+
+        if (!template) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Este modelo ainda não possui um simulado de revisão gerado. O administrador deve gerar e revisar o simulado antes de liberá-lo.'
           });
         }
 
-        // Compensar déficit: se alguma especialidade tinha menos questões que o pedido,
-        // completar com questões de qualquer especialidade já não incluída
-        const deficit = totalSolicitado - questoesSelecionadas.length;
-        if (deficit > 0) {
-          const db = await getDb();
-          if (db) {
-            const { not, and: andOp2 } = await import('drizzle-orm');
-            const extras = await db
-              .select({ id: questoes.id })
-              .from(questoes)
-              .where(andOp2(
-                eq(questoes.ativo, 1),
-                not(inArray(questoes.id, questoesSelecionadas))
-              ))
-              .limit(deficit * 3); // buscar mais para poder embaralhar
-            const shuffled = extras.sort(() => Math.random() - 0.5).slice(0, deficit);
-            shuffled.forEach((q: any) => {
-              if (!questoesSelecionadasSet.has(q.id)) {
-                questoesSelecionadasSet.add(q.id);
-                questoesSelecionadas.push(q.id);
-              }
-            });
-          }
+        // 4. Buscar as questões fixas do template, na ordem definida pelo admin
+        const templateQuestoes = await db
+          .select({ questaoId: simuladoTemplateQuestoes.questaoId, ordem: simuladoTemplateQuestoes.ordem })
+          .from(simuladoTemplateQuestoes)
+          .where(eq(simuladoTemplateQuestoes.templateId, template.id))
+          .orderBy(simuladoTemplateQuestoes.ordem);
+
+        if (templateQuestoes.length === 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'O template de revisão não possui questões. Regenere o simulado de revisão.'
+          });
         }
-        
-        // 5. Criar simulado
+
+        // 5. Criar simulado para o residente com as mesmas questões do template
         const simuladoId = await avaliacoesDb.createSimulado({
           userId: ctx.user.id,
           modeloId: input.modeloId,
           dataInicio: new Date(),
           duracaoMinutos: modelo.duracaoMinutos,
-          totalQuestoes: questoesSelecionadas.length,
+          totalQuestoes: templateQuestoes.length,
         });
-        
-        // 6. Adicionar questões ao simulado
-        for (let i = 0; i < questoesSelecionadas.length; i++) {
-          await avaliacoesDb.addQuestaoAoSimulado(simuladoId, questoesSelecionadas[i], i + 1);
+
+        // 6. Adicionar as questões FIXAS do template ao simulado do residente (mesma ordem)
+        for (const tq of templateQuestoes) {
+          await avaliacoesDb.addQuestaoAoSimulado(simuladoId, tq.questaoId, tq.ordem);
         }
-        
+
         return { simuladoId };
       }),
     

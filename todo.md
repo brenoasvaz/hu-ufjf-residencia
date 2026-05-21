@@ -498,3 +498,4 @@
 - [x] Reuniões Clínicas: popup do Artigo da Semana com detalhes e download do PDF do Clube de Revista
 - [x] Reuniões Clínicas: ao trocar datas, trocar também artigos do Clube de Revista vinculados
 - [x] Clube de Revista: busca global em todos os artigos do banco
+- [x] Avaliações: corrigir para que todos os residentes recebam as mesmas questões do modelo
