@@ -230,16 +230,16 @@ export default function AdminAvaliacoes() {
 
       {/* Tabs */}
       <Tabs defaultValue="modelos" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="modelos">Modelos de Prova</TabsTrigger>
-          <TabsTrigger value="avaliacoes">Avaliações</TabsTrigger>
-          <TabsTrigger value="questoes">Questões</TabsTrigger>
-          <TabsTrigger value="estatisticas">Estatísticas</TabsTrigger>
+        <TabsList className="flex flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="modelos" className="text-xs sm:text-sm">Modelos</TabsTrigger>
+          <TabsTrigger value="avaliacoes" className="text-xs sm:text-sm">Avaliações</TabsTrigger>
+          <TabsTrigger value="questoes" className="text-xs sm:text-sm">Questões</TabsTrigger>
+          <TabsTrigger value="estatisticas" className="text-xs sm:text-sm">Estatísticas</TabsTrigger>
         </TabsList>
 
         {/* Modelos de Prova */}
         <TabsContent value="modelos" className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold">Modelos de Prova</h2>
               <p className="text-sm text-muted-foreground mt-1">
@@ -247,7 +247,7 @@ export default function AdminAvaliacoes() {
               </p>
             </div>
             <Link href="/admin/avaliacoes/modelos">
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Settings className="mr-2 h-4 w-4" />
                 Gerenciar Modelos
               </Button>
@@ -306,7 +306,7 @@ export default function AdminAvaliacoes() {
                       )}
                     </div>
                     {/* Ações de revisão */}
-                    <div className="flex gap-2 flex-wrap">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       {modelo.status === 'liberado' && (
                         <Button
                           variant="outline"
@@ -519,7 +519,7 @@ export default function AdminAvaliacoes() {
 
         {/* Questões */}
         <TabsContent value="questoes" className="space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold">Banco de Questões</h2>
               <p className="text-sm text-muted-foreground mt-1">
@@ -527,7 +527,7 @@ export default function AdminAvaliacoes() {
               </p>
             </div>
             <Link href="/admin/questoes/imagens">
-              <Button variant="outline">
+              <Button variant="outline" className="w-full sm:w-auto">
                 <Image className="mr-2 h-4 w-4" />
                 Gerenciar Questões
               </Button>
@@ -535,8 +535,8 @@ export default function AdminAvaliacoes() {
           </div>
 
           {/* Filtros */}
-          <div className="flex flex-wrap gap-3">
-            <div className="relative flex-1 min-w-[180px]">
+          <div className="flex flex-col gap-2">
+            <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar por enunciado..."
@@ -545,44 +545,44 @@ export default function AdminAvaliacoes() {
                 onChange={(e) => { setQuestoesBusca(e.target.value); setQuestoesPage(1); }}
               />
             </div>
-            <Select
-              value={questoesEspecialidade?.toString() ?? "all"}
-              onValueChange={(v) => { setQuestoesEspecialidade(v === "all" ? undefined : Number(v)); setQuestoesPage(1); }}
-            >
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Especialidade" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas as especialidades</SelectItem>
-                {especialidades?.map((e: any) => (
-                  <SelectItem key={e.id} value={e.id.toString()}>{e.nome}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Filtro por Prova/Fonte */}
-            <Select value={questoesFonte} onValueChange={(v) => { setQuestoesFonte(v); setQuestoesPage(1); }}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="Prova" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todas">Todas as provas</SelectItem>
-                {fontes?.map((f: string) => (
-                  <SelectItem key={f} value={f}>{f}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {/* Filtro por Ano */}
-            <Select value={questoesAno} onValueChange={(v) => { setQuestoesAno(v); setQuestoesPage(1); }}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Ano" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos os anos</SelectItem>
-                {anosDisponiveis?.map((a: number) => (
-                  <SelectItem key={a} value={String(a)}>{a}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              <Select
+                value={questoesEspecialidade?.toString() ?? "all"}
+                onValueChange={(v) => { setQuestoesEspecialidade(v === "all" ? undefined : Number(v)); setQuestoesPage(1); }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Especialidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as especialidades</SelectItem>
+                  {especialidades?.map((e: any) => (
+                    <SelectItem key={e.id} value={e.id.toString()}>{e.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={questoesFonte} onValueChange={(v) => { setQuestoesFonte(v); setQuestoesPage(1); }}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Prova" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as provas</SelectItem>
+                  {fontes?.map((f: string) => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={questoesAno} onValueChange={(v) => { setQuestoesAno(v); setQuestoesPage(1); }}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Ano" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos os anos</SelectItem>
+                  {anosDisponiveis?.map((a: number) => (
+                    <SelectItem key={a} value={String(a)}>{a}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Lista de questões */}
@@ -659,9 +659,9 @@ export default function AdminAvaliacoes() {
               ))}
 
               {/* Paginação */}
-              <div className="flex items-center justify-between pt-2">
-                <p className="text-sm text-muted-foreground">
-                  Mostrando {((questoesPage - 1) * 20) + 1}–{Math.min(questoesPage * 20, questoesData.total)} de {questoesData.total.toLocaleString('pt-BR')} questões
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2">
+                <p className="text-xs text-muted-foreground">
+                  {((questoesPage - 1) * 20) + 1}–{Math.min(questoesPage * 20, questoesData.total)} de {questoesData.total.toLocaleString('pt-BR')} questões
                 </p>
                 <div className="flex gap-2">
                   <Button
