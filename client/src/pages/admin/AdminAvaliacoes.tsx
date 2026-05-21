@@ -34,6 +34,8 @@ export default function AdminAvaliacoes() {
   const [questoesAno, setQuestoesAno] = useState<string>("todos");
   const [expandedQuestaoId, setExpandedQuestaoId] = useState<number | null>(null);
   const [gerandoTemplateId, setGerandoTemplateId] = useState<number | null>(null);
+  const [simuladosBusca, setSimuladosBusca] = useState("");
+  const [simuladosFiltroStatus, setSimuladosFiltroStatus] = useState<"todos" | "concluido" | "andamento">("todos");
 
   const { data: modelos, isLoading: loadingModelos } = trpc.avaliacoes.modelos.list.useQuery();
   const { data: allSimulados, isLoading: loadingSimulados, refetch: refetchSimulados } = trpc.avaliacoes.simulados.list.useQuery();
@@ -370,12 +372,57 @@ export default function AdminAvaliacoes() {
             </p>
           </div>
 
+          {/* Filtros */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por residente ou modelo de prova..."
+                value={simuladosBusca}
+                onChange={(e) => setSimuladosBusca(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={simuladosFiltroStatus} onValueChange={(v) => setSimuladosFiltroStatus(v as any)}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="concluido">Concluídas</SelectItem>
+                <SelectItem value="andamento">Em andamento</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           {loadingSimulados ? (
             <div className="text-center py-8 text-muted-foreground">Carregando avaliações...</div>
-          ) : allSimulados && allSimulados.length > 0 ? (
+          ) : allSimulados && allSimulados.length > 0 ? (() => {
+            const termoBusca = simuladosBusca.toLowerCase().trim();
+            const filtrados = allSimulados
+              .filter((s: any) => {
+                const matchBusca = !termoBusca ||
+                  (s.userName ?? '').toLowerCase().includes(termoBusca) ||
+                  (s.userEmail ?? '').toLowerCase().includes(termoBusca) ||
+                  (s.modeloNome ?? '').toLowerCase().includes(termoBusca);
+                const matchStatus =
+                  simuladosFiltroStatus === 'todos' ||
+                  (simuladosFiltroStatus === 'concluido' && s.concluido === 1) ||
+                  (simuladosFiltroStatus === 'andamento' && s.concluido !== 1);
+                return matchBusca && matchStatus;
+              })
+              .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+            return filtrados.length > 0 ? (
             <div className="space-y-3">
-              {allSimulados
-                .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+              {/* Contador de resultados */}
+              {(termoBusca || simuladosFiltroStatus !== 'todos') && (
+                <p className="text-sm text-muted-foreground">
+                  {filtrados.length} {filtrados.length === 1 ? 'resultado encontrado' : 'resultados encontrados'}
+                  {termoBusca && <> para <span className="font-medium text-foreground">"{simuladosBusca}"</span></>}
+                </p>
+              )}
+              {filtrados
                 .map((simulado: any) => (
                   <Card key={simulado.id}>
                     <CardContent className="py-4">
@@ -451,7 +498,16 @@ export default function AdminAvaliacoes() {
                   </Card>
                 ))}
             </div>
-          ) : (
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  {termoBusca || simuladosFiltroStatus !== 'todos'
+                    ? `Nenhuma avaliação encontrada${termoBusca ? ` para "${simuladosBusca}"` : ''}.`
+                    : 'Nenhuma avaliação realizada ainda.'}
+                </CardContent>
+              </Card>
+            );
+          })() : (
             <Card>
               <CardContent className="py-8 text-center text-muted-foreground">
                 Nenhuma avaliação realizada ainda.

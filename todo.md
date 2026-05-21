@@ -504,3 +504,4 @@
 - [ ] Avaliações: troca de questões individuais no template de revisão
 - [x] Histórico de avaliações do residente com link para gabarito
 - [x] Exportar PDF individual por residente (questão a questão)
+- [x] Admin: filtro por residente na lista de avaliações realizadas
