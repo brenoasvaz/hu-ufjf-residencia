@@ -502,3 +502,5 @@
 - [ ] Avaliações: gabarito único pós-submissão (visualizado apenas uma vez)
 - [ ] Avaliações: relatório PDF das provas de todos os residentes
 - [ ] Avaliações: troca de questões individuais no template de revisão
+- [x] Histórico de avaliações do residente com link para gabarito
+- [x] Exportar PDF individual por residente (questão a questão)

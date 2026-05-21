@@ -122,6 +122,7 @@ export async function getSimuladosPorUsuario(userId: number) {
       totalQuestoes: simulados.totalQuestoes,
       totalAcertos: simulados.totalAcertos,
       concluido: simulados.concluido,
+      gabaritoVisualizado: simulados.gabaritoVisualizado,
       createdAt: simulados.createdAt,
     })
     .from(simulados)

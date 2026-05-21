@@ -9,7 +9,7 @@ import * as avaliacoesDb from "../db-helpers/avaliacoes";
 import { getDb } from "../db";
 import { simulados, simuladoQuestoes, respostasUsuario, users, questoes, modelosProva, simuladoTemplates, simuladoTemplateQuestoes, especialidades, alternativas } from "../../drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
-import { gerarPDFAvaliacao, gerarRelatorioConsolidado } from "../pdf-generator";
+import { gerarPDFAvaliacao, gerarRelatorioConsolidado, gerarPDFIndividualResidente } from "../pdf-generator";
 import { storagePut } from "../storage";
 
 // Helper para procedures que requerem papel ADMIN
@@ -873,6 +873,82 @@ export const avaliacoesRouter = router({
         mediaPercentual: residentes.length > 0
           ? Math.round(residentes.reduce((s, r) => s + r.percentual, 0) / residentes.length)
           : 0,
+      };
+    }),
+
+  gerarRelatorioPorResidente: adminProcedure
+    .input(z.object({ simuladoId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+      // Buscar dados do simulado
+      const [simuladoData] = await db
+        .select({
+          id: simulados.id,
+          userId: simulados.userId,
+          modeloId: simulados.modeloId,
+          modeloNome: modelosProva.nome,
+          dataInicio: simulados.dataInicio,
+          dataFim: simulados.dataFim,
+          duracaoMinutos: simulados.duracaoMinutos,
+          totalQuestoes: simulados.totalQuestoes,
+          totalAcertos: simulados.totalAcertos,
+          concluido: simulados.concluido,
+          userName: users.name,
+          userEmail: users.email,
+        })
+        .from(simulados)
+        .innerJoin(users, eq(simulados.userId, users.id))
+        .leftJoin(modelosProva, eq(simulados.modeloId, modelosProva.id))
+        .where(eq(simulados.id, input.simuladoId))
+        .limit(1);
+
+      if (!simuladoData) throw new TRPCError({ code: 'NOT_FOUND', message: 'Simulado não encontrado' });
+      if (!simuladoData.concluido) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Simulado ainda não foi concluído' });
+
+      // Buscar questões com respostas usando o helper existente
+      const questoesComRespostas = await avaliacoesDb.getQuestoesComRespostas(input.simuladoId);
+
+      const acertos = simuladoData.totalAcertos ?? 0;
+      const percentual = simuladoData.totalQuestoes > 0
+        ? Math.round((acertos / simuladoData.totalQuestoes) * 100)
+        : 0;
+
+      const questoesFormatadas = questoesComRespostas.map((q: any, idx: number) => ({
+        numero: idx + 1,
+        enunciado: q.enunciado,
+        especialidade: q.especialidade,
+        alternativas: q.alternativas.map((a: any) => ({
+          letra: a.letra,
+          texto: a.texto,
+          correta: a.correta === 1 || a.correta === true,
+        })),
+        respostaUsuario: q.respostaUsuario,
+        acertou: q.acertou === 1 || q.acertou === true,
+      }));
+
+      const pdfBuffer = await gerarPDFIndividualResidente({
+        simuladoId: simuladoData.id,
+        modeloNome: simuladoData.modeloNome ?? `Avaliação #${simuladoData.id}`,
+        residenteNome: simuladoData.userName ?? 'Não informado',
+        residenteEmail: simuladoData.userEmail ?? 'Não informado',
+        dataInicio: new Date(simuladoData.dataInicio),
+        dataFim: simuladoData.dataFim ? new Date(simuladoData.dataFim) : null,
+        totalQuestoes: simuladoData.totalQuestoes,
+        totalAcertos: acertos,
+        percentual,
+        questoes: questoesFormatadas,
+        geradoEm: new Date(),
+      });
+
+      const nomeSafe = (simuladoData.userName ?? 'residente').replace(/\s+/g, '_');
+      const modeloSafe = (simuladoData.modeloNome ?? 'avaliacao').replace(/\s+/g, '_');
+      const nomeArquivo = `relatorio_${nomeSafe}_${modeloSafe}_${new Date().toISOString().slice(0, 10)}.pdf`;
+
+      return {
+        pdf: pdfBuffer.toString('base64'),
+        filename: nomeArquivo,
       };
     }),
 

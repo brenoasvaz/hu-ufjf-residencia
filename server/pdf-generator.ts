@@ -303,3 +303,186 @@ export async function gerarRelatorioConsolidado(data: RelatorioConsolidadoData):
     }
   });
 }
+
+// ─── PDF Individual por Residente (questão a questão) ─────────────────────────
+
+interface QuestaoDetalhada {
+  numero: number;
+  enunciado: string;
+  especialidade: string;
+  alternativas: Array<{
+    letra: string;
+    texto: string;
+    correta: boolean;
+  }>;
+  respostaUsuario: string | null;
+  acertou: boolean;
+}
+
+interface PDFIndividualData {
+  simuladoId: number;
+  modeloNome: string;
+  residenteNome: string;
+  residenteEmail: string;
+  dataInicio: Date;
+  dataFim: Date | null;
+  totalQuestoes: number;
+  totalAcertos: number;
+  percentual: number;
+  questoes: QuestaoDetalhada[];
+  geradoEm: Date;
+}
+
+export async function gerarPDFIndividualResidente(data: PDFIndividualData): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 50, bottom: 60, left: 50, right: 50 },
+        bufferPages: true,
+      });
+
+      const chunks: Buffer[] = [];
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('error', reject);
+
+      const aprovado = data.percentual >= 70;
+
+      // ── Cabeçalho ──────────────────────────────────────────────────────────
+      doc.fontSize(16).font('Helvetica-Bold')
+        .text('HU UFJF — Residência Médica em Ortopedia', { align: 'center' });
+      doc.fontSize(12).font('Helvetica')
+        .text('Relatório Individual de Avaliação', { align: 'center' });
+      doc.moveDown(0.5);
+      doc.fontSize(13).font('Helvetica-Bold').text(data.modeloNome, { align: 'center' });
+      doc.moveDown(0.5);
+
+      doc.strokeColor('#333333').lineWidth(1.5)
+        .moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+      doc.moveDown(0.8);
+
+      // ── Dados do residente ─────────────────────────────────────────────────
+      doc.fontSize(11).font('Helvetica-Bold').text('Dados do Residente');
+      doc.moveDown(0.4);
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Nome: ${data.residenteNome}`);
+      doc.text(`E-mail: ${data.residenteEmail}`);
+      doc.text(`Data de realização: ${data.dataInicio.toLocaleString('pt-BR')}`);
+      if (data.dataFim) {
+        doc.text(`Concluído em: ${data.dataFim.toLocaleString('pt-BR')}`);
+      }
+      doc.moveDown(0.8);
+
+      // ── Resultado geral ────────────────────────────────────────────────────
+      doc.fontSize(11).font('Helvetica-Bold').text('Resultado Geral');
+      doc.moveDown(0.4);
+      doc.fontSize(10).font('Helvetica');
+      doc.text(`Total de questões: ${data.totalQuestoes}`);
+      doc.text(`Acertos: ${data.totalAcertos}`);
+      doc.text(`Erros: ${data.totalQuestoes - data.totalAcertos}`);
+      doc.fontSize(11).font('Helvetica-Bold')
+        .fillColor(aprovado ? '#276749' : '#9b2c2c')
+        .text(`Aproveitamento: ${data.percentual}% — ${aprovado ? 'APROVADO' : 'REPROVADO'}`);
+      doc.fillColor('black');
+      doc.moveDown(0.5);
+      doc.fontSize(9).font('Helvetica').fillColor('gray')
+        .text(`Gerado em: ${data.geradoEm.toLocaleString('pt-BR')}`, { align: 'right' });
+      doc.fillColor('black');
+      doc.moveDown(1);
+
+      doc.strokeColor('#718096').lineWidth(1)
+        .moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+      doc.moveDown(1);
+
+      // ── Questões ───────────────────────────────────────────────────────────
+      doc.fontSize(12).font('Helvetica-Bold').text('Questões e Respostas', { underline: true });
+      doc.moveDown(0.8);
+
+      data.questoes.forEach((q) => {
+        // Verificar espaço na página
+        if (doc.y > 680) {
+          doc.addPage();
+        }
+
+        const statusColor = q.acertou ? '#276749' : '#9b2c2c';
+        const statusLabel = q.acertou ? '✓ CORRETO' : '✗ ERRADO';
+        const respostaCorreta = q.alternativas.find(a => a.correta)?.letra ?? '?';
+
+        // Número e status
+        doc.fontSize(10).font('Helvetica-Bold')
+          .fillColor(statusColor)
+          .text(`Questão ${q.numero} — ${statusLabel}`, { continued: false });
+        doc.fillColor('#4a5568').fontSize(9).font('Helvetica')
+          .text(`Especialidade: ${q.especialidade}`);
+        doc.fillColor('black');
+        doc.moveDown(0.3);
+
+        // Enunciado
+        doc.fontSize(9.5).font('Helvetica').text(q.enunciado, {
+          width: 495,
+          align: 'justify',
+        });
+        doc.moveDown(0.4);
+
+        // Alternativas
+        q.alternativas.forEach((alt) => {
+          const isRespostaUsuario = alt.letra === q.respostaUsuario;
+          const isCorreta = alt.correta;
+
+          let altColor = '#1a202c';
+          let prefix = `${alt.letra}) `;
+
+          if (isCorreta) {
+            altColor = '#276749';
+            prefix = `${alt.letra}) `;
+          }
+          if (isRespostaUsuario && !isCorreta) {
+            altColor = '#9b2c2c';
+          }
+
+          const marker = isCorreta ? ' ← GABARITO' : isRespostaUsuario && !isCorreta ? ' ← SUA RESPOSTA' : '';
+
+          doc.fontSize(9).font(isRespostaUsuario || isCorreta ? 'Helvetica-Bold' : 'Helvetica')
+            .fillColor(altColor)
+            .text(`${prefix}${alt.texto}${marker}`, { width: 475, indent: 10 });
+        });
+
+        // Resumo da resposta
+        doc.moveDown(0.3);
+        doc.fontSize(8.5).font('Helvetica').fillColor('#718096');
+        if (q.respostaUsuario) {
+          doc.text(
+            `Sua resposta: ${q.respostaUsuario}  |  Resposta correta: ${respostaCorreta}`,
+            { indent: 10 }
+          );
+        } else {
+          doc.text(`Não respondida  |  Resposta correta: ${respostaCorreta}`, { indent: 10 });
+        }
+        doc.fillColor('black');
+        doc.moveDown(0.8);
+
+        // Linha separadora entre questões
+        doc.strokeColor('#e2e8f0').lineWidth(0.5)
+          .moveTo(50, doc.y).lineTo(545, doc.y).stroke();
+        doc.moveDown(0.5);
+      });
+
+      // ── Rodapé em todas as páginas ─────────────────────────────────────────
+      const range = doc.bufferedPageRange();
+      for (let i = range.start; i < range.start + range.count; i++) {
+        doc.switchToPage(i);
+        doc.fontSize(8).font('Helvetica').fillColor('gray');
+        doc.text(
+          `HU UFJF — Residência Médica em Ortopedia  |  ${data.residenteNome}  |  Página ${i - range.start + 1} de ${range.count}`,
+          50, 790, { align: 'center', width: 495 }
+        );
+      }
+
+      doc.flushPages();
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
+}

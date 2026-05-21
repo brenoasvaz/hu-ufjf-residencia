@@ -51,6 +51,8 @@ export default function AdminAvaliacoes() {
   const deleteMutation = trpc.avaliacoes.simulados.delete.useMutation();
   const gerarPDFMutation = trpc.avaliacoes.simulados.gerarPDF.useMutation();
   const gerarRelatorioMutation = trpc.avaliacoes.gerarRelatorio.useMutation();
+  const gerarRelatorioIndividualMutation = trpc.avaliacoes.gerarRelatorioPorResidente.useMutation();
+  const [gerandoPDFIndividualId, setGerandoPDFIndividualId] = useState<number | null>(null);
 
   const handleGerarRelatorio = async (modeloId: number) => {
     try {
@@ -95,6 +97,34 @@ export default function AdminAvaliacoes() {
     if (!especialidades) return {};
     return Object.fromEntries(especialidades.map((e: any) => [e.id, e.nome]));
   }, [especialidades]);
+
+  const handleGerarRelatorioIndividual = async (simuladoId: number) => {
+    setGerandoPDFIndividualId(simuladoId);
+    try {
+      toast.info("Gerando relatório individual...");
+      const result = await gerarRelatorioIndividualMutation.mutateAsync({ simuladoId });
+      const byteCharacters = atob(result.pdf);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = result.filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success("Relatório individual gerado com sucesso!");
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao gerar relatório individual");
+    } finally {
+      setGerandoPDFIndividualId(null);
+    }
+  };
 
   const handleGerarPDF = async (simuladoId: number) => {
     try {
@@ -382,15 +412,27 @@ export default function AdminAvaliacoes() {
                         
                         <div className="flex gap-2">
                           {simulado.concluido === 1 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleGerarPDF(simulado.id)}
-                              disabled={gerarPDFMutation.isPending}
-                            >
-                              <Download className="mr-2 h-4 w-4" />
-                              Exportar PDF
-                            </Button>
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleGerarRelatorioIndividual(simulado.id)}
+                                disabled={gerandoPDFIndividualId === simulado.id}
+                                className="text-purple-700 border-purple-300 hover:bg-purple-50"
+                              >
+                                <FileText className="mr-2 h-4 w-4" />
+                                {gerandoPDFIndividualId === simulado.id ? 'Gerando...' : 'PDF Individual'}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleGerarPDF(simulado.id)}
+                                disabled={gerarPDFMutation.isPending}
+                              >
+                                <Download className="mr-2 h-4 w-4" />
+                                Exportar PDF
+                              </Button>
+                            </>
                           )}
                           <Button
                             variant="destructive"
