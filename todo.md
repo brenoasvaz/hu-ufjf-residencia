@@ -505,3 +505,4 @@
 - [x] Histórico de avaliações do residente com link para gabarito
 - [x] Exportar PDF individual por residente (questão a questão)
 - [x] Admin: filtro por residente na lista de avaliações realizadas
+- [x] Resultado do simulado: breakdown de acertos por especialidade

@@ -8,7 +8,7 @@ import {
   BookOpen, AlertTriangle, ChevronDown, ChevronUp, Eye, EyeOff
 } from "lucide-react";
 import { useRoute, Link } from "wouter";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 // ─── Sub-componente: card de questão com gabarito ─────────────────────────────
 function QuestaoGabaritoCard({ questao, index }: { questao: any; index: number }) {
@@ -285,6 +285,57 @@ export default function ResultadoSimulado() {
           </Card>
         )}
       </div>
+
+      {/* ── Breakdown por Especialidade ── */}
+      {showGabarito && gabarito?.questoes && (() => {
+        // Calcular acertos por especialidade a partir do gabarito
+        const espMap: Record<string, { acertos: number; total: number }> = {};
+        for (const q of gabarito.questoes) {
+          const esp = q.especialidade || 'Não informada';
+          if (!espMap[esp]) espMap[esp] = { acertos: 0, total: 0 };
+          espMap[esp].total++;
+          if (q.acertou) espMap[esp].acertos++;
+        }
+        const espList = Object.entries(espMap)
+          .map(([nome, v]) => ({ nome, ...v, pct: Math.round((v.acertos / v.total) * 100) }))
+          .sort((a, b) => b.pct - a.pct);
+
+        return (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-base">Desempenho por Especialidade</CardTitle>
+              </div>
+              <CardDescription>Acertos em cada área de conhecimento avaliada</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {espList.map((esp) => {
+                  const barColor = esp.pct >= 70 ? 'bg-green-500' : esp.pct >= 50 ? 'bg-amber-500' : 'bg-red-500';
+                  const textColor = esp.pct >= 70 ? 'text-green-700' : esp.pct >= 50 ? 'text-amber-700' : 'text-red-700';
+                  return (
+                    <div key={esp.nome} className="space-y-1">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium truncate flex-1 mr-2">{esp.nome}</span>
+                        <span className={`font-semibold flex-shrink-0 ${textColor}`}>
+                          {esp.acertos}/{esp.total} ({esp.pct}%)
+                        </span>
+                      </div>
+                      <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${barColor}`}
+                          style={{ width: `${esp.pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* ── Seção Gabarito ── */}
       {!showGabarito && (
