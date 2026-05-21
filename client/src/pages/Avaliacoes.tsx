@@ -250,6 +250,13 @@ export default function Avaliacoes() {
                           <p className="font-medium truncate">
                             {exam.modeloNome ?? `Avaliação #${exam.id}`}
                           </p>
+                        </div>
+                        {user?.name && (
+                          <p className="text-xs text-muted-foreground -mt-1">
+                            {user.name}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-2 flex-wrap">
                           {exam.concluido === 1 ? (
                             <Badge
                               variant="outline"
