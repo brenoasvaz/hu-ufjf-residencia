@@ -425,74 +425,75 @@ export default function AdminAvaliacoes() {
               {filtrados
                 .map((simulado: any) => (
                   <Card key={simulado.id}>
-                    <CardContent className="py-4">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1 flex-1">
-                          <div className="flex items-center gap-3">
-                            <p className="font-medium">
-                              {simulado.modeloNome
-                                ? `${simulado.modeloNome} — ${simulado.userName || 'Usuário desconhecido'}`
-                                : `Avaliação #${simulado.id}${simulado.userName ? ` — ${simulado.userName}` : ''}`}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span>
-                              Criada em {new Date(simulado.createdAt).toLocaleDateString('pt-BR', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
-                            {simulado.concluido === 1 ? (
-                              <span className="text-green-600 font-medium">
-                                Concluída • {Math.round((simulado.totalAcertos / simulado.totalQuestoes) * 100)}%
-                              </span>
-                            ) : (
-                              <span className="text-amber-600 font-medium">
-                                Em andamento
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          {simulado.concluido === 1 && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleGerarRelatorioIndividual(simulado.id)}
-                                disabled={gerandoPDFIndividualId === simulado.id}
-                                className="text-purple-700 border-purple-300 hover:bg-purple-50"
-                              >
-                                <FileText className="mr-2 h-4 w-4" />
-                                {gerandoPDFIndividualId === simulado.id ? 'Gerando...' : 'PDF Individual'}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleGerarPDF(simulado.id)}
-                                disabled={gerarPDFMutation.isPending}
-                              >
-                                <Download className="mr-2 h-4 w-4" />
-                                Exportar PDF
-                              </Button>
-                            </>
-                          )}
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => {
-                              setSimuladoToDelete(simulado.id);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Deletar
-                          </Button>
-                        </div>
+                    <CardContent className="py-4 space-y-3">
+                      {/* Linha de título */}
+                      <div>
+                        <p className="font-semibold text-sm leading-snug">
+                          {simulado.modeloNome || `Avaliação #${simulado.id}`}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {simulado.userName || 'Usuário desconhecido'}
+                        </p>
+                      </div>
+
+                      {/* Linha de meta-dados */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span>
+                          {new Date(simulado.createdAt).toLocaleDateString('pt-BR', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                        {simulado.concluido === 1 ? (
+                          <span className="text-green-600 font-medium">
+                            Concluída • {Math.round((simulado.totalAcertos / simulado.totalQuestoes) * 100)}%
+                          </span>
+                        ) : (
+                          <span className="text-amber-600 font-medium">Em andamento</span>
+                        )}
+                      </div>
+
+                      {/* Botões em grade responsiva */}
+                      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                        {simulado.concluido === 1 && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleGerarRelatorioIndividual(simulado.id)}
+                              disabled={gerandoPDFIndividualId === simulado.id}
+                              className="text-purple-700 border-purple-300 hover:bg-purple-50 w-full sm:w-auto"
+                            >
+                              <FileText className="mr-1.5 h-3.5 w-3.5" />
+                              {gerandoPDFIndividualId === simulado.id ? 'Gerando...' : 'PDF Individual'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleGerarPDF(simulado.id)}
+                              disabled={gerarPDFMutation.isPending}
+                              className="w-full sm:w-auto"
+                            >
+                              <Download className="mr-1.5 h-3.5 w-3.5" />
+                              Exportar PDF
+                            </Button>
+                          </>
+                        )}
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => {
+                            setSimuladoToDelete(simulado.id);
+                            setDeleteDialogOpen(true);
+                          }}
+                          className="col-span-2 sm:col-span-1 sm:w-auto w-full"
+                        >
+                          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                          Deletar
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
