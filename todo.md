@@ -507,3 +507,4 @@
 - [x] Admin: filtro por residente na lista de avaliações realizadas
 - [x] Resultado do simulado: breakdown de acertos por especialidade
 - [x] Admin: revisão de layout mobile de todas as seções (Modelos de Prova, Banco de Questões, abas)
+- [x] Admin: badge de gabarito visto/não visto por residente nos cards de simulados (painel admin Avaliações)

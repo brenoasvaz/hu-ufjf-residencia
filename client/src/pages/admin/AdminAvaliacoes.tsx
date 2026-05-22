@@ -454,6 +454,19 @@ export default function AdminAvaliacoes() {
                         ) : (
                           <span className="text-amber-600 font-medium">Em andamento</span>
                         )}
+                        {simulado.concluido === 1 && (
+                          simulado.gabaritoVisualizado === 1 ? (
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-300 gap-1">
+                              <Eye className="h-3 w-3" />
+                              Gabarito visto
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs bg-gray-50 text-gray-500 border-gray-300 gap-1">
+                              <Eye className="h-3 w-3" />
+                              Gabarito não visto
+                            </Badge>
+                          )
+                        )}
                       </div>
 
                       {/* Botões em grade responsiva */}
