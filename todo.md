@@ -514,3 +514,4 @@
 - [x] Home: card de notificação para residentes com avaliações pendentes e gabaritos disponíveis
 - [x] Marca d'água dinâmica com nome do residente e data/hora na tela de gabarito (dissuasão de screenshots)
 - [x] Admin: botão "Restaurar Gabarito" nos cards de simulados concluídos com gabarito já visto (redefine acesso do residente)
+- [x] UserManagement: redesign mobile-first — cards com layout em coluna, botões largura total, nome sem quebra estranha, stats compactos
