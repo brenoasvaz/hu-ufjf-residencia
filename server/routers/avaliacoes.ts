@@ -705,6 +705,30 @@ export const avaliacoesRouter = router({
         };
       }),
 
+    // Admin: Restaurar acesso ao gabarito de um residente
+    restaurarGabarito: adminProcedure
+      .input(z.object({ simuladoId: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+        const [simulado] = await db
+          .select({ id: simulados.id, gabaritoVisualizado: simulados.gabaritoVisualizado, concluido: simulados.concluido })
+          .from(simulados)
+          .where(eq(simulados.id, input.simuladoId))
+          .limit(1);
+
+        if (!simulado) throw new TRPCError({ code: 'NOT_FOUND', message: 'Avaliação não encontrada' });
+        if (simulado.concluido === 0) throw new TRPCError({ code: 'BAD_REQUEST', message: 'A avaliação ainda não foi concluída' });
+
+        await db
+          .update(simulados)
+          .set({ gabaritoVisualizado: 0 })
+          .where(eq(simulados.id, input.simuladoId));
+
+        return { success: true };
+      }),
+
     // Admin: Deletar simulado
     delete: adminProcedure
       .input(z.object({ simuladoId: z.number() }))

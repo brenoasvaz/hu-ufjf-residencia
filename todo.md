@@ -513,3 +513,4 @@
 - [x] Cards de avaliação com gabarito disponível destacados com borda âmbar no histórico
 - [x] Home: card de notificação para residentes com avaliações pendentes e gabaritos disponíveis
 - [x] Marca d'água dinâmica com nome do residente e data/hora na tela de gabarito (dissuasão de screenshots)
+- [x] Admin: botão "Restaurar Gabarito" nos cards de simulados concluídos com gabarito já visto (redefine acesso do residente)

@@ -55,6 +55,18 @@ export default function AdminAvaliacoes() {
   const gerarRelatorioMutation = trpc.avaliacoes.gerarRelatorio.useMutation();
   const gerarRelatorioIndividualMutation = trpc.avaliacoes.gerarRelatorioPorResidente.useMutation();
   const [gerandoPDFIndividualId, setGerandoPDFIndividualId] = useState<number | null>(null);
+  const [restaurandoGabaritoId, setRestaurandoGabaritoId] = useState<number | null>(null);
+  const restaurarGabaritoMutation = trpc.avaliacoes.simulados.restaurarGabarito.useMutation({
+    onSuccess: () => {
+      utils.avaliacoes.simulados.list.invalidate();
+      toast.success('Acesso ao gabarito restaurado com sucesso!');
+      setRestaurandoGabaritoId(null);
+    },
+    onError: (err) => {
+      toast.error(err.message || 'Erro ao restaurar acesso ao gabarito');
+      setRestaurandoGabaritoId(null);
+    },
+  });
 
   const handleGerarRelatorio = async (modeloId: number) => {
     try {
@@ -471,6 +483,22 @@ export default function AdminAvaliacoes() {
 
                       {/* Botões em grade responsiva */}
                       <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                        {simulado.concluido === 1 && simulado.gabaritoVisualizado === 1 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setRestaurandoGabaritoId(simulado.id);
+                              restaurarGabaritoMutation.mutate({ simuladoId: simulado.id });
+                            }}
+                            disabled={restaurandoGabaritoId === simulado.id}
+                            className="col-span-2 sm:col-span-1 sm:w-auto w-full text-amber-700 border-amber-300 hover:bg-amber-50"
+                            title="Permite que o residente visualize o gabarito novamente"
+                          >
+                            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                            {restaurandoGabaritoId === simulado.id ? 'Restaurando...' : 'Restaurar Gabarito'}
+                          </Button>
+                        )}
                         {simulado.concluido === 1 && (
                           <>
                             <Button
