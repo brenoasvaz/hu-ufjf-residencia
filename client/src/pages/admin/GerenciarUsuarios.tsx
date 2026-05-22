@@ -1,8 +1,9 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { Users, Shield, UserCog, ArrowLeft, Trash2, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Users, Shield, UserCog, ArrowLeft, Trash2, CheckCircle, XCircle, Clock, Ban } from "lucide-react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -14,6 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -28,8 +39,10 @@ export default function GerenciarUsuarios() {
   const { user } = useAuth();
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [userToRevoke, setUserToRevoke] = useState<any>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editRole, setEditRole] = useState<"admin" | "user">("user");
@@ -40,15 +53,13 @@ export default function GerenciarUsuarios() {
   const approveMutation = trpc.users.approve.useMutation();
   const rejectMutation = trpc.users.reject.useMutation();
 
-  if (!user || user.role !== 'admin') {
+  if (!user || user.role !== "admin") {
     return (
       <div className="container max-w-6xl py-8">
         <Card>
           <CardHeader>
             <CardTitle>Acesso Negado</CardTitle>
-            <CardDescription>
-              Apenas administradores podem acessar esta página.
-            </CardDescription>
+            <CardDescription>Apenas administradores podem acessar esta página.</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -65,7 +76,6 @@ export default function GerenciarUsuarios() {
 
   const handleSaveEdit = async () => {
     if (!selectedUser) return;
-
     try {
       await updateMutation.mutateAsync({
         userId: selectedUser.id,
@@ -73,7 +83,6 @@ export default function GerenciarUsuarios() {
         email: editEmail,
         role: editRole,
       });
-
       toast.success("Usuário atualizado com sucesso!");
       setEditDialogOpen(false);
       refetch();
@@ -89,12 +98,8 @@ export default function GerenciarUsuarios() {
 
   const handleConfirmDelete = async () => {
     if (!userToDelete) return;
-
     try {
-      await deleteMutation.mutateAsync({
-        userId: userToDelete.id,
-      });
-
+      await deleteMutation.mutateAsync({ userId: userToDelete.id });
       toast.success("Usuário deletado com sucesso!");
       setDeleteDialogOpen(false);
       setUserToDelete(null);
@@ -104,10 +109,28 @@ export default function GerenciarUsuarios() {
     }
   };
 
+  const handleRevokeClick = (usuario: any) => {
+    setUserToRevoke(usuario);
+    setRevokeDialogOpen(true);
+  };
+
+  const handleConfirmRevoke = async () => {
+    if (!userToRevoke) return;
+    try {
+      await rejectMutation.mutateAsync({ userId: userToRevoke.id });
+      toast.success(`Acesso de ${userToRevoke.name || userToRevoke.email} revogado.`);
+      setRevokeDialogOpen(false);
+      setUserToRevoke(null);
+      refetch();
+    } catch (error: any) {
+      toast.error(error.message || "Erro ao revogar acesso");
+    }
+  };
+
   const handleApprove = async (userId: number) => {
     try {
       await approveMutation.mutateAsync({ userId });
-      toast.success("Usuário aprovado com sucesso!");
+      toast.success("Acesso aprovado com sucesso!");
       refetch();
     } catch (error: any) {
       toast.error(error.message || "Erro ao aprovar usuário");
@@ -117,7 +140,7 @@ export default function GerenciarUsuarios() {
   const handleReject = async (userId: number) => {
     try {
       await rejectMutation.mutateAsync({ userId });
-      toast.success("Usuário rejeitado");
+      toast.success("Usuário rejeitado.");
       refetch();
     } catch (error: any) {
       toast.error(error.message || "Erro ao rejeitar usuário");
@@ -126,26 +149,23 @@ export default function GerenciarUsuarios() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-            <Clock className="h-3 w-3" />
-            Pendente
-          </span>
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300 gap-1 shrink-0 text-xs">
+            <Clock className="h-3 w-3" /> Pendente
+          </Badge>
         );
-      case 'approved':
+      case "approved":
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-            <CheckCircle className="h-3 w-3" />
-            Aprovado
-          </span>
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-300 gap-1 shrink-0 text-xs">
+            <CheckCircle className="h-3 w-3" /> Aprovado
+          </Badge>
         );
-      case 'rejected':
+      case "rejected":
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-            <XCircle className="h-3 w-3" />
-            Rejeitado
-          </span>
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-300 gap-1 shrink-0 text-xs">
+            <XCircle className="h-3 w-3" /> Acesso Revogado
+          </Badge>
         );
       default:
         return null;
@@ -153,155 +173,175 @@ export default function GerenciarUsuarios() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/admin">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Gerenciamento de Usuários</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Visualize e edite informações dos usuários, incluindo permissões de administrador.
-            </p>
-          </div>
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <Link href="/admin">
+          <Button variant="ghost" size="sm" className="mt-0.5 shrink-0">
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            Voltar
+          </Button>
+        </Link>
+        <div>
+          <h1 className="text-xl font-bold tracking-tight">Gerenciamento de Usuários</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Visualize e edite informações dos usuários, incluindo permissões de administrador.
+          </p>
         </div>
       </div>
 
+      {/* Lista */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Usuários Cadastrados
-              </CardTitle>
-              <CardDescription>
-                {usuarios?.length || 0} usuários no sistema
-              </CardDescription>
-            </div>
-          </div>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Users className="h-4 w-4" />
+            Usuários Cadastrados
+          </CardTitle>
+          <CardDescription>{usuarios?.length || 0} usuários no sistema</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Carregando usuários...</div>
+            <div className="text-center py-8 text-muted-foreground text-sm">Carregando usuários...</div>
           ) : usuarios && usuarios.length > 0 ? (
             <div className="space-y-3">
               {usuarios.map((usuario: any) => (
-                <Card key={usuario.id}>
-                  <CardContent className="py-4">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center gap-3">
-                          <p className="font-medium">{usuario.name || "Sem nome"}</p>
-                          {usuario.role === 'admin' && (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 text-amber-800 text-xs font-medium">
-                              <Shield className="h-3 w-3" />
-                              Administrador
-                            </span>
-                          )}
-                          {usuario.id === user.id && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-medium">
-                              Você
-                            </span>
-                          )}
-                          {getStatusBadge(usuario.accountStatus)}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span>{usuario.email}</span>
-                          <span>•</span>
-                          <span>
-                            Cadastrado em {new Date(usuario.createdAt).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        {usuario.accountStatus === 'pending' && (
-                          <>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => handleApprove(usuario.id)}
-                              disabled={approveMutation.isPending}
-                            >
-                              <CheckCircle className="mr-2 h-4 w-4" />
-                              Aprovar
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleReject(usuario.id)}
-                              disabled={rejectMutation.isPending}
-                            >
-                              <XCircle className="mr-2 h-4 w-4" />
-                              Rejeitar
-                            </Button>
-                          </>
-                        )}
-                        
-                        {usuario.accountStatus === 'approved' && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEditClick(usuario)}
-                            >
-                              <UserCog className="mr-2 h-4 w-4" />
-                              Editar
-                            </Button>
-                            
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteClick(usuario)}
-                              disabled={usuario.id === user.id}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Deletar
-                            </Button>
-                          </>
-                        )}
-                        
-                        {usuario.accountStatus === 'rejected' && (
+                <Card key={usuario.id} className={usuario.accountStatus === "rejected" ? "opacity-70" : ""}>
+                  <CardContent className="p-4">
+                    {/* Linha 1: nome + badges */}
+                    <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                      <span className="font-medium text-sm leading-tight">
+                        {usuario.name || "Sem nome"}
+                      </span>
+                      {usuario.role === "admin" && (
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-300 gap-1 shrink-0 text-xs">
+                          <Shield className="h-3 w-3" /> Administrador
+                        </Badge>
+                      )}
+                      {usuario.id === user.id && (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-300 shrink-0 text-xs">
+                          Você
+                        </Badge>
+                      )}
+                      {getStatusBadge(usuario.accountStatus)}
+                    </div>
+
+                    {/* Linha 2: email + data */}
+                    <p className="text-xs text-muted-foreground truncate mb-0.5">{usuario.email}</p>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Cadastrado em {new Date(usuario.createdAt).toLocaleDateString("pt-BR")}
+                    </p>
+
+                    {/* Botões de ação — coluna no mobile, linha no desktop */}
+                    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                      {/* Pendente: Aprovar + Rejeitar */}
+                      {usuario.accountStatus === "pending" && (
+                        <>
                           <Button
-                            variant="outline"
+                            variant="default"
                             size="sm"
+                            className="w-full sm:w-auto"
                             onClick={() => handleApprove(usuario.id)}
                             disabled={approveMutation.isPending}
                           >
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Reaprovar
+                            <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                            Aprovar
                           </Button>
-                        )}
-                      </div>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="w-full sm:w-auto"
+                            onClick={() => handleReject(usuario.id)}
+                            disabled={rejectMutation.isPending}
+                          >
+                            <XCircle className="mr-1.5 h-3.5 w-3.5" />
+                            Rejeitar
+                          </Button>
+                        </>
+                      )}
+
+                      {/* Aprovado: Editar + Revogar Acesso + Deletar */}
+                      {usuario.accountStatus === "approved" && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full sm:w-auto"
+                            onClick={() => handleEditClick(usuario)}
+                          >
+                            <UserCog className="mr-1.5 h-3.5 w-3.5" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full sm:w-auto text-orange-700 border-orange-300 hover:bg-orange-50"
+                            onClick={() => handleRevokeClick(usuario)}
+                            disabled={usuario.id === user.id}
+                            title={usuario.id === user.id ? "Você não pode revogar seu próprio acesso" : "Revogar acesso do usuário"}
+                          >
+                            <Ban className="mr-1.5 h-3.5 w-3.5" />
+                            Revogar Acesso
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="w-full sm:w-auto"
+                            onClick={() => handleDeleteClick(usuario)}
+                            disabled={usuario.id === user.id}
+                            title={usuario.id === user.id ? "Você não pode deletar sua própria conta" : "Deletar usuário permanentemente"}
+                          >
+                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                            Deletar
+                          </Button>
+                        </>
+                      )}
+
+                      {/* Revogado: Restaurar Acesso + Deletar */}
+                      {usuario.accountStatus === "rejected" && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full sm:w-auto text-green-700 border-green-300 hover:bg-green-50"
+                            onClick={() => handleApprove(usuario.id)}
+                            disabled={approveMutation.isPending}
+                          >
+                            <CheckCircle className="mr-1.5 h-3.5 w-3.5" />
+                            Restaurar Acesso
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="w-full sm:w-auto"
+                            onClick={() => handleDeleteClick(usuario)}
+                          >
+                            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                            Deletar
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground text-sm">
               Nenhum usuário encontrado.
             </div>
           )}
         </CardContent>
       </Card>
 
-      {/* Dialog de Edição */}
+      {/* ── Dialog: Editar Usuário ── */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar Usuário</DialogTitle>
-            <DialogDescription>
-              Altere as informações do usuário e suas permissões.
-            </DialogDescription>
+            <DialogDescription>Altere as informações do usuário e suas permissões.</DialogDescription>
           </DialogHeader>
-          
-          <div className="space-y-4 py-4">
+
+          <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label htmlFor="edit-name">Nome</Label>
               <Input
@@ -311,7 +351,6 @@ export default function GerenciarUsuarios() {
                 placeholder="Nome completo"
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="edit-email">Email</Label>
               <Input
@@ -322,10 +361,9 @@ export default function GerenciarUsuarios() {
                 placeholder="email@exemplo.com"
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="edit-role">Permissão</Label>
-              <Select value={editRole} onValueChange={(value: "admin" | "user") => setEditRole(value)}>
+              <Select value={editRole} onValueChange={(v: "admin" | "user") => setEditRole(v)}>
                 <SelectTrigger id="edit-role">
                   <SelectValue />
                 </SelectTrigger>
@@ -334,12 +372,11 @@ export default function GerenciarUsuarios() {
                   <SelectItem value="admin">Administrador</SelectItem>
                 </SelectContent>
               </Select>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 Administradores têm acesso completo ao sistema, incluindo gerenciamento de usuários e configurações.
               </p>
             </div>
-
-            {selectedUser?.id === user.id && editRole === 'user' && (
+            {selectedUser?.id === user.id && editRole === "user" && (
               <div className="p-3 bg-amber-50 border border-amber-200 rounded-md">
                 <p className="text-sm text-amber-800">
                   ⚠️ Você não pode remover suas próprias credenciais de administrador.
@@ -348,13 +385,14 @@ export default function GerenciarUsuarios() {
             )}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button className="w-full sm:w-auto" variant="outline" onClick={() => setEditDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button 
+            <Button
+              className="w-full sm:w-auto"
               onClick={handleSaveEdit}
-              disabled={updateMutation.isPending || (selectedUser?.id === user.id && editRole === 'user')}
+              disabled={updateMutation.isPending || (selectedUser?.id === user.id && editRole === "user")}
             >
               {updateMutation.isPending ? "Salvando..." : "Salvar Alterações"}
             </Button>
@@ -362,37 +400,56 @@ export default function GerenciarUsuarios() {
         </DialogContent>
       </Dialog>
 
-      {/* Dialog de Confirmação de Deletar */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirmar Exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja deletar o usuário <strong>{userToDelete?.name || userToDelete?.email}</strong>?
-              Esta ação não pode ser desfeita.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-800">
-              ⚠️ <strong>Atenção:</strong> Todos os dados associados a este usuário serão permanentemente removidos do sistema.
-            </p>
+      {/* ── AlertDialog: Revogar Acesso ── */}
+      <AlertDialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revogar Acesso</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja revogar o acesso de{" "}
+              <strong>{userToRevoke?.name || userToRevoke?.email}</strong>? O usuário não conseguirá mais
+              fazer login no sistema. Você poderá restaurar o acesso a qualquer momento.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="p-3 bg-orange-50 border border-orange-200 rounded-md text-sm text-orange-800">
+            Os dados do usuário serão preservados. Esta ação pode ser desfeita.
           </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmRevoke}
+              className="bg-orange-600 hover:bg-orange-700"
+            >
+              Revogar Acesso
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              variant="destructive"
+      {/* ── AlertDialog: Deletar Usuário ── */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja deletar{" "}
+              <strong>{userToDelete?.name || userToDelete?.email}</strong>? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-800">
+            ⚠️ <strong>Atenção:</strong> Todos os dados associados a este usuário serão permanentemente removidos do sistema.
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
               onClick={handleConfirmDelete}
-              disabled={deleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
             >
               {deleteMutation.isPending ? "Deletando..." : "Confirmar Exclusão"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
