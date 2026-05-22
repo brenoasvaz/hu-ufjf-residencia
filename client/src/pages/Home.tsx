@@ -2,11 +2,23 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getLoginUrl } from "@/const";
-import { Calendar, CalendarDays, Presentation, BookMarked, ArrowRight } from "lucide-react";
+import { Calendar, CalendarDays, Presentation, BookMarked, ArrowRight, Bell, Sparkles, BookOpen, PlayCircle, Eye } from "lucide-react";
 import { Link } from "wouter";
+import { trpc } from "@/lib/trpc";
 
 export default function Home() {
   const { user, isAuthenticated } = useAuth();
+
+  // Busca alertas de avaliações/gabaritos pendentes (apenas para residentes logados)
+  const { data: alertas } = trpc.avaliacoes.alertas.useQuery(undefined, {
+    enabled: !!isAuthenticated && user?.role !== 'admin',
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
+
+  const novasAvaliacoes = alertas?.novasAvaliacoes ?? [];
+  const gaboritosDisponiveis = alertas?.gaboritosDisponiveis ?? [];
+  const totalAlertas = novasAvaliacoes.length + gaboritosDisponiveis.length;
 
   const features = [
     {
@@ -66,6 +78,93 @@ export default function Home() {
           </p>
         )}
       </div>
+
+      {/* ===== CARD DE NOTIFICAÇÕES (apenas para residentes) ===== */}
+      {isAuthenticated && user?.role !== 'admin' && totalAlertas > 0 && (
+        <div className="max-w-2xl mx-auto w-full">
+          <Card className="border-2 border-primary/30 bg-primary/5 shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                  <Bell className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">
+                    {totalAlertas === 1 ? "Você tem 1 notificação" : `Você tem ${totalAlertas} notificações`}
+                  </CardTitle>
+                  <CardDescription className="text-xs mt-0">
+                    Ações pendentes em Avaliações
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3 pt-0">
+              {/* Novas avaliações */}
+              {novasAvaliacoes.map((av) => (
+                <div
+                  key={av.id}
+                  className="flex items-center justify-between gap-3 rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 px-3 py-2.5"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900">
+                      <Sparkles className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-200 truncate">
+                        {av.nome}
+                      </p>
+                      <p className="text-xs text-blue-500 dark:text-blue-400">
+                        Nova avaliação disponível • {av.totalQuestoes} questões
+                        {av.duracaoMinutos ? ` • ${av.duracaoMinutos} min` : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <Link href="/avaliacoes">
+                    <Button
+                      size="sm"
+                      className="bg-blue-600 hover:bg-blue-700 text-white shrink-0 h-7 text-xs px-3"
+                    >
+                      <PlayCircle className="mr-1 h-3 w-3" />
+                      Iniciar
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+
+              {/* Gabaritos disponíveis */}
+              {gaboritosDisponiveis.map((g) => (
+                <div
+                  key={g.simuladoId}
+                  className="flex items-center justify-between gap-3 rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 px-3 py-2.5"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">
+                      <BookOpen className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200 truncate">
+                        {g.modeloNome}
+                      </p>
+                      <p className="text-xs text-amber-500 dark:text-amber-400">
+                        Gabarito disponível • {g.percentual}% de acertos • visualização única
+                      </p>
+                    </div>
+                  </div>
+                  <Link href={`/avaliacoes/${g.simuladoId}/resultado?gabarito=1`}>
+                    <Button
+                      size="sm"
+                      className="bg-amber-600 hover:bg-amber-700 text-white shrink-0 h-7 text-xs px-3"
+                    >
+                      <Eye className="mr-1 h-3 w-3" />
+                      Ver
+                    </Button>
+                  </Link>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Grade de funcionalidades */}
       {isAuthenticated && (

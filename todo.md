@@ -511,3 +511,4 @@
 - [x] Alertas visuais no painel do residente: banner azul para novas avaliações e banner âmbar para gabaritos disponíveis
 - [x] Badge do menu Avaliações agora soma avaliações pendentes + gabaritos não visualizados
 - [x] Cards de avaliação com gabarito disponível destacados com borda âmbar no histórico
+- [x] Home: card de notificação para residentes com avaliações pendentes e gabaritos disponíveis
