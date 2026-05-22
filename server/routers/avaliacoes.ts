@@ -1332,39 +1332,128 @@ export const avaliacoesRouter = router({
    */
   pendingCount: protectedProcedure.query(async ({ ctx }) => {
     // Admins não têm badge de pendentes
-    if (ctx.user.role === 'admin') return { count: 0 };
+    if (ctx.user.role === 'admin') return { count: 0, avaliacoesPendentes: 0, gabaritosPendentes: 0 };
     
     const db = await getDb();
-    if (!db) return { count: 0 };
+    if (!db) return { count: 0, avaliacoesPendentes: 0, gabaritosPendentes: 0 };
     
     const { eq: eqOp, and: andOp, inArray: inArrayOp } = await import('drizzle-orm');
     
     // 1. Buscar todos os modelos liberados e ativos
     const modelosLiberados = await db
-      .select({ id: modelosProva.id })
+      .select({ id: modelosProva.id, nome: modelosProva.nome })
       .from(modelosProva)
       .where(andOp(eqOp(modelosProva.ativo, 1), eqOp(modelosProva.status, 'liberado')));
     
-    if (modelosLiberados.length === 0) return { count: 0 };
+    let avaliacoesPendentes = 0;
+    let gabaritosPendentes = 0;
     
-    const modeloIds = modelosLiberados.map(m => m.id);
+    if (modelosLiberados.length > 0) {
+      const modeloIds = modelosLiberados.map(m => m.id);
+      
+      // 2. Buscar simulados do usuário para esses modelos
+      const simuladosDoUsuario = await db
+        .select({ modeloId: simulados.modeloId, concluido: simulados.concluido, gabaritoVisualizado: simulados.gabaritoVisualizado })
+        .from(simulados)
+        .where(andOp(
+          eqOp(simulados.userId, ctx.user.id),
+          inArrayOp(simulados.modeloId, modeloIds)
+        ));
+      
+      const modelosRealizadosIds = new Set(
+        simuladosDoUsuario.filter(s => s.concluido === 1).map(s => s.modeloId)
+      );
+      
+      // 3. Contar modelos liberados não realizados
+      avaliacoesPendentes = modeloIds.filter(id => !modelosRealizadosIds.has(id)).length;
+      
+      // 4. Contar simulados concluídos com gabarito não visualizado
+      gabaritosPendentes = simuladosDoUsuario.filter(
+        s => s.concluido === 1 && s.gabaritoVisualizado === 0
+      ).length;
+    }
     
-    // 2. Buscar quais modelos o usuário já realizou (tem simulado concluído)
-    const simuladosRealizados = await db
-      .select({ modeloId: simulados.modeloId })
-      .from(simulados)
-      .where(andOp(
-        eqOp(simulados.userId, ctx.user.id),
-        eqOp(simulados.concluido, 1),
-        inArrayOp(simulados.modeloId, modeloIds)
-      ));
+    return {
+      count: avaliacoesPendentes + gabaritosPendentes,
+      avaliacoesPendentes,
+      gabaritosPendentes,
+    };
+  }),
+
+  /**
+   * Retorna detalhes dos alertas para o residente:
+   * - Modelos liberados ainda não realizados
+   * - Simulados concluídos com gabarito disponível (não visualizado)
+   */
+  alertas: protectedProcedure.query(async ({ ctx }) => {
+    if (ctx.user.role === 'admin') return { novasAvaliacoes: [], gaboritosDisponiveis: [] };
     
-    const modelosRealizadosIds = new Set(simuladosRealizados.map(s => s.modeloId));
+    const db = await getDb();
+    if (!db) return { novasAvaliacoes: [], gaboritosDisponiveis: [] };
     
-    // 3. Contar modelos liberados não realizados
-    const pendentes = modeloIds.filter(id => !modelosRealizadosIds.has(id));
+    const { eq: eqOp, and: andOp, inArray: inArrayOp } = await import('drizzle-orm');
     
-    return { count: pendentes.length };
+    // 1. Modelos liberados
+    const modelosLiberados = await db
+      .select({ id: modelosProva.id, nome: modelosProva.nome, duracaoMinutos: modelosProva.duracaoMinutos, configuracao: modelosProva.configuracao })
+      .from(modelosProva)
+      .where(andOp(eqOp(modelosProva.ativo, 1), eqOp(modelosProva.status, 'liberado')));
+    
+    const novasAvaliacoes: { id: number; nome: string; totalQuestoes: number; duracaoMinutos: number | null }[] = [];
+    const gaboritosDisponiveis: { simuladoId: number; modeloNome: string; percentual: number }[] = [];
+    
+    if (modelosLiberados.length > 0) {
+      const modeloIds = modelosLiberados.map(m => m.id);
+      
+      const simuladosDoUsuario = await db
+        .select({
+          id: simulados.id,
+          modeloId: simulados.modeloId,
+          concluido: simulados.concluido,
+          gabaritoVisualizado: simulados.gabaritoVisualizado,
+          totalAcertos: simulados.totalAcertos,
+          totalQuestoes: simulados.totalQuestoes,
+        })
+        .from(simulados)
+        .where(andOp(
+          eqOp(simulados.userId, ctx.user.id),
+          inArrayOp(simulados.modeloId, modeloIds)
+        ));
+      
+      const modelosRealizadosIds = new Set(
+        simuladosDoUsuario.filter(s => s.concluido === 1).map(s => s.modeloId)
+      );
+      
+      // Modelos não realizados
+      for (const modelo of modelosLiberados) {
+        if (!modelosRealizadosIds.has(modelo.id)) {
+          const config = JSON.parse(modelo.configuracao || '{}');
+          const totalQuestoes = Object.values(config).reduce((s: number, v: any) => s + v, 0) as number;
+          novasAvaliacoes.push({
+            id: modelo.id,
+            nome: modelo.nome,
+            totalQuestoes,
+            duracaoMinutos: modelo.duracaoMinutos,
+          });
+        }
+      }
+      
+      // Gabaritos não visualizados
+      const modeloNomeMap = Object.fromEntries(modelosLiberados.map(m => [m.id, m.nome]));
+      for (const sim of simuladosDoUsuario) {
+        if (sim.concluido === 1 && sim.gabaritoVisualizado === 0) {
+          gaboritosDisponiveis.push({
+            simuladoId: sim.id,
+            modeloNome: modeloNomeMap[sim.modeloId!] ?? `Avaliação #${sim.id}`,
+            percentual: sim.totalQuestoes > 0
+              ? Math.round((sim.totalAcertos / sim.totalQuestoes) * 100)
+              : 0,
+          });
+        }
+      }
+    }
+    
+    return { novasAvaliacoes, gaboritosDisponiveis };
   }),
 
   // ========================================

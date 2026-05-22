@@ -59,7 +59,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
   const { theme, toggleTheme } = useTheme();
   const logoutMutation = trpc.auth.logout.useMutation();
 
-  // Busca contagem de avaliações pendentes (só para usuários autenticados não-admin)
+  // Busca contagem de avaliações pendentes + gabaritos não vistos (só para usuários autenticados não-admin)
   const { data: pendingData } = trpc.avaliacoes.pendingCount.useQuery(undefined, {
     enabled: !!isAuthenticated,
     refetchInterval: 60_000, // atualiza a cada 1 minuto

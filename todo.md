@@ -508,3 +508,6 @@
 - [x] Resultado do simulado: breakdown de acertos por especialidade
 - [x] Admin: revisão de layout mobile de todas as seções (Modelos de Prova, Banco de Questões, abas)
 - [x] Admin: badge de gabarito visto/não visto por residente nos cards de simulados (painel admin Avaliações)
+- [x] Alertas visuais no painel do residente: banner azul para novas avaliações e banner âmbar para gabaritos disponíveis
+- [x] Badge do menu Avaliações agora soma avaliações pendentes + gabaritos não visualizados
+- [x] Cards de avaliação com gabarito disponível destacados com borda âmbar no histórico
