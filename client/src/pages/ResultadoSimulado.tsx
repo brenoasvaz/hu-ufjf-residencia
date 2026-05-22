@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useRoute, Link } from "wouter";
 import { useState, useMemo } from "react";
+import Watermark from "@/components/Watermark";
 
 // ─── Sub-componente: card de questão com gabarito ─────────────────────────────
 function QuestaoGabaritoCard({ questao, index }: { questao: any; index: number }) {
@@ -394,6 +395,18 @@ export default function ResultadoSimulado() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Marca d'água dinâmica durante visualização do gabarito */}
+      {showGabarito && !isAdmin && (
+        <Watermark
+          text={user.name ?? "Residente"}
+          subtext={new Date().toLocaleString("pt-BR", {
+            day: "2-digit", month: "2-digit", year: "numeric",
+            hour: "2-digit", minute: "2-digit"
+          })}
+          opacity={0.13}
+        />
       )}
 
       {/* ── Lista de questões com gabarito ── */}
