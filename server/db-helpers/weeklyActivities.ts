@@ -3,8 +3,10 @@ import { getDb } from "../db";
 import { 
   weeklyActivities, 
   activityAudiences,
+  activityPreceptors,
   type InsertWeeklyActivity,
-  type InsertActivityAudience 
+  type InsertActivityAudience,
+  type InsertActivityPreceptor
 } from "../../drizzle/schema";
 
 export async function getAllWeeklyActivities(filters?: {
@@ -157,6 +159,38 @@ export async function getAllActivitiesWithAudiences(anoResidencia?: "R1" | "R2" 
     a.audiences.length === 0 || // atividades sem audience específico são globais
     a.audiences.some((aud) => aud.anoResidencia === anoResidencia || aud.anoResidencia === null)
   );
+}
+
+// ===== PRECEPTORES =====
+
+export async function getActivityPreceptors(activityId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.select().from(activityPreceptors).where(eq(activityPreceptors.activityId, activityId));
+}
+
+export async function addActivityPreceptor(data: InsertActivityPreceptor) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(activityPreceptors).values(data);
+  const insertId = Number((result as any).insertId);
+  const [row] = await db.select().from(activityPreceptors).where(eq(activityPreceptors.id, insertId)).limit(1);
+  return row;
+}
+
+export async function removeActivityPreceptor(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.delete(activityPreceptors).where(eq(activityPreceptors.id, id));
+  return { success: true };
+}
+
+export async function updateActivityPreceptor(id: number, nome: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(activityPreceptors).set({ nome }).where(eq(activityPreceptors.id, id));
+  const [row] = await db.select().from(activityPreceptors).where(eq(activityPreceptors.id, id)).limit(1);
+  return row;
 }
 
 /**

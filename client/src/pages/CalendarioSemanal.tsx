@@ -56,8 +56,10 @@ export default function CalendarioSemanal() {
   // Painel lateral
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [editingPreceptor, setEditingPreceptor] = useState(false);
-  const [preceptorValue, setPreceptorValue] = useState("");
+  // Preceptores
+  const [newPreceptorValue, setNewPreceptorValue] = useState("");
+  const [editingPreceptorId, setEditingPreceptorId] = useState<number | null>(null);
+  const [editingPreceptorValue, setEditingPreceptorValue] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(searchString);
@@ -79,22 +81,31 @@ export default function CalendarioSemanal() {
   const { data: stages } = trpc.stages.list.useQuery({ activeOnly: true });
   const utils = trpc.useUtils();
 
-  const updatePreceptor = trpc.weeklyActivities.update.useMutation({
-    onSuccess: () => {
-      toast.success("Preceptor atualizado!");
-      utils.weeklyActivities.list.invalidate();
-      setEditingPreceptor(false);
-      if (selectedActivity) {
-        setSelectedActivity((prev: any) => prev ? { ...prev, preceptor: preceptorValue } : prev);
-      }
-    },
+  // Query de preceptores da atividade selecionada
+  const { data: preceptores, refetch: refetchPreceptores } = trpc.weeklyActivities.listPreceptors.useQuery(
+    { activityId: selectedActivity?.id ?? 0 },
+    { enabled: !!selectedActivity && sheetOpen }
+  );
+
+  const addPreceptor = trpc.weeklyActivities.addPreceptor.useMutation({
+    onSuccess: () => { toast.success("Preceptor adicionado!"); refetchPreceptores(); setNewPreceptorValue(""); },
+    onError: () => toast.error("Erro ao adicionar preceptor"),
+  });
+
+  const removePreceptor = trpc.weeklyActivities.removePreceptor.useMutation({
+    onSuccess: () => { toast.success("Preceptor removido!"); refetchPreceptores(); },
+    onError: () => toast.error("Erro ao remover preceptor"),
+  });
+
+  const updatePreceptorMutation = trpc.weeklyActivities.updatePreceptor.useMutation({
+    onSuccess: () => { toast.success("Preceptor atualizado!"); refetchPreceptores(); setEditingPreceptorId(null); },
     onError: () => toast.error("Erro ao atualizar preceptor"),
   });
 
   const openActivitySheet = (activity: any) => {
     setSelectedActivity(activity);
-    setPreceptorValue(activity.preceptor ?? "");
-    setEditingPreceptor(false);
+    setNewPreceptorValue("");
+    setEditingPreceptorId(null);
     setSheetOpen(true);
   };
 
@@ -551,7 +562,7 @@ export default function CalendarioSemanal() {
         </CardContent>
       </Card>
       {/* ── Painel lateral de detalhes da atividade ── */}
-      <Sheet open={sheetOpen} onOpenChange={(v) => { setSheetOpen(v); if (!v) setEditingPreceptor(false); }}>
+      <Sheet open={sheetOpen} onOpenChange={(v) => { setSheetOpen(v); if (!v) setEditingPreceptorId(null); }}>
         <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
           {selectedActivity && (
             <>
@@ -580,44 +591,82 @@ export default function CalendarioSemanal() {
                   </div>
                 )}
 
-                {/* Preceptor */}
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                  <UserCheck className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground font-medium mb-0.5">Preceptor Responsável</p>
-                    {editingPreceptor && isAdmin ? (
-                      <div className="flex items-center gap-2">
-                        <Input
-                          value={preceptorValue}
-                          onChange={(e) => setPreceptorValue(e.target.value)}
-                          placeholder="Nome do preceptor..."
-                          className="h-7 text-sm"
-                          autoFocus
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") updatePreceptor.mutate({ id: selectedActivity.id, preceptor: preceptorValue || undefined });
-                            if (e.key === "Escape") setEditingPreceptor(false);
-                          }}
-                        />
-                        <Button size="icon" variant="ghost" className="h-7 w-7 flex-shrink-0" onClick={() => updatePreceptor.mutate({ id: selectedActivity.id, preceptor: preceptorValue || undefined })} disabled={updatePreceptor.isPending}>
-                          <Check className="h-3.5 w-3.5 text-green-600" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-7 w-7 flex-shrink-0" onClick={() => setEditingPreceptor(false)}>
-                          <X className="h-3.5 w-3.5 text-red-500" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium flex-1">
-                          {selectedActivity.preceptor || <span className="text-muted-foreground italic text-xs">Não informado</span>}
-                        </p>
-                        {isAdmin && (
-                          <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0" onClick={() => setEditingPreceptor(true)}>
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    )}
+                {/* Preceptores */}
+                <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+                  <div className="flex items-center gap-2 mb-2">
+                    <UserCheck className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <p className="text-xs text-muted-foreground font-medium">Preceptores Responsáveis</p>
                   </div>
+
+                  {/* Lista de preceptores */}
+                  {preceptores && preceptores.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {preceptores.map((p: any) => (
+                        <div key={p.id} className="flex items-center gap-2">
+                          {editingPreceptorId === p.id ? (
+                            <>
+                              <Input
+                                value={editingPreceptorValue}
+                                onChange={(e) => setEditingPreceptorValue(e.target.value)}
+                                className="h-7 text-sm flex-1"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") updatePreceptorMutation.mutate({ id: p.id, nome: editingPreceptorValue });
+                                  if (e.key === "Escape") setEditingPreceptorId(null);
+                                }}
+                              />
+                              <Button size="icon" variant="ghost" className="h-7 w-7 flex-shrink-0" onClick={() => updatePreceptorMutation.mutate({ id: p.id, nome: editingPreceptorValue })} disabled={updatePreceptorMutation.isPending}>
+                                <Check className="h-3.5 w-3.5 text-green-600" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 flex-shrink-0" onClick={() => setEditingPreceptorId(null)}>
+                                <X className="h-3.5 w-3.5 text-red-500" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <span className="text-sm font-medium flex-1">{p.nome}</span>
+                              {isAdmin && (
+                                <>
+                                  <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0" onClick={() => { setEditingPreceptorId(p.id); setEditingPreceptorValue(p.nome); }}>
+                                    <Pencil className="h-3 w-3" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0 text-red-500 hover:text-red-600" onClick={() => removePreceptor.mutate({ id: p.id })} disabled={removePreceptor.isPending}>
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">Nenhum preceptor informado</p>
+                  )}
+
+                  {/* Adicionar novo preceptor (apenas admin) */}
+                  {isAdmin && (
+                    <div className="flex items-center gap-2 pt-1">
+                      <Input
+                        value={newPreceptorValue}
+                        onChange={(e) => setNewPreceptorValue(e.target.value)}
+                        placeholder="Adicionar preceptor..."
+                        className="h-7 text-sm flex-1"
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && newPreceptorValue.trim()) {
+                            addPreceptor.mutate({ activityId: selectedActivity.id, nome: newPreceptorValue.trim() });
+                          }
+                        }}
+                      />
+                      <Button
+                        size="icon" variant="ghost" className="h-7 w-7 flex-shrink-0"
+                        onClick={() => { if (newPreceptorValue.trim()) addPreceptor.mutate({ activityId: selectedActivity.id, nome: newPreceptorValue.trim() }); }}
+                        disabled={!newPreceptorValue.trim() || addPreceptor.isPending}
+                      >
+                        <Check className="h-3.5 w-3.5 text-green-600" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Público-alvo */}

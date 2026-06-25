@@ -127,6 +127,13 @@
       "when": 1782385390616,
       "tag": "0017_public_logan",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1782386450477,
+      "tag": "0018_brainy_outlaw_kid",
+      "breakpoints": true
     }
   ]
 }

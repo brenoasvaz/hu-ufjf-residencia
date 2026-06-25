@@ -464,6 +464,31 @@ export const appRouter = router({
         return weeklyActivitiesDb.getActivityWithAudiences(insertId);
       }),
 
+    // ===== PRECEPTORES =====
+    listPreceptors: viewerProcedure
+      .input(z.object({ activityId: z.number() }))
+      .query(async ({ input }) => {
+        return weeklyActivitiesDb.getActivityPreceptors(input.activityId);
+      }),
+
+    addPreceptor: adminProcedure
+      .input(z.object({ activityId: z.number(), nome: z.string().min(1) }))
+      .mutation(async ({ input }) => {
+        return weeklyActivitiesDb.addActivityPreceptor({ activityId: input.activityId, nome: input.nome });
+      }),
+
+    removePreceptor: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return weeklyActivitiesDb.removeActivityPreceptor(input.id);
+      }),
+
+    updatePreceptor: adminProcedure
+      .input(z.object({ id: z.number(), nome: z.string().min(1) }))
+      .mutation(async ({ input }) => {
+        return weeklyActivitiesDb.updateActivityPreceptor(input.id, input.nome);
+      }),
+
     // Atualiza atividade + audiences em uma operação
     updateWithAudiences: adminProcedure
       .input(z.object({

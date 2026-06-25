@@ -100,6 +100,19 @@ export type WeeklyActivity = typeof weeklyActivities.$inferSelect;
 export type InsertWeeklyActivity = typeof weeklyActivities.$inferInsert;
 
 /**
+ * Preceptores das Atividades - Múltiplos preceptores por atividade semanal
+ */
+export const activityPreceptors = mysqlTable("activity_preceptors", {
+  id: int("id").autoincrement().primaryKey(),
+  activityId: int("activity_id").notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type ActivityPreceptor = typeof activityPreceptors.$inferSelect;
+export type InsertActivityPreceptor = typeof activityPreceptors.$inferInsert;
+
+/**
  * Público-alvo das Atividades - Define quais residentes devem participar
  */
 export const activityAudiences = mysqlTable("activity_audiences", {

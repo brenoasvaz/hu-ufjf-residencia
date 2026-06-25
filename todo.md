@@ -523,3 +523,6 @@
 - [x] CalendarioSemanal R2/R3: painel lateral (Sheet) ao clicar em atividade com detalhes — preceptor, local, horário, descrição
 - [x] Schema: campo preceptor na tabela de atividades semanais (weeklyActivities)
 - [x] Admin: edição inline do preceptor no painel lateral da escala semanal
+- [x] Schema: tabela activity_preceptors (id, activityId, nome) para múltiplos preceptores por atividade
+- [x] Backend: procedures addPreceptor, removePreceptor, updatePreceptor, listPreceptors por atividade
+- [x] Frontend: painel lateral com lista de preceptores — adicionar, editar e remover individualmente
