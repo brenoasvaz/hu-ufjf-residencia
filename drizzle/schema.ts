@@ -54,6 +54,7 @@ export const rotations = mysqlTable("rotations", {
   dataFim: timestamp("data_fim").notNull(),
   mesReferencia: varchar("mes_referencia", { length: 7 }).notNull(), // YYYY-MM
   localEstagio: varchar("local_estagio", { length: 255 }).notNull(),
+  preceptor: varchar("preceptor", { length: 255 }),
   descricao: text("descricao"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

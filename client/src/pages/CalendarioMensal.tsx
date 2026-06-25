@@ -1,16 +1,19 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Users, MapPin, Clock, ExternalLink } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Users, MapPin, Clock, ExternalLink, UserCheck, Pencil, Check, X } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { toast } from "sonner";
 
 // Cores para diferentes blocos/estágios
 const getStageColor = (stage: string) => {
@@ -23,6 +26,16 @@ const getStageColor = (stage: string) => {
   return "bg-slate-100 border-slate-300 text-slate-900 hover:bg-slate-200 dark:bg-slate-800/50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800";
 };
 
+const getStageBadgeColor = (stage: string) => {
+  if (stage === "Bloco A" || stage === "A") return "bg-blue-100 text-blue-800 border-blue-300";
+  if (stage === "Bloco B" || stage === "B") return "bg-green-100 text-green-800 border-green-300";
+  if (stage === "Bloco C" || stage === "C") return "bg-purple-100 text-purple-800 border-purple-300";
+  if (stage === "Enfermaria") return "bg-cyan-100 text-cyan-800 border-cyan-300";
+  if (stage === "CC1") return "bg-orange-100 text-orange-800 border-orange-300";
+  if (stage === "CC2") return "bg-rose-100 text-rose-800 border-rose-300";
+  return "bg-slate-100 text-slate-800 border-slate-300";
+};
+
 // Mapear bloco para filtro do calendário semanal
 const getBlocoFilter = (stage: string) => {
   if (stage === "Bloco A") return "A";
@@ -33,18 +46,28 @@ const getBlocoFilter = (stage: string) => {
 
 export default function CalendarioMensal() {
   const [, navigate] = useLocation();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedYear, setSelectedYear] = useState<string>("all");
   const [selectedStage, setSelectedStage] = useState<string>("all");
   const [selectedResident, setSelectedResident] = useState<string>("all");
+
+  // Painel lateral
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [selectedRotation, setSelectedRotation] = useState<any>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Edição de preceptor inline
+  const [editingPreceptor, setEditingPreceptor] = useState(false);
+  const [preceptorInput, setPreceptorInput] = useState("");
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
 
   // Buscar rodízios do mês
-  const { data: rotations, isLoading: loadingRotations } = trpc.rotations.getByDateRange.useQuery({
+  const { data: rotations, isLoading: loadingRotations, refetch: refetchRotations } = trpc.rotations.getByDateRange.useQuery({
     dataInicio: monthStart,
     dataFim: monthEnd,
   });
@@ -55,83 +78,108 @@ export default function CalendarioMensal() {
   // Buscar estágios para filtro
   const { data: stages } = trpc.stages.list.useQuery({ activeOnly: true });
 
+  // Mutation para atualizar preceptor
+  const updateRotationMutation = trpc.rotations.update.useMutation({
+    onSuccess: () => {
+      toast.success("Preceptor atualizado com sucesso!");
+      setEditingPreceptor(false);
+      refetchRotations();
+      // Atualizar o rodízio selecionado localmente
+      if (selectedRotation) {
+        setSelectedRotation({ ...selectedRotation, preceptor: preceptorInput || null });
+      }
+    },
+    onError: () => {
+      toast.error("Erro ao atualizar preceptor.");
+    },
+  });
+
   // Gerar dias do mês com padding para alinhar ao domingo
   const daysInMonth = useMemo(() => {
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
     const firstDayOfWeek = getDay(monthStart);
-    
-    // Adicionar dias vazios no início para alinhar
     const paddedDays: (Date | null)[] = [];
     for (let i = 0; i < firstDayOfWeek; i++) {
       paddedDays.push(null);
     }
-    
     return [...paddedDays, ...days];
   }, [monthStart, monthEnd]);
 
   // Filtrar estágios por ano de residência
   const filteredStages = useMemo(() => {
     if (!stages) return [];
-    
     if (selectedYear === "all") return stages;
-    
-    // R1: Enfermaria, CC1, CC2
-    if (selectedYear === "R1") {
-      return stages.filter((stage: any) => ["Enfermaria", "CC1", "CC2"].includes(stage.nome));
-    }
-    
-    // R2 e R3: Bloco A, B, C
-    if (selectedYear === "R2" || selectedYear === "R3") {
-      return stages.filter((stage: any) => ["Bloco A", "Bloco B", "Bloco C"].includes(stage.nome));
-    }
-    
+    if (selectedYear === "R1") return stages.filter((s: any) => ["Enfermaria", "CC1", "CC2"].includes(s.nome));
+    if (selectedYear === "R2" || selectedYear === "R3") return stages.filter((s: any) => ["Bloco A", "Bloco B", "Bloco C"].includes(s.nome));
     return stages;
   }, [stages, selectedYear]);
 
   // Filtrar rodízios
   const filteredRotations = useMemo(() => {
     if (!rotations) return [];
-
     return rotations.filter((rotation: any) => {
-      // Filtro por residente - mostrar apenas o bloco onde ele está escalado
       if (selectedResident !== "all") {
         const residentId = parseInt(selectedResident);
         const hasResident = rotation.residents?.some((r: any) => r.id === residentId);
         if (!hasResident) return false;
       }
-      
-      // Filtro por estágio
       if (selectedStage !== "all" && rotation.localEstagio !== selectedStage) return false;
-      
-      // Filtro por ano
       if (selectedYear !== "all") {
         const isR1Stage = ["Enfermaria", "CC1", "CC2"].includes(rotation.localEstagio);
         const isR2R3Stage = ["Bloco A", "Bloco B", "Bloco C"].includes(rotation.localEstagio);
-        
         if (selectedYear === "R1" && !isR1Stage) return false;
         if ((selectedYear === "R2" || selectedYear === "R3") && !isR2R3Stage) return false;
       }
-      
       return true;
     });
   }, [rotations, selectedStage, selectedYear, selectedResident]);
 
-  // Navegar entre meses
   const goToPreviousMonth = () => setCurrentDate(subMonths(currentDate, 1));
   const goToNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const goToToday = () => setCurrentDate(new Date());
 
-  // Abrir modal com detalhes do rodízio
-  const openRotationDetails = (rotation: any) => {
+  // Abrir painel lateral ao clicar num rodízio
+  const openRotationSheet = (rotation: any, day?: Date) => {
     setSelectedRotation(rotation);
-    setDialogOpen(true);
+    setSelectedDay(day ?? null);
+    setPreceptorInput(rotation.preceptor ?? "");
+    setEditingPreceptor(false);
+    setSheetOpen(true);
   };
 
-  // Navegar para escala semanal com filtro
+  // Abrir painel lateral ao clicar num dia (mostra todos os rodízios do dia)
+  const openDaySheet = (day: Date, dayRotations: any[]) => {
+    if (dayRotations.length === 1) {
+      openRotationSheet(dayRotations[0], day);
+    } else if (dayRotations.length > 1) {
+      setSelectedDay(day);
+      setSelectedRotation(null);
+      setSheetOpen(true);
+    }
+  };
+
   const goToWeeklySchedule = (stage: string) => {
     const bloco = getBlocoFilter(stage);
     navigate(`/calendario-semanal?bloco=${bloco}`);
   };
+
+  const handleSavePreceptor = () => {
+    if (!selectedRotation) return;
+    updateRotationMutation.mutate({
+      id: selectedRotation.id,
+      preceptor: preceptorInput || undefined,
+    });
+  };
+
+  // Rodízios do dia selecionado (quando há múltiplos)
+  const dayRotationsForSheet = useMemo(() => {
+    if (!selectedDay || !filteredRotations) return [];
+    return filteredRotations.filter((rotation: any) => {
+      const rotationStart = new Date(rotation.dataInicio);
+      const rotationEnd = new Date(rotation.dataFim);
+      return selectedDay >= rotationStart && selectedDay <= rotationEnd;
+    });
+  }, [selectedDay, filteredRotations]);
 
   return (
     <div className="space-y-6">
@@ -263,7 +311,10 @@ export default function CalendarioMensal() {
                     key={day.toISOString()}
                     className={`min-h-[100px] p-1 md:p-2 border rounded-lg transition-colors ${
                       isToday ? "border-primary border-2 bg-primary/5" : "border-border"
-                    } ${!isSameMonth(day, currentDate) ? "opacity-50" : ""}`}
+                    } ${!isSameMonth(day, currentDate) ? "opacity-50" : ""} ${
+                      dayRotations.length > 0 ? "cursor-pointer hover:bg-muted/30" : ""
+                    }`}
+                    onClick={() => dayRotations.length > 0 && openDaySheet(day, dayRotations)}
                   >
                     <div className={`text-sm font-medium mb-1 ${isToday ? "text-primary" : ""}`}>
                       {format(day, "d")}
@@ -272,7 +323,7 @@ export default function CalendarioMensal() {
                       {dayRotations.slice(0, 3).map((rotation: any) => (
                         <button
                           key={rotation.id}
-                          onClick={() => openRotationDetails(rotation)}
+                          onClick={(e) => { e.stopPropagation(); openRotationSheet(rotation, day); }}
                           className={`text-xs w-full text-left px-1.5 py-0.5 rounded border cursor-pointer transition-colors ${getStageColor(rotation.localEstagio)}`}
                         >
                           <div className="font-medium truncate">
@@ -307,7 +358,7 @@ export default function CalendarioMensal() {
             Rodízios do Mês
           </CardTitle>
           <CardDescription>
-            {filteredRotations.length} rodízio(s) encontrado(s) - Clique para ver detalhes e escala semanal
+            {filteredRotations.length} rodízio(s) encontrado(s) — Clique para ver detalhes
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -320,7 +371,7 @@ export default function CalendarioMensal() {
               {filteredRotations.map((rotation: any) => (
                 <button
                   key={rotation.id}
-                  onClick={() => openRotationDetails(rotation)}
+                  onClick={() => openRotationSheet(rotation)}
                   className={`flex flex-col p-4 border rounded-lg transition-all cursor-pointer text-left ${getStageColor(rotation.localEstagio)}`}
                 >
                   <div className="font-semibold text-lg mb-2">
@@ -328,30 +379,21 @@ export default function CalendarioMensal() {
                   </div>
                   <div className="text-sm flex items-center gap-1 mb-1">
                     <Clock className="h-3.5 w-3.5" />
-                    {format(new Date(rotation.dataInicio), "dd/MM", { locale: ptBR })} -{" "}
+                    {format(new Date(rotation.dataInicio), "dd/MM", { locale: ptBR })} —{" "}
                     {format(new Date(rotation.dataFim), "dd/MM/yyyy", { locale: ptBR })}
                   </div>
-                  {rotation.residents && rotation.residents.length > 0 && (
+                  {rotation.preceptor && (
                     <div className="text-sm flex items-center gap-1 mb-1">
+                      <UserCheck className="h-3.5 w-3.5" />
+                      {rotation.preceptor}
+                    </div>
+                  )}
+                  {rotation.residents && rotation.residents.length > 0 && (
+                    <div className="text-sm flex items-center gap-1">
                       <Users className="h-3.5 w-3.5" />
                       {rotation.residents.map((r: any) => r.nomeCompleto).join(" + ")}
                     </div>
                   )}
-                  {rotation.descricao && (
-                    <div className="text-sm opacity-80 line-clamp-2">{rotation.descricao}</div>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-2 text-xs h-7 w-full justify-start"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      goToWeeklySchedule(rotation.localEstagio);
-                    }}
-                  >
-                    <ExternalLink className="h-3 w-3 mr-1" />
-                    Ver escala semanal
-                  </Button>
                 </button>
               ))}
             </div>
@@ -359,109 +401,228 @@ export default function CalendarioMensal() {
         </CardContent>
       </Card>
 
-      {/* Modal de Detalhes do Rodízio */}
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="text-xl flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-primary" />
-              {selectedRotation?.localEstagio}
-            </DialogTitle>
-            <DialogDescription>
-              Detalhes do rodízio e acesso à escala semanal
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedRotation && (
-            <div className="space-y-4">
-              {/* Período */}
-              <div className="p-4 bg-muted rounded-lg">
-                <div className="text-sm text-muted-foreground mb-1">Período</div>
-                <div className="font-medium flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  {format(new Date(selectedRotation.dataInicio), "dd 'de' MMMM", { locale: ptBR })} a{" "}
-                  {format(new Date(selectedRotation.dataFim), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                </div>
-              </div>
-
-              {/* Descrição */}
-              {selectedRotation.descricao && (
-                <div>
-                  <div className="text-sm text-muted-foreground mb-1">Descrição</div>
-                  <div>{selectedRotation.descricao}</div>
-                </div>
-              )}
-
-              {/* Residentes atribuídos */}
-              {selectedRotation.assignments && selectedRotation.assignments.length > 0 && (
-                <div>
-                  <div className="text-sm text-muted-foreground mb-2">Residentes</div>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedRotation.assignments.map((assignment: any) => (
-                      <Badge key={assignment.id} variant="secondary">
-                        {assignment.resident?.nomeCompleto || assignment.resident?.apelido || "Residente"}
-                        {assignment.papel && ` (${assignment.papel})`}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Botão para escala semanal */}
-              <div className="pt-4 border-t">
-                <Button 
-                  className="w-full" 
-                  onClick={() => {
-                    setDialogOpen(false);
-                    goToWeeklySchedule(selectedRotation.localEstagio);
-                  }}
-                >
-                  <CalendarIcon className="h-4 w-4 mr-2" />
-                  Ver Escala Semanal Completa
-                </Button>
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  Visualize todas as atividades diárias deste bloco
-                </p>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Legenda */}
+      {/* Legenda de Cores */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Legenda de Cores</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-blue-100 border border-blue-300" />
-              <span className="text-sm">Bloco A</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-green-100 border border-green-300" />
-              <span className="text-sm">Bloco B</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-purple-100 border border-purple-300" />
-              <span className="text-sm">Bloco C</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-cyan-100 border border-cyan-300" />
-              <span className="text-sm">Enfermaria</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-orange-100 border border-orange-300" />
-              <span className="text-sm">CC1</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded bg-rose-100 border border-rose-300" />
-              <span className="text-sm">CC2</span>
-            </div>
+            {[
+              { label: "Bloco A", color: "bg-blue-100 border-blue-300" },
+              { label: "Bloco B", color: "bg-green-100 border-green-300" },
+              { label: "Bloco C", color: "bg-purple-100 border-purple-300" },
+              { label: "Enfermaria", color: "bg-cyan-100 border-cyan-300" },
+              { label: "CC1", color: "bg-orange-100 border-orange-300" },
+              { label: "CC2", color: "bg-rose-100 border-rose-300" },
+            ].map(({ label, color }) => (
+              <div key={label} className="flex items-center gap-2">
+                <div className={`w-4 h-4 rounded border ${color}`} />
+                <span className="text-sm">{label}</span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
+
+      {/* Painel Lateral de Detalhes */}
+      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          {/* Múltiplos rodízios no dia */}
+          {selectedDay && !selectedRotation && dayRotationsForSheet.length > 1 && (
+            <>
+              <SheetHeader className="mb-6">
+                <SheetTitle className="flex items-center gap-2">
+                  <CalendarIcon className="h-5 w-5 text-primary" />
+                  {format(selectedDay, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                </SheetTitle>
+                <SheetDescription>
+                  {dayRotationsForSheet.length} rodízios neste dia
+                </SheetDescription>
+              </SheetHeader>
+              <div className="space-y-3">
+                {dayRotationsForSheet.map((rotation: any) => (
+                  <button
+                    key={rotation.id}
+                    onClick={() => { setSelectedRotation(rotation); setPreceptorInput(rotation.preceptor ?? ""); setEditingPreceptor(false); }}
+                    className={`w-full text-left p-4 rounded-lg border transition-colors ${getStageColor(rotation.localEstagio)}`}
+                  >
+                    <p className="font-semibold">{rotation.stage?.descricao ? `${rotation.localEstagio} - ${rotation.stage.descricao}` : rotation.localEstagio}</p>
+                    {rotation.preceptor && (
+                      <p className="text-sm mt-1 flex items-center gap-1"><UserCheck className="h-3.5 w-3.5" />{rotation.preceptor}</p>
+                    )}
+                    {rotation.residents && rotation.residents.length > 0 && (
+                      <p className="text-sm mt-1 flex items-center gap-1"><Users className="h-3.5 w-3.5" />{rotation.residents.map((r: any) => r.nomeCompleto).join(", ")}</p>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* Detalhes de um rodízio específico */}
+          {selectedRotation && (
+            <>
+              <SheetHeader className="mb-6">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant="outline" className={`text-sm px-3 py-1 font-semibold ${getStageBadgeColor(selectedRotation.localEstagio)}`}>
+                    {selectedRotation.localEstagio}
+                  </Badge>
+                  {selectedRotation.stage?.descricao && (
+                    <span className="text-sm text-muted-foreground">{selectedRotation.stage.descricao}</span>
+                  )}
+                </div>
+                <SheetTitle className="text-lg mt-2">
+                  {selectedDay
+                    ? format(selectedDay, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+                    : "Detalhes do Rodízio"}
+                </SheetTitle>
+                <SheetDescription>
+                  Informações completas do estágio
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="space-y-5">
+                {/* Período */}
+                <div className="rounded-lg border p-4 space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Período</p>
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    {format(new Date(selectedRotation.dataInicio), "dd 'de' MMMM", { locale: ptBR })}
+                    {" — "}
+                    {format(new Date(selectedRotation.dataFim), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  </div>
+                </div>
+
+                {/* Preceptor */}
+                <div className="rounded-lg border p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                      <UserCheck className="h-3.5 w-3.5" />
+                      Preceptor Responsável
+                    </p>
+                    {isAdmin && !editingPreceptor && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setEditingPreceptor(true)}
+                      >
+                        <Pencil className="h-3 w-3 mr-1" />
+                        Editar
+                      </Button>
+                    )}
+                  </div>
+                  {editingPreceptor ? (
+                    <div className="flex gap-2">
+                      <Input
+                        value={preceptorInput}
+                        onChange={(e) => setPreceptorInput(e.target.value)}
+                        placeholder="Nome do preceptor..."
+                        className="h-8 text-sm"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSavePreceptor();
+                          if (e.key === "Escape") setEditingPreceptor(false);
+                        }}
+                      />
+                      <Button
+                        size="sm"
+                        className="h-8 px-2"
+                        onClick={handleSavePreceptor}
+                        disabled={updateRotationMutation.isPending}
+                      >
+                        <Check className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-2"
+                        onClick={() => { setEditingPreceptor(false); setPreceptorInput(selectedRotation.preceptor ?? ""); }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <p className={`text-sm font-medium ${selectedRotation.preceptor ? "" : "text-muted-foreground italic"}`}>
+                      {selectedRotation.preceptor || (isAdmin ? "Nenhum preceptor definido — clique em Editar" : "Não informado")}
+                    </p>
+                  )}
+                </div>
+
+                {/* Residentes */}
+                {selectedRotation.residents && selectedRotation.residents.length > 0 && (
+                  <div className="rounded-lg border p-4 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5" />
+                      Residentes
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedRotation.residents.map((r: any) => (
+                        <Badge key={r.id} variant="secondary" className="text-sm">
+                          {r.nomeCompleto}
+                          {r.anoResidencia && <span className="ml-1 opacity-60">({r.anoResidencia})</span>}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Assignments com papel na dupla */}
+                {selectedRotation.assignments && selectedRotation.assignments.length > 0 && (
+                  <div className="rounded-lg border p-4 space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Dupla / Papel</p>
+                    <div className="space-y-1">
+                      {selectedRotation.assignments.map((a: any) => (
+                        <div key={a.assignment?.id ?? a.id} className="flex items-center justify-between text-sm">
+                          <span>{a.resident?.nomeCompleto || "Residente"}</span>
+                          {(a.assignment?.papelNaDupla || a.papelNaDupla) && (
+                            <Badge variant="outline" className="text-xs">
+                              {a.assignment?.papelNaDupla || a.papelNaDupla}
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Descrição */}
+                {selectedRotation.descricao && (
+                  <div className="rounded-lg border p-4 space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Descrição</p>
+                    <p className="text-sm">{selectedRotation.descricao}</p>
+                  </div>
+                )}
+
+                {/* Ações */}
+                <div className="pt-2 space-y-2">
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      setSheetOpen(false);
+                      goToWeeklySchedule(selectedRotation.localEstagio);
+                    }}
+                  >
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    Ver Escala Semanal Completa
+                  </Button>
+                  {selectedDay && dayRotationsForSheet.length > 1 && (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setSelectedRotation(null)}
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-2" />
+                      Ver todos os rodízios do dia
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

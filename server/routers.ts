@@ -250,6 +250,7 @@ export const appRouter = router({
         dataFim: z.date(),
         mesReferencia: z.string(),
         localEstagio: z.string(),
+        preceptor: z.string().optional(),
         descricao: z.string().optional(),
         assignments: z.array(z.object({
           residentId: z.number(),
@@ -301,6 +302,7 @@ export const appRouter = router({
         dataFim: z.date().optional(),
         mesReferencia: z.string().optional(),
         localEstagio: z.string().optional(),
+        preceptor: z.string().optional(),
         descricao: z.string().optional(),
       }))
       .mutation(async ({ input }) => {

@@ -1,0 +1,1 @@
+ALTER TABLE `rotations` ADD `preceptor` varchar(255);

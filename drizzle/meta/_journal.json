@@ -113,6 +113,13 @@
       "when": 1779393923828,
       "tag": "0015_nifty_guardsmen",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1782384707299,
+      "tag": "0016_burly_archangel",
+      "breakpoints": true
     }
   ]
 }

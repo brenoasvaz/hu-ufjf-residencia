@@ -517,3 +517,6 @@
 - [x] UserManagement: redesign mobile-first — cards com layout em coluna, botões largura total, nome sem quebra estranha, stats compactos
 - [x] GerenciarUsuarios: botão "Revogar Acesso" (laranja) para usuários aprovados — preserva dados, pode ser revertido com "Restaurar Acesso"; layout mobile-first com botões em coluna
 - [x] Admin Avaliações: agrupamento por pasta (modelo de prova) com contador, média e badge de gabaritos não vistos; pastas colapsáveis com ícone Folder/FolderOpen
+- [x] CalendarioMensal: painel lateral (Sheet) ao clicar no dia com detalhes do rodízio — preceptor, residentes, período, descrição
+- [x] Schema: campo preceptor na tabela rotations
+- [x] Admin: edição inline do preceptor no painel lateral do CalendarioMensal (apenas admin)
