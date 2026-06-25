@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
-import { ClipboardCheck, Users, TrendingUp, FileText, Settings, Trash2, Download, Search, ChevronLeft, ChevronRight, Image, ChevronDown, ChevronUp, CheckCircle2, Eye, RefreshCw } from "lucide-react";
+import { ClipboardCheck, Users, TrendingUp, FileText, Settings, Trash2, Download, Search, ChevronLeft, ChevronRight, Image, ChevronDown, ChevronUp, CheckCircle2, Eye, RefreshCw, Folder, FolderOpen } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { useState, useMemo } from "react";
@@ -36,6 +36,16 @@ export default function AdminAvaliacoes() {
   const [gerandoTemplateId, setGerandoTemplateId] = useState<number | null>(null);
   const [simuladosBusca, setSimuladosBusca] = useState("");
   const [simuladosFiltroStatus, setSimuladosFiltroStatus] = useState<"todos" | "concluido" | "andamento">("todos");
+  const [pastasAbertas, setPastasAbertas] = useState<Set<string>>(new Set());
+
+  const togglePasta = (nomeModelo: string) => {
+    setPastasAbertas(prev => {
+      const next = new Set(prev);
+      if (next.has(nomeModelo)) next.delete(nomeModelo);
+      else next.add(nomeModelo);
+      return next;
+    });
+  };
 
   const { data: modelos, isLoading: loadingModelos } = trpc.avaliacoes.modelos.list.useQuery();
   const { data: allSimulados, isLoading: loadingSimulados, refetch: refetchSimulados } = trpc.avaliacoes.simulados.list.useQuery();
@@ -425,129 +435,168 @@ export default function AdminAvaliacoes() {
               })
               .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-            return filtrados.length > 0 ? (
-            <div className="space-y-3">
-              {/* Contador de resultados */}
-              {(termoBusca || simuladosFiltroStatus !== 'todos') && (
-                <p className="text-sm text-muted-foreground">
-                  {filtrados.length} {filtrados.length === 1 ? 'resultado encontrado' : 'resultados encontrados'}
-                  {termoBusca && <> para <span className="font-medium text-foreground">"{simuladosBusca}"</span></>}
-                </p>
-              )}
-              {filtrados
-                .map((simulado: any) => (
-                  <Card key={simulado.id}>
-                    <CardContent className="py-4 space-y-3">
-                      {/* Linha de título */}
-                      <div>
-                        <p className="font-semibold text-sm leading-snug">
-                          {simulado.modeloNome || `Avaliação #${simulado.id}`}
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                          {simulado.userName || 'Usuário desconhecido'}
-                        </p>
-                      </div>
+            if (filtrados.length === 0) {
+              return (
+                <Card>
+                  <CardContent className="py-8 text-center text-muted-foreground">
+                    {termoBusca || simuladosFiltroStatus !== 'todos'
+                      ? `Nenhuma avaliação encontrada${termoBusca ? ` para "${simuladosBusca}"` : ''}.`
+                      : 'Nenhuma avaliação realizada ainda.'}
+                  </CardContent>
+                </Card>
+              );
+            }
 
-                      {/* Linha de meta-dados */}
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span>
-                          {new Date(simulado.createdAt).toLocaleDateString('pt-BR', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </span>
-                        {simulado.concluido === 1 ? (
-                          <span className="text-green-600 font-medium">
-                            Concluída • {Math.round((simulado.totalAcertos / simulado.totalQuestoes) * 100)}%
-                          </span>
-                        ) : (
-                          <span className="text-amber-600 font-medium">Em andamento</span>
-                        )}
-                        {simulado.concluido === 1 && (
-                          simulado.gabaritoVisualizado === 1 ? (
-                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-300 gap-1">
-                              <Eye className="h-3 w-3" />
-                              Gabarito visto
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs bg-gray-50 text-gray-500 border-gray-300 gap-1">
-                              <Eye className="h-3 w-3" />
-                              Gabarito não visto
-                            </Badge>
-                          )
-                        )}
-                      </div>
+            // Agrupar por modelo de prova
+            const grupos = filtrados.reduce((acc: Record<string, any[]>, s: any) => {
+              const chave = s.modeloNome || `Avaliação #${s.id}`;
+              if (!acc[chave]) acc[chave] = [];
+              acc[chave].push(s);
+              return acc;
+            }, {});
 
-                      {/* Botões em grade responsiva */}
-                      <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                        {simulado.concluido === 1 && simulado.gabaritoVisualizado === 1 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setRestaurandoGabaritoId(simulado.id);
-                              restaurarGabaritoMutation.mutate({ simuladoId: simulado.id });
-                            }}
-                            disabled={restaurandoGabaritoId === simulado.id}
-                            className="col-span-2 sm:col-span-1 sm:w-auto w-full text-amber-700 border-amber-300 hover:bg-amber-50"
-                            title="Permite que o residente visualize o gabarito novamente"
-                          >
-                            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-                            {restaurandoGabaritoId === simulado.id ? 'Restaurando...' : 'Restaurar Gabarito'}
-                          </Button>
-                        )}
-                        {simulado.concluido === 1 && (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleGerarRelatorioIndividual(simulado.id)}
-                              disabled={gerandoPDFIndividualId === simulado.id}
-                              className="text-purple-700 border-purple-300 hover:bg-purple-50 w-full sm:w-auto"
-                            >
-                              <FileText className="mr-1.5 h-3.5 w-3.5" />
-                              {gerandoPDFIndividualId === simulado.id ? 'Gerando...' : 'PDF Individual'}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleGerarPDF(simulado.id)}
-                              disabled={gerarPDFMutation.isPending}
-                              className="w-full sm:w-auto"
-                            >
-                              <Download className="mr-1.5 h-3.5 w-3.5" />
-                              Exportar PDF
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            setSimuladoToDelete(simulado.id);
-                            setDeleteDialogOpen(true);
-                          }}
-                          className="col-span-2 sm:col-span-1 sm:w-auto w-full"
-                        >
-                          <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                          Deletar
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-            </div>
-            ) : (
-              <Card>
-                <CardContent className="py-8 text-center text-muted-foreground">
-                  {termoBusca || simuladosFiltroStatus !== 'todos'
-                    ? `Nenhuma avaliação encontrada${termoBusca ? ` para "${simuladosBusca}"` : ''}.`
-                    : 'Nenhuma avaliação realizada ainda.'}
-                </CardContent>
-              </Card>
+            return (
+              <div className="space-y-3">
+                {(termoBusca || simuladosFiltroStatus !== 'todos') && (
+                  <p className="text-sm text-muted-foreground">
+                    {filtrados.length} {filtrados.length === 1 ? 'resultado encontrado' : 'resultados encontrados'}
+                    {termoBusca && <> para <span className="font-medium text-foreground">"{simuladosBusca}"</span></>}
+                  </p>
+                )}
+
+                {Object.entries(grupos).map(([nomeModelo, simuladosDoModelo]: [string, any[]]) => {
+                  const aberta = pastasAbertas.has(nomeModelo);
+                  const concluidas = simuladosDoModelo.filter((s: any) => s.concluido === 1);
+                  const mediaPerc = concluidas.length > 0
+                    ? Math.round(concluidas.reduce((sum: number, s: any) => sum + (s.totalAcertos / s.totalQuestoes) * 100, 0) / concluidas.length)
+                    : null;
+                  const gabNaoVistos = concluidas.filter((s: any) => s.gabaritoVisualizado !== 1).length;
+
+                  return (
+                    <div key={nomeModelo} className="rounded-lg border bg-card overflow-hidden">
+                      {/* Cabeçalho da pasta */}
+                      <button
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors"
+                        onClick={() => togglePasta(nomeModelo)}
+                      >
+                        {aberta
+                          ? <FolderOpen className="h-5 w-5 text-amber-500 shrink-0" />
+                          : <Folder className="h-5 w-5 text-amber-500 shrink-0" />}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate">{nomeModelo}</p>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                            <span>{simuladosDoModelo.length} {simuladosDoModelo.length === 1 ? 'avaliação' : 'avaliações'}</span>
+                            {concluidas.length > 0 && (
+                              <span className="text-green-600">{concluidas.length} concluída{concluidas.length !== 1 ? 's' : ''}</span>
+                            )}
+                            {mediaPerc !== null && (
+                              <span>Média: <span className="font-medium text-foreground">{mediaPerc}%</span></span>
+                            )}
+                            {gabNaoVistos > 0 && (
+                              <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 bg-gray-50 text-gray-500 border-gray-300">
+                                {gabNaoVistos} gabarito{gabNaoVistos !== 1 ? 's' : ''} não visto{gabNaoVistos !== 1 ? 's' : ''}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                        {aberta
+                          ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" />
+                          : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
+                      </button>
+
+                      {/* Avaliações dentro da pasta */}
+                      {aberta && (
+                        <div className="border-t divide-y">
+                          {simuladosDoModelo.map((simulado: any) => (
+                            <div key={simulado.id} className="px-4 py-3 space-y-2">
+                              {/* Nome do residente + meta */}
+                              <div className="flex flex-wrap items-start justify-between gap-2">
+                                <div>
+                                  <p className="font-medium text-sm">{simulado.userName || 'Usuário desconhecido'}</p>
+                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5 text-xs text-muted-foreground">
+                                    <span>
+                                      {new Date(simulado.createdAt).toLocaleDateString('pt-BR', {
+                                        day: '2-digit', month: '2-digit', year: 'numeric',
+                                        hour: '2-digit', minute: '2-digit'
+                                      })}
+                                    </span>
+                                    {simulado.concluido === 1 ? (
+                                      <span className="text-green-600 font-medium">
+                                        Concluída • {Math.round((simulado.totalAcertos / simulado.totalQuestoes) * 100)}%
+                                      </span>
+                                    ) : (
+                                      <span className="text-amber-600 font-medium">Em andamento</span>
+                                    )}
+                                    {simulado.concluido === 1 && (
+                                      simulado.gabaritoVisualizado === 1 ? (
+                                        <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-300 gap-1">
+                                          <Eye className="h-3 w-3" /> Gabarito visto
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline" className="text-xs bg-gray-50 text-gray-500 border-gray-300 gap-1">
+                                          <Eye className="h-3 w-3" /> Gabarito não visto
+                                        </Badge>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Botões */}
+                              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                                {simulado.concluido === 1 && simulado.gabaritoVisualizado === 1 && (
+                                  <Button
+                                    variant="outline" size="sm"
+                                    onClick={() => {
+                                      setRestaurandoGabaritoId(simulado.id);
+                                      restaurarGabaritoMutation.mutate({ simuladoId: simulado.id });
+                                    }}
+                                    disabled={restaurandoGabaritoId === simulado.id}
+                                    className="col-span-2 sm:col-span-1 sm:w-auto w-full text-amber-700 border-amber-300 hover:bg-amber-50"
+                                  >
+                                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                                    {restaurandoGabaritoId === simulado.id ? 'Restaurando...' : 'Restaurar Gabarito'}
+                                  </Button>
+                                )}
+                                {simulado.concluido === 1 && (
+                                  <>
+                                    <Button
+                                      variant="outline" size="sm"
+                                      onClick={() => handleGerarRelatorioIndividual(simulado.id)}
+                                      disabled={gerandoPDFIndividualId === simulado.id}
+                                      className="text-purple-700 border-purple-300 hover:bg-purple-50 w-full sm:w-auto"
+                                    >
+                                      <FileText className="mr-1.5 h-3.5 w-3.5" />
+                                      {gerandoPDFIndividualId === simulado.id ? 'Gerando...' : 'PDF Individual'}
+                                    </Button>
+                                    <Button
+                                      variant="outline" size="sm"
+                                      onClick={() => handleGerarPDF(simulado.id)}
+                                      disabled={gerarPDFMutation.isPending}
+                                      className="w-full sm:w-auto"
+                                    >
+                                      <Download className="mr-1.5 h-3.5 w-3.5" />
+                                      Exportar PDF
+                                    </Button>
+                                  </>
+                                )}
+                                <Button
+                                  variant="destructive" size="sm"
+                                  onClick={() => { setSimuladoToDelete(simulado.id); setDeleteDialogOpen(true); }}
+                                  className="col-span-2 sm:col-span-1 sm:w-auto w-full"
+                                >
+                                  <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                                  Deletar
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             );
           })() : (
             <Card>
