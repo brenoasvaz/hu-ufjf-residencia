@@ -90,6 +90,7 @@ export const weeklyActivities = mysqlTable("weekly_activities", {
   descricao: text("descricao"),
   local: varchar("local", { length: 255 }),
   recorrente: int("recorrente").default(1).notNull(), // 1 = sim, 0 = não
+  preceptor: varchar("preceptor", { length: 255 }),
   observacao: text("observacao"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),

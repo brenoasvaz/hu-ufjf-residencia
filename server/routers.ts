@@ -359,6 +359,7 @@ export const appRouter = router({
         titulo: z.string(),
         descricao: z.string().optional(),
         local: z.string().optional(),
+        preceptor: z.string().optional(),
         recorrente: z.number().optional(),
         observacao: z.string().optional(),
         audiences: z.array(z.object({
@@ -395,6 +396,7 @@ export const appRouter = router({
         titulo: z.string().optional(),
         descricao: z.string().optional(),
         local: z.string().optional(),
+        preceptor: z.string().optional(),
         recorrente: z.number().optional(),
         observacao: z.string().optional(),
       }))
@@ -441,6 +443,7 @@ export const appRouter = router({
         titulo: z.string(),
         descricao: z.string().optional(),
         local: z.string().optional(),
+        preceptor: z.string().optional(),
         recorrente: z.number().optional(),
         observacao: z.string().optional(),
         audiences: z.array(z.object({
@@ -471,6 +474,7 @@ export const appRouter = router({
         titulo: z.string().optional(),
         descricao: z.string().optional(),
         local: z.string().optional(),
+        preceptor: z.string().optional(),
         recorrente: z.number().optional(),
         observacao: z.string().optional(),
         audiences: z.array(z.object({

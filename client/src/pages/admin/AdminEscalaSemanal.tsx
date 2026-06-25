@@ -186,6 +186,7 @@ function ActivityModal({
   const [horaInicio, setHoraInicio] = useState(activity?.horaInicio ?? defaultHora ?? "08:00");
   const [horaFim, setHoraFim] = useState(activity?.horaFim ?? "09:00");
   const [local, setLocal] = useState(activity?.local ?? "");
+  const [preceptor, setPreceptor] = useState(activity?.preceptor ?? "");
   const [descricao, setDescricao] = useState(activity?.descricao ?? "");
   const [observacao, setObservacao] = useState(activity?.observacao ?? "");
 
@@ -222,6 +223,7 @@ function ActivityModal({
       horaInicio,
       horaFim,
       local: local.trim() || undefined,
+      preceptor: preceptor.trim() || undefined,
       descricao: descricao.trim() || undefined,
       observacao: observacao.trim() || undefined,
       audiences: buildAudiences(),
@@ -287,6 +289,12 @@ function ActivityModal({
           <div className="space-y-1.5">
             <Label htmlFor="local">Local</Label>
             <Input id="local" value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Ex.: Ambulatório 3, Bloco C..." />
+          </div>
+
+          {/* Preceptor */}
+          <div className="space-y-1.5">
+            <Label htmlFor="preceptor">Preceptor Responsável</Label>
+            <Input id="preceptor" value={preceptor} onChange={(e) => setPreceptor(e.target.value)} placeholder="Ex.: Dr. José da Mota" />
           </div>
 
           {/* Público-alvo */}

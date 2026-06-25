@@ -120,6 +120,13 @@
       "when": 1782384707299,
       "tag": "0016_burly_archangel",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1782385390616,
+      "tag": "0017_public_logan",
+      "breakpoints": true
     }
   ]
 }

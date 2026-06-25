@@ -520,3 +520,6 @@
 - [x] CalendarioMensal: painel lateral (Sheet) ao clicar no dia com detalhes do rodízio — preceptor, residentes, período, descrição
 - [x] Schema: campo preceptor na tabela rotations
 - [x] Admin: edição inline do preceptor no painel lateral do CalendarioMensal (apenas admin)
+- [x] CalendarioSemanal R2/R3: painel lateral (Sheet) ao clicar em atividade com detalhes — preceptor, local, horário, descrição
+- [x] Schema: campo preceptor na tabela de atividades semanais (weeklyActivities)
+- [x] Admin: edição inline do preceptor no painel lateral da escala semanal

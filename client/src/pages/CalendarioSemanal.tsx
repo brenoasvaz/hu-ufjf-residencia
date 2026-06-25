@@ -1,14 +1,18 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { CalendarDays, Clock, MapPin, Info, ChevronLeft, ChevronRight } from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { CalendarDays, Clock, MapPin, Info, ChevronLeft, ChevronRight, UserCheck, Users, Pencil, Check, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
 
 const DIAS_SEMANA = [
   { index: 1, nome: "Segunda", abrev: "Seg" },
@@ -41,12 +45,19 @@ const getActivityColor = (titulo: string) => {
 
 export default function CalendarioSemanal() {
   const searchString = useSearch();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const [selectedYear, setSelectedYear] = useState<string>("R1");
   const [selectedBloco, setSelectedBloco] = useState<string>("Enfermaria");
   // Mobile: índice do dia selecionado (0 = Segunda, 4 = Sexta)
   const [mobileDayIndex, setMobileDayIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
+  // Painel lateral
+  const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingPreceptor, setEditingPreceptor] = useState(false);
+  const [preceptorValue, setPreceptorValue] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(searchString);
@@ -66,6 +77,26 @@ export default function CalendarioSemanal() {
   });
 
   const { data: stages } = trpc.stages.list.useQuery({ activeOnly: true });
+  const utils = trpc.useUtils();
+
+  const updatePreceptor = trpc.weeklyActivities.update.useMutation({
+    onSuccess: () => {
+      toast.success("Preceptor atualizado!");
+      utils.weeklyActivities.list.invalidate();
+      setEditingPreceptor(false);
+      if (selectedActivity) {
+        setSelectedActivity((prev: any) => prev ? { ...prev, preceptor: preceptorValue } : prev);
+      }
+    },
+    onError: () => toast.error("Erro ao atualizar preceptor"),
+  });
+
+  const openActivitySheet = (activity: any) => {
+    setSelectedActivity(activity);
+    setPreceptorValue(activity.preceptor ?? "");
+    setEditingPreceptor(false);
+    setSheetOpen(true);
+  };
 
   // Todos os dias para mobile (Seg–Dom)
   const DIAS_UTEIS = DIAS_SEMANA;
@@ -312,7 +343,8 @@ export default function CalendarioSemanal() {
                 {mobileDayActivities.map((activity: any) => (
                   <div
                     key={activity.id}
-                    className={`flex gap-3 p-3 ${getActivityColor(activity.titulo)}`}
+                    className={`flex gap-3 p-3 cursor-pointer hover:brightness-95 transition-all ${getActivityColor(activity.titulo)}`}
+                    onClick={() => openActivitySheet(activity)}
                   >
                     {/* Horário */}
                     <div className="flex-shrink-0 text-center w-14">
@@ -399,12 +431,13 @@ export default function CalendarioSemanal() {
                                   <Tooltip key={`${activity.id}-${idx}`}>
                                     <TooltipTrigger asChild>
                                       <div
-                                        className={`rounded border text-xs cursor-pointer transition-all hover:shadow-md ${
+                                        className={`rounded border text-xs cursor-pointer transition-all hover:shadow-md hover:scale-[1.01] ${
                                           activity.isFirstBlock
                                             ? `p-2 ${getActivityColor(activity.titulo)}`
                                             : `p-1 ${getActivityColor(activity.titulo)} opacity-60`
                                         }`}
                                         style={{ minHeight: activity.isFirstBlock ? `${Math.min(getActivityHeight(activity) * 60, 120)}px` : '60px' }}
+                                        onClick={() => openActivitySheet(activity)}
                                       >
                                         {activity.isFirstBlock ? (
                                           <>
@@ -517,6 +550,119 @@ export default function CalendarioSemanal() {
           </div>
         </CardContent>
       </Card>
+      {/* ── Painel lateral de detalhes da atividade ── */}
+      <Sheet open={sheetOpen} onOpenChange={(v) => { setSheetOpen(v); if (!v) setEditingPreceptor(false); }}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          {selectedActivity && (
+            <>
+              <SheetHeader className="pb-4">
+                <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold w-fit mb-2 ${getActivityColor(selectedActivity.titulo)}`}>
+                  {selectedActivity.titulo}
+                </div>
+                <SheetTitle className="text-xl leading-tight">{selectedActivity.titulo}</SheetTitle>
+                <SheetDescription className="flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
+                  {selectedActivity.horaInicio?.substring(0, 5)} – {selectedActivity.horaFim?.substring(0, 5)}
+                  {" · "}
+                  {DIAS_SEMANA.find(d => d.index === selectedActivity.diaSemana)?.nome}
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="space-y-5">
+                {/* Local */}
+                {selectedActivity.local && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                    <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium mb-0.5">Local</p>
+                      <p className="text-sm font-medium">{selectedActivity.local}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Preceptor */}
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                  <UserCheck className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground font-medium mb-0.5">Preceptor Responsável</p>
+                    {editingPreceptor && isAdmin ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          value={preceptorValue}
+                          onChange={(e) => setPreceptorValue(e.target.value)}
+                          placeholder="Nome do preceptor..."
+                          className="h-7 text-sm"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") updatePreceptor.mutate({ id: selectedActivity.id, preceptor: preceptorValue || undefined });
+                            if (e.key === "Escape") setEditingPreceptor(false);
+                          }}
+                        />
+                        <Button size="icon" variant="ghost" className="h-7 w-7 flex-shrink-0" onClick={() => updatePreceptor.mutate({ id: selectedActivity.id, preceptor: preceptorValue || undefined })} disabled={updatePreceptor.isPending}>
+                          <Check className="h-3.5 w-3.5 text-green-600" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7 flex-shrink-0" onClick={() => setEditingPreceptor(false)}>
+                          <X className="h-3.5 w-3.5 text-red-500" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium flex-1">
+                          {selectedActivity.preceptor || <span className="text-muted-foreground italic text-xs">Não informado</span>}
+                        </p>
+                        {isAdmin && (
+                          <Button size="icon" variant="ghost" className="h-6 w-6 flex-shrink-0" onClick={() => setEditingPreceptor(true)}>
+                            <Pencil className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Público-alvo */}
+                {selectedActivity.audiences?.length > 0 && (
+                  <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                    <Users className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium mb-1.5">Público-alvo</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {selectedActivity.audiences.map((aud: any) => (
+                          <Badge key={aud.id} variant="secondary" className="text-xs">
+                            {aud.anoResidencia}{aud.bloco ? ` · ${aud.bloco}` : ""}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Descrição */}
+                {selectedActivity.descricao && (
+                  <div className="p-3 rounded-lg bg-muted/50">
+                    <p className="text-xs text-muted-foreground font-medium mb-1">Descrição</p>
+                    <p className="text-sm leading-relaxed">{selectedActivity.descricao}</p>
+                  </div>
+                )}
+
+                {/* Observação */}
+                {selectedActivity.observacao && (
+                  <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800">
+                    <p className="text-xs text-amber-700 dark:text-amber-400 font-medium mb-1">Observação</p>
+                    <p className="text-sm text-amber-800 dark:text-amber-300 leading-relaxed">{selectedActivity.observacao}</p>
+                  </div>
+                )}
+
+                {/* Recorrência */}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className={`w-2 h-2 rounded-full ${selectedActivity.recorrente ? "bg-green-500" : "bg-slate-400"}`} />
+                  {selectedActivity.recorrente ? "Atividade recorrente (toda semana)" : "Atividade não recorrente"}
+                </div>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
