@@ -37,6 +37,7 @@ import {
   ChevronRight,
   Filter,
   ImageOff,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -52,6 +53,20 @@ export default function GerenciarImagensQuestoes() {
 
   // Dialogs
   const [questaoSelecionada, setQuestaoSelecionada] = useState<any>(null);
+  const [criarDialogOpen, setCriarDialogOpen] = useState(false);
+
+  // Estado do formulário de criação
+  const [novoEnunciado, setNovoEnunciado] = useState("");
+  const [novaFonte, setNovaFonte] = useState("");
+  const [novoAno, setNovoAno] = useState("");
+  const [novaEspecialidadeId, setNovaEspecialidadeId] = useState("");
+  const [novaSubcategoria, setNovaSubcategoria] = useState("");
+  const [novasAlternativas, setNovasAlternativas] = useState([
+    { letra: "A" as const, texto: "", isCorreta: 1 },
+    { letra: "B" as const, texto: "", isCorreta: 0 },
+    { letra: "C" as const, texto: "", isCorreta: 0 },
+    { letra: "D" as const, texto: "", isCorreta: 0 },
+  ]);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -143,6 +158,26 @@ export default function GerenciarImagensQuestoes() {
     onError: (error) => toast.error(error.message || "Erro ao atualizar marcação"),
   });
 
+  const criarMutation = trpc.avaliacoes.questoes.criar.useMutation({
+    onSuccess: () => {
+      toast.success("Questão criada com sucesso!");
+      setCriarDialogOpen(false);
+      setNovoEnunciado("");
+      setNovaFonte("");
+      setNovoAno("");
+      setNovaEspecialidadeId("");
+      setNovaSubcategoria("");
+      setNovasAlternativas([
+        { letra: "A" as const, texto: "", isCorreta: 1 },
+        { letra: "B" as const, texto: "", isCorreta: 0 },
+        { letra: "C" as const, texto: "", isCorreta: 0 },
+        { letra: "D" as const, texto: "", isCorreta: 0 },
+      ]);
+      refetch();
+    },
+    onError: (error) => toast.error(error.message || "Erro ao criar questão"),
+  });
+
   const editarMutation = trpc.avaliacoes.questoes.editar.useMutation({
     onSuccess: () => {
       toast.success("Questão atualizada com sucesso!");
@@ -206,6 +241,28 @@ export default function GerenciarImagensQuestoes() {
     setEditDialogOpen(true);
   };
 
+  const handleNovaAltChange = (idx: number, field: "texto" | "isCorreta", value: any) => {
+    setNovasAlternativas(prev => prev.map((a, i) => {
+      if (field === "isCorreta") return { ...a, isCorreta: i === idx ? 1 : 0 };
+      return i === idx ? { ...a, texto: value } : a;
+    }));
+  };
+
+  const handleCriarQuestao = () => {
+    if (!novaEspecialidadeId) { toast.error("Selecione a especialidade."); return; }
+    if (!novoEnunciado.trim() || novoEnunciado.length < 10) { toast.error("Enunciado deve ter pelo menos 10 caracteres."); return; }
+    const altsVazias = novasAlternativas.filter(a => !a.texto.trim());
+    if (altsVazias.length > 0) { toast.error("Preencha todas as alternativas."); return; }
+    criarMutation.mutate({
+      enunciado: novoEnunciado.trim(),
+      especialidadeId: parseInt(novaEspecialidadeId),
+      fonte: novaFonte.trim() || undefined,
+      ano: novoAno ? parseInt(novoAno) : undefined,
+      subcategoria: novaSubcategoria.trim() || undefined,
+      alternativas: novasAlternativas,
+    });
+  };
+
   const handleSaveEdit = () => {
     if (!questaoSelecionada || !questaoComAlts) return;
     const alts = editAlternativas.length > 0 ? editAlternativas : questaoComAlts.alternativas;
@@ -254,12 +311,18 @@ export default function GerenciarImagensQuestoes() {
             Edite enunciados, alternativas e imagens de qualquer questão do banco.
           </p>
         </div>
-        <Link href="/admin/avaliacoes">
+        <div className="flex gap-2">
+          <Button onClick={() => setCriarDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Nova Questão
+          </Button>
+          <Link href="/admin/avaliacoes">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Button>
-        </Link>
+          </Link>
+        </div>
       </div>
 
       {/* Cards de resumo com totais reais do banco */}
@@ -669,6 +732,115 @@ export default function GerenciarImagensQuestoes() {
             </Button>
             <Button onClick={handleSaveEdit} disabled={editarMutation.isPending || loadingAlts || currentAlts.length === 0}>
               {editarMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Criação de Questão */}
+      <Dialog open={criarDialogOpen} onOpenChange={(open) => { if (!open) setCriarDialogOpen(false); }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Nova Questão</DialogTitle>
+            <DialogDescription>
+              Preencha os dados da nova questão para adicioná-la ao banco.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Metadados */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Prova / Fonte</Label>
+                <Input
+                  value={novaFonte}
+                  onChange={(e) => setNovaFonte(e.target.value)}
+                  placeholder="Ex.: TARO, TEOT, SBOT 1000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Ano</Label>
+                <Input
+                  type="number"
+                  value={novoAno}
+                  onChange={(e) => setNovoAno(e.target.value)}
+                  placeholder="Ex.: 2024"
+                />
+              </div>
+            </div>
+
+            {/* Especialidade */}
+            <div className="space-y-2">
+              <Label>Especialidade / Área de Conhecimento <span className="text-destructive">*</span></Label>
+              <Select value={novaEspecialidadeId} onValueChange={setNovaEspecialidadeId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a especialidade..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {(especialidades ?? []).map((esp: any) => (
+                    <SelectItem key={esp.id} value={String(esp.id)}>{esp.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Subcategoria */}
+            <div className="space-y-2">
+              <Label>Subcategoria</Label>
+              <Input
+                value={novaSubcategoria}
+                onChange={(e) => setNovaSubcategoria(e.target.value)}
+                placeholder="Ex.: Joelho, Coluna, Trauma..."
+              />
+            </div>
+
+            {/* Enunciado */}
+            <div className="space-y-2">
+              <Label>Enunciado <span className="text-destructive">*</span></Label>
+              <Textarea
+                value={novoEnunciado}
+                onChange={(e) => setNovoEnunciado(e.target.value)}
+                rows={5}
+                className="resize-y"
+                placeholder="Texto completo da questão..."
+              />
+            </div>
+
+            {/* Alternativas */}
+            <div className="space-y-3">
+              <Label>Alternativas <span className="text-destructive">*</span></Label>
+              {novasAlternativas.map((alt, idx) => (
+                <div key={idx} className="flex items-start gap-3">
+                  <div className="flex items-center gap-2 mt-2 flex-shrink-0">
+                    <input
+                      type="radio"
+                      name="novaCorreta"
+                      checked={alt.isCorreta === 1}
+                      onChange={() => handleNovaAltChange(idx, "isCorreta", 1)}
+                      className="w-4 h-4 accent-primary"
+                      title="Marcar como correta"
+                    />
+                    <span className="text-sm font-semibold w-5">{alt.letra}.</span>
+                  </div>
+                  <Textarea
+                    value={alt.texto}
+                    onChange={(e) => handleNovaAltChange(idx, "texto", e.target.value)}
+                    rows={2}
+                    className={`resize-y flex-1 text-sm ${alt.isCorreta === 1 ? "border-green-500 bg-green-50 dark:bg-green-900/10" : ""}`}
+                    placeholder={`Texto da alternativa ${alt.letra}...`}
+                  />
+                </div>
+              ))}
+              <p className="text-xs text-muted-foreground">Selecione o botão de rádio ao lado da alternativa correta.</p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCriarDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleCriarQuestao} disabled={criarMutation.isPending}>
+              {criarMutation.isPending ? "Salvando..." : "Criar Questão"}
             </Button>
           </DialogFooter>
         </DialogContent>

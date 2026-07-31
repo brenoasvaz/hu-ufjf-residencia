@@ -526,3 +526,4 @@
 - [x] Schema: tabela activity_preceptors (id, activityId, nome) para múltiplos preceptores por atividade
 - [x] Backend: procedures addPreceptor, removePreceptor, updatePreceptor, listPreceptors por atividade
 - [x] Frontend: painel lateral com lista de preceptores — adicionar, editar e remover individualmente
+- [x] Admin Gestão de Questões: formulário de criação manual de questão (enunciado, especialidade, subcategoria, alternativas A-D, gabarito, fonte, ano)

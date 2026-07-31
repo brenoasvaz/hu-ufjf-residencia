@@ -262,6 +262,60 @@ export const avaliacoesRouter = router({
         return questao;
       }),
 
+    // Criar nova questão manualmente (admin apenas)
+    criar: adminProcedure
+      .input(z.object({
+        enunciado: z.string().min(10, 'Enunciado deve ter pelo menos 10 caracteres'),
+        especialidadeId: z.number(),
+        fonte: z.string().optional(),
+        ano: z.number().optional(),
+        subcategoria: z.string().optional(),
+        alternativas: z.array(z.object({
+          letra: z.enum(['A', 'B', 'C', 'D', 'E']),
+          texto: z.string().min(1, 'Texto da alternativa não pode ser vazio'),
+          isCorreta: z.number().min(0).max(1),
+        })).min(4).max(5),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'DB indisponível' });
+
+        // Validar: exatamente 1 alternativa correta
+        const corretas = input.alternativas.filter(a => a.isCorreta === 1);
+        if (corretas.length !== 1) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'Exatamente uma alternativa deve ser marcada como correta.' });
+        }
+
+        // Verificar que especialidade existe
+        const [esp] = await db.select({ id: especialidades.id }).from(especialidades).where(eq(especialidades.id, input.especialidadeId)).limit(1);
+        if (!esp) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Especialidade não encontrada.' });
+
+        // Inserir questão
+        const [result] = await db.insert(questoes).values({
+          enunciado: input.enunciado,
+          especialidadeId: input.especialidadeId,
+          fonte: input.fonte ?? null,
+          ano: input.ano ?? null,
+          subcategoria: input.subcategoria ?? null,
+          ativo: 1,
+          temImagem: 0,
+        });
+
+        const novaQuestaoId = (result as any).insertId;
+
+        // Inserir alternativas
+        for (const alt of input.alternativas) {
+          await db.insert(alternativas).values({
+            questaoId: novaQuestaoId,
+            letra: alt.letra,
+            texto: alt.texto,
+            isCorreta: alt.isCorreta,
+          });
+        }
+
+        return { success: true, questaoId: novaQuestaoId };
+      }),
+
     // Upload de imagem para questão (admin apenas)
     uploadImagem: adminProcedure
       .input(z.object({
