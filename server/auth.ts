@@ -17,6 +17,12 @@ export interface LoginInput {
   password: string;
 }
 
+export interface SetPasswordInput {
+  userId: number;
+  newPassword: string;
+  currentPassword?: string;
+}
+
 /**
  * Hash a password using bcrypt
  */
@@ -111,6 +117,56 @@ export async function authenticateUser(input: LoginInput) {
     name: user.name,
     role: user.role,
   };
+}
+
+/** Retorna somente o estado público da senha da própria conta autenticada. */
+export async function getPasswordStatus(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  const foundUsers = await db
+    .select({ email: users.email, passwordHash: users.passwordHash })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  const user = foundUsers[0];
+
+  if (!user) throw new Error('Usuário não encontrado');
+
+  return { email: user.email, hasPassword: Boolean(user.passwordHash) };
+}
+
+/**
+ * Define uma senha no registro existente do usuário. Se já houver senha,
+ * exige a senha atual antes de autorizar a substituição.
+ */
+export async function setUserPassword(input: SetPasswordInput) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  const foundUsers = await db
+    .select({ id: users.id, passwordHash: users.passwordHash })
+    .from(users)
+    .where(eq(users.id, input.userId))
+    .limit(1);
+  const user = foundUsers[0];
+
+  if (!user) throw new Error('Usuário não encontrado');
+
+  if (user.passwordHash) {
+    if (!input.currentPassword) {
+      throw new Error('Informe a senha atual para alterá-la.');
+    }
+    const currentPasswordIsValid = await verifyPassword(input.currentPassword, user.passwordHash);
+    if (!currentPasswordIsValid) {
+      throw new Error('A senha atual está incorreta.');
+    }
+  }
+
+  const passwordHash = await hashPassword(input.newPassword);
+  await db.update(users).set({ passwordHash }).where(eq(users.id, input.userId));
+
+  return { success: true };
 }
 
 /**

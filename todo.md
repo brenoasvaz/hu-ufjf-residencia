@@ -527,3 +527,7 @@
 - [x] Backend: procedures addPreceptor, removePreceptor, updatePreceptor, listPreceptors por atividade
 - [x] Frontend: painel lateral com lista de preceptores — adicionar, editar e remover individualmente
 - [x] Admin Gestão de Questões: formulário de criação manual de questão (enunciado, especialidade, subcategoria, alternativas A-D, gabarito, fonte, ano)
+- [x] Backup externo: exportar estrutura e dados completos do banco de dados em SQL, com validação de contagens por tabela (somente leitura)
+- [x] Backup externo: exportar arquivos referenciados por Clube de Revista, importações e questões em ZIP, com relatório de validação (somente leitura)
+- [x] Backup externo: gerar pacote de migração storage_hu_ufjf.zip com imagens, PDFs e manifesto CSV (somente leitura)
+- [x] Autenticação: permitir que usuário OAuth defina ou redefina senha na mesma conta, preservando e-mail, permissões e histórico

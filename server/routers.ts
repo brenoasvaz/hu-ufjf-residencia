@@ -11,7 +11,7 @@ import * as importsDb from "./db-helpers/imports";
 import * as clinicalMeetingsDb from "./db";
 import * as escalaDb from "./db";
 import { pdfRouter } from "./pdf-upload-router";
-import { registerUser, authenticateUser, getUserByEmail, getAllUsers, approveUser, rejectUser } from "./auth";
+import { registerUser, authenticateUser, getUserByEmail, getAllUsers, approveUser, rejectUser, getPasswordStatus, setUserPassword } from "./auth";
 import { avaliacoesRouter } from "./routers/avaliacoes";
 import { usersRouter } from "./routers/users";
 import { linksRouter } from "./routers/links";
@@ -116,6 +116,37 @@ export const appRouter = router({
           throw new TRPCError({
             code: 'UNAUTHORIZED',
             message: error instanceof Error ? error.message : 'Email ou senha inválidos',
+          });
+        }
+      }),
+
+    passwordStatus: protectedProcedure.query(async ({ ctx }) => {
+      try {
+        return await getPasswordStatus(ctx.user.id);
+      } catch (error) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: error instanceof Error ? error.message : 'Não foi possível consultar a conta.',
+        });
+      }
+    }),
+
+    setPassword: protectedProcedure
+      .input(z.object({
+        newPassword: z.string().min(8, 'A senha deve ter pelo menos 8 caracteres').max(128, 'A senha deve ter no máximo 128 caracteres'),
+        currentPassword: z.string().min(1, 'Informe a senha atual').optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          return await setUserPassword({
+            userId: ctx.user.id,
+            newPassword: input.newPassword,
+            currentPassword: input.currentPassword,
+          });
+        } catch (error) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: error instanceof Error ? error.message : 'Não foi possível atualizar a senha.',
           });
         }
       }),
@@ -844,4 +875,3 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
-

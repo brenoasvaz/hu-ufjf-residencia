@@ -28,6 +28,7 @@ import {
   BookOpen,
   BookMarked,
   Home,
+  KeyRound,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -228,6 +229,9 @@ export default function MainLayout({ children }: MainLayoutProps) {
                     {user.role === "admin" ? "Administrador" : "Visualizador"}
                   </p>
                 </div>
+                <Button variant="ghost" size="icon" onClick={() => navigate("/minha-conta")} title="Segurança da conta">
+                  <KeyRound className="h-4 w-4" />
+                </Button>
                 <Button variant="ghost" size="icon" onClick={handleLogout} title="Sair">
                   <LogOut className="h-4 w-4" />
                 </Button>
@@ -289,6 +293,17 @@ export default function MainLayout({ children }: MainLayoutProps) {
                       {user.role === "admin" ? "Administrador" : "Visualizador"}
                     </p>
                   </div>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      navigate("/minha-conta");
+                    }}
+                  >
+                    <KeyRound className="h-4 w-4 mr-2" />
+                    Segurança da conta
+                  </Button>
                   <Button
                     variant="ghost"
                     className="w-full justify-start"
