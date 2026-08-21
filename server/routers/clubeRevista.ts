@@ -4,7 +4,7 @@ import { router, protectedProcedure } from "../_core/trpc";
 import { getDb } from "../db";
 import { clubeRevista } from "../../drizzle/schema";
 import { eq, and, gte, lte, desc, asc } from "drizzle-orm";
-import { storagePut } from "../storage";
+import { storagePut, resolveSignedUrl } from "../storage";
 
 // Helper para procedures que requerem papel ADMIN
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -57,7 +57,10 @@ export const clubeRevistaRouter = router({
         )
         .orderBy(asc(clubeRevista.data), asc(clubeRevista.id));
 
-      return rows;
+      return Promise.all(rows.map(async (r) => ({
+        ...r,
+        pdfUrl: r.pdfKey ? await resolveSignedUrl(r.pdfKey) : null,
+      })));
     }),
 
   /**
@@ -77,7 +80,7 @@ export const clubeRevistaRouter = router({
       if (!row) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Artigo não encontrado" });
       }
-      return row;
+      return { ...row, pdfUrl: row.pdfKey ? await resolveSignedUrl(row.pdfKey) : null };
     }),
 
   /**
@@ -217,7 +220,7 @@ export const clubeRevistaRouter = router({
       await db
         .update(clubeRevista)
         .set({
-          pdfUrl: url,
+          pdfUrl: null,
           pdfKey: fileKey,
           pdfNome: input.fileName,
         })
@@ -264,7 +267,7 @@ export const clubeRevistaRouter = router({
 
       // Filtrar no servidor (MySQL LIKE não suporta acentuação bem; fazemos no JS)
       const q = input.query.toLowerCase();
-      return rows.filter((r) => {
+      const filtered = rows.filter((r) => {
         return (
           r.tituloArtigo?.toLowerCase().includes(q) ||
           r.autores?.toLowerCase().includes(q) ||
@@ -274,6 +277,10 @@ export const clubeRevistaRouter = router({
           r.observacao?.toLowerCase().includes(q)
         );
       });
+      return Promise.all(filtered.map(async (r) => ({
+        ...r,
+        pdfUrl: r.pdfKey ? await resolveSignedUrl(r.pdfKey) : null,
+      })));
     }),
 
   /**
@@ -307,7 +314,9 @@ export const clubeRevistaRouter = router({
         .orderBy(asc(clubeRevista.id))
         .limit(1);
 
-      return rows[0] ?? null;
+      const row0 = rows[0];
+      if (!row0) return null;
+      return { ...row0, pdfUrl: row0.pdfKey ? await resolveSignedUrl(row0.pdfKey) : null };
     }),
 
   /**

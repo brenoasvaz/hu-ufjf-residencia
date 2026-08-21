@@ -232,6 +232,7 @@ export async function getQuestoesDoSimulado(simuladoId: number) {
       enunciado: questoes.enunciado,
       especialidadeId: questoes.especialidadeId,
       imageUrl: questoes.imageUrl,
+      imageKey: questoes.imageKey,
       temImagem: questoes.temImagem,
     })
     .from(simuladoQuestoes)
@@ -377,6 +378,7 @@ export async function getQuestoesComRespostas(simuladoId: number) {
       especialidadeId: questoes.especialidadeId,
       especialidadeNome: especialidades.nome,
       imageUrl: questoes.imageUrl,
+      imageKey: questoes.imageKey,
     })
     .from(questoes)
     .innerJoin(especialidades, eq(questoes.especialidadeId, especialidades.id))
@@ -436,6 +438,7 @@ export async function getQuestoesComRespostas(simuladoId: number) {
       enunciado: questaoDetalhe.enunciado,
       especialidade: questaoDetalhe.especialidadeNome,
       imageUrl: questaoDetalhe.imageUrl,
+      imageKey: questaoDetalhe.imageKey,
       alternativas: alts.map((alt: any) => ({
         id: alt.id,
         letra: alt.letra,

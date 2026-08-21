@@ -1,7 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getLoginUrl } from "@/const";
+
 import { Calendar, CalendarDays, Presentation, BookMarked, ArrowRight, Bell, Sparkles, BookOpen, PlayCircle, Eye } from "lucide-react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";

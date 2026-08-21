@@ -1,7 +1,7 @@
 import { router } from "./_core/trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { storagePut } from "./storage";
+import { storagePut, storageGet } from "./storage";
 import { 
   downloadPDF, 
   extractRotationsFromPDF, 
@@ -50,7 +50,7 @@ export const pdfRouter = router({
         const importRecord = await importsDb.createImport({
           tipo: input.tipo,
           arquivoNome: input.fileName,
-          arquivoUrl: url,
+          arquivoUrl: null,
           arquivoKey: fileKey,
           usuarioAdminId: ctx.user.id,
           status: "PENDENTE",
@@ -93,9 +93,10 @@ export const pdfRouter = router({
           status: "PROCESSANDO",
         });
         
-        // Download do PDF do S3
-        const pdfBuffer = await downloadPDF(importRecord.arquivoUrl);
-        
+        // Download do PDF do R2 (gera URL assinada a partir da chave)
+        const { url: arquivoSignedUrl } = await storageGet(importRecord.arquivoKey);
+        const pdfBuffer = await downloadPDF(arquivoSignedUrl);
+
         // Extrair dados baseado no tipo
         let extractedData: any;
         let logValidacao = "";
@@ -151,9 +152,10 @@ export const pdfRouter = router({
           });
         }
         
-        // Download do PDF do S3
-        const pdfBuffer = await downloadPDF(importRecord.arquivoUrl);
-        
+        // Download do PDF do R2 (gera URL assinada a partir da chave)
+        const { url: previewSignedUrl } = await storageGet(importRecord.arquivoKey);
+        const pdfBuffer = await downloadPDF(previewSignedUrl);
+
         // Extrair texto
         const parsed = await extractTextFromPDF(pdfBuffer);
         

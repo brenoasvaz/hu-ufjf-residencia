@@ -10,7 +10,7 @@ import { getDb } from "../db";
 import { simulados, simuladoQuestoes, respostasUsuario, users, questoes, modelosProva, simuladoTemplates, simuladoTemplateQuestoes, especialidades, alternativas } from "../../drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
 import { gerarPDFAvaliacao, gerarRelatorioConsolidado, gerarPDFIndividualResidente } from "../pdf-generator";
-import { storagePut } from "../storage";
+import { storagePut, resolveSignedUrl } from "../storage";
 
 // Helper para procedures que requerem papel ADMIN
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -90,6 +90,7 @@ export const avaliacoesRouter = router({
             especialidadeId: questoes.especialidadeId,
             temImagem: questoes.temImagem,
             imageUrl: questoes.imageUrl,
+            imageKey: questoes.imageKey,
           })
           .from(questoes)
           .where(where)
@@ -134,11 +135,11 @@ export const avaliacoesRouter = router({
         if (input?.ano) conditions.push(eq(questoes.ano, input.ano));
         if (input?.especialidadeId) conditions.push(eq(questoes.especialidadeId, input.especialidadeId));
         if (input?.busca?.trim()) conditions.push(like(questoes.enunciado, `%${input.busca.trim()}%`));
-        if (input?.statusImagem === 'com_imagem') conditions.push(isNotNull(questoes.imageUrl));
+        if (input?.statusImagem === 'com_imagem') conditions.push(isNotNull(questoes.imageKey));
         // 'sem_imagem' = marcadas na planilha como precisando de imagem (temImagem=1) mas ainda sem arquivo enviado
         if (input?.statusImagem === 'sem_imagem') {
           conditions.push(eq(questoes.temImagem, 1));
-          conditions.push(isNull(questoes.imageUrl));
+          conditions.push(isNull(questoes.imageKey));
         }
 
         const where = conditions.length > 1 ? and(...conditions) : conditions[0];
@@ -162,6 +163,7 @@ export const avaliacoesRouter = router({
             subcategoria: questoes.subcategoria,
             temImagem: questoes.temImagem,
             imageUrl: questoes.imageUrl,
+            imageKey: questoes.imageKey,
           })
           .from(questoes)
           .where(where)
@@ -355,10 +357,10 @@ export const avaliacoesRouter = router({
         // Upload para S3
         const { url } = await storagePut(fileKey, buffer, input.mimeType);
 
-        // Atualizar questão com URL da imagem e marcar temImagem=1
+        // Atualizar questão — salvar apenas a chave (imageUrl permanece null)
         await db
           .update(questoes)
-          .set({ imageUrl: url, imageKey: fileKey, temImagem: 1 })
+          .set({ imageUrl: null, imageKey: fileKey, temImagem: 1 })
           .where(eq(questoes.id, input.questaoId));
 
         return { success: true, imageUrl: url };
@@ -594,9 +596,17 @@ export const avaliacoesRouter = router({
           })
         );
         
-        return questoesComAlternativas;
+        // Resolver URLs assinadas (15 min) a partir das chaves de imagem
+        const questoesComUrls = await Promise.all(
+          questoesComAlternativas.map(async (q) => ({
+            ...q,
+            imageUrl: (q as any).imageKey ? await resolveSignedUrl((q as any).imageKey) : null,
+          }))
+        );
+
+        return questoesComUrls;
       }),
-    
+
     // Submeter respostas do simulado
     submeter: protectedProcedure
       .input(z.object({
@@ -740,22 +750,26 @@ export const avaliacoesRouter = router({
             .where(eq(simulados.id, input.simuladoId));
         }
 
-        return {
-          gabaritoVisualizado: simulado.gabaritoVisualizado === 1, // true = já havia sido visualizado antes
-          questoes: questoesComRespostas.map((q: any, index: number) => ({
+        const questoesFormatadas = await Promise.all(
+          questoesComRespostas.map(async (q: any, index: number) => ({
             numero: index + 1,
             enunciado: q.enunciado,
             especialidade: q.especialidade,
-            imageUrl: q.imageUrl || null,
+            imageUrl: q.imageKey ? await resolveSignedUrl(q.imageKey) : null,
             alternativas: q.alternativas.map((alt: any) => ({
               id: alt.id,
               letra: alt.letra,
               texto: alt.texto,
               correta: alt.correta === 1,
             })),
-            respostaUsuario: q.respostaUsuario, // letra da alternativa escolhida
+            respostaUsuario: q.respostaUsuario,
             acertou: q.acertou === 1,
-          })),
+          }))
+        );
+
+        return {
+          gabaritoVisualizado: simulado.gabaritoVisualizado === 1,
+          questoes: questoesFormatadas,
         };
       }),
 
@@ -1393,7 +1407,7 @@ export const avaliacoesRouter = router({
         const { url } = await storagePut(fileKey, buffer, input.mimeType);
 
         await db.update(questoes)
-          .set({ imageUrl: url, imageKey: fileKey, temImagem: 1 })
+          .set({ imageUrl: null, imageKey: fileKey, temImagem: 1 })
           .where(eq(questoes.id, input.questaoId));
 
         return { success: true, imageUrl: url };

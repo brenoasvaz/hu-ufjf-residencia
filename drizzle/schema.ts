@@ -134,7 +134,7 @@ export const imports = mysqlTable("imports", {
   id: int("id").autoincrement().primaryKey(),
   tipo: mysqlEnum("tipo", ["RODIZIO", "CRONOGRAMA"]).notNull(),
   arquivoNome: varchar("arquivo_nome", { length: 255 }).notNull(),
-  arquivoUrl: text("arquivo_url").notNull(), // URL do S3
+  arquivoUrl: text("arquivo_url"), // URL do S3 (nullable: gerada dinamicamente da chave)
   arquivoKey: varchar("arquivo_key", { length: 500 }).notNull(), // Key do S3
   usuarioAdminId: int("usuario_admin_id").notNull(),
   status: mysqlEnum("status", ["PENDENTE", "PROCESSANDO", "CONCLUIDO", "ERRO"]).notNull(),

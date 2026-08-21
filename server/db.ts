@@ -1,5 +1,6 @@
 import { eq, and, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
+import mysql from "mysql2/promise";
 import { InsertUser, users, clinicalMeetings, presentationGuidelines, ClinicalMeeting, InsertClinicalMeeting, PresentationGuideline, InsertPresentationGuideline, escalaAvaliacoes, EscalaAvaliacao, InsertEscalaAvaliacao, clubeRevista } from "../drizzle/schema";
 import * as schema from "../drizzle/schema";
 import { ENV } from './_core/env';
@@ -10,7 +11,20 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL, { schema, mode: 'default' });
+      // Pool configurado para TiDB Cloud:
+      // - idleTimeout 300 s (< 340 s limite do TiDB para conexões ociosas)
+      // - maxIdle baixo para não acumular conexões paradas
+      // - keepAlive previne que o SO feche conexões inativas antes do banco
+      const pool = mysql.createPool({
+        uri: process.env.DATABASE_URL,
+        waitForConnections: true,
+        connectionLimit: 10,
+        maxIdle: 5,
+        idleTimeout: 300_000,          // 5 min — abaixo do limite de 340 s do TiDB
+        enableKeepAlive: true,
+        keepAliveInitialDelay: 60_000, // ping após 60 s de silêncio
+      });
+      _db = drizzle(pool, { schema, mode: 'default' });
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
